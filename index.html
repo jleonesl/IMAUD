@@ -1,37 +1,6 @@
 <!doctype html>
-<html lang="es">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#102d46"><meta name="description" content="IMАUD — Sistema Integral de Recaudación de Aseo Domiciliario">
-<title>IMАUD | Gestión municipal</title><link rel="stylesheet" href="styles.css">
-</head>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#102d46"><meta name="description" content="IMАUD — Sistema Integral de Recaudación de Aseo Domiciliario"><title>IMАUD | Gestión municipal</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="auth.css"></head>
 <body>
-<div class="app-shell">
-<aside class="sidebar" id="sidebar">
-  <div class="brand"><div class="brand-mark" aria-label="Espacio para el logo oficial IMAUD"><span>im</span><b>♻</b><span>ud</span></div><div class="brand-caption">INSTITUTO MUNICIPAL DE<br>ASEO URBANO Y DOMICILIARIO</div></div>
-  <div class="municipality">ALCALDÍA DEL MUNICIPIO MIRANDA<br><strong>Coro · Estado Falcón</strong></div>
-  <div class="nav-label">GENERAL</div><nav id="mainNav">
-  <button class="nav-item active" data-view="inicio"><i>▦</i>Inicio</button>
-  <div class="nav-label">GESTIÓN TRIBUTARIA</div>
-  <button class="nav-item" data-view="contribuyentes"><i>♙</i>Contribuyentes</button>
-  <button class="nav-item" data-view="inmuebles"><i>⌂</i>Inmuebles</button>
-  <button class="nav-item" data-view="organizaciones"><i>▤</i>Organizaciones residenciales</button>
-  <button class="nav-item" data-view="pagos"><i>＋</i>Recaudación y pagos</button>
-  <button class="nav-item" data-view="facturacion"><i>▧</i>Facturación</button>
-  <div class="nav-label">CONTROL Y ANÁLISIS</div>
-  <button class="nav-item" data-view="reportes"><i>▥</i>Reportes</button>
-  <button class="nav-item" data-view="mapa"><i>⌖</i>Mapa territorial</button>
-  <button class="nav-item" data-view="ordenanza"><i>§</i>Ordenanza y tarifas</button>
-  <button class="nav-item" data-view="funcionarios"><i>♧</i>Funcionarios y permisos</button>
-  <button class="nav-item" data-view="bitacora"><i>◷</i>Bitácora</button>
-  </nav>
-  <div class="sidebar-bottom"><div class="secure-dot"></div><span>Entorno de demostración</span><span class="version">v0.1</span></div>
-</aside>
-<main class="main">
-<header class="topbar"><button class="menu-toggle" id="menuToggle">☰</button><div class="breadcrumb">IMАUD <span>/</span> <b id="crumb">Inicio</b></div><div class="top-actions"><span class="demo-pill">● DEMO</span><button class="icon-btn" title="Notificaciones">♧</button><div class="user-chip"><div class="avatar">UI</div><div><b>Usuario intendente</b><small>Superusuario</small></div><span>⌄</span></div></div></header>
-<div class="demo-banner"><b>ENTORNO DE PRUEBA</b><span>Datos ficticios. No registrar información real ni procesar pagos.</span></div>
-<section class="content" id="content"></section>
-<footer>IMАUD · Alcaldía del Municipio Miranda · Coro, estado Falcón <span>Plataforma en desarrollo</span></footer>
-</main></div>
-<div class="toast" id="toast" role="status"></div><script src="app.js"></script>
-</body></html>
+<section id="authGate" class="auth-gate" hidden><div class="auth-card"><div class="auth-brand"><div class="auth-mark">IM<span>AU</span>D</div><p>ALCALDÍA DEL MUNICIPIO MIRANDA<br><b>Coro · Estado Falcón</b></p></div><div class="auth-kicker">PLATAFORMA DE GESTIÓN MUNICIPAL</div><h1>Bienvenido a IMAUD</h1><p class="auth-sub">Accede a tu espacio de trabajo seguro.</p><form id="loginForm"><label for="loginEmail">Correo electrónico</label><input id="loginEmail" name="email" type="email" autocomplete="username" placeholder="tu correo institucional" required><label for="loginPassword">Contraseña</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="Tu contraseña" required><button id="loginButton" type="submit">Iniciar sesión</button></form><a href="#" id="forgotLink">¿Olvidaste tu contraseña?</a><p id="authMessage" role="status"></p><div class="auth-foot">Acceso exclusivo para funcionarios autorizados.<br>Las cuentas son habilitadas por el equipo intendente.</div></div></section>
+<div class="app-shell" style="display:none"><aside class="sidebar" id="sidebar"><div class="brand"><div class="brand-mark"><span>im</span><b>♻</b><span>ud</span></div><div class="brand-caption">SISTEMA INTEGRAL DE<br>RECAUDACIÓN DE ASEO DOMICILIARIO</div></div><div class="municipality">ALCALDÍA DEL MUNICIPIO MIRANDA<br><strong>Coro · Estado Falcón</strong></div><div class="nav-label">GENERAL</div><nav id="mainNav"><button class="nav-item active" data-view="inicio"><i>▦</i>Inicio</button><div class="nav-label">GESTIÓN TRIBUTARIA</div><button class="nav-item" data-view="contribuyentes"><i>♙</i>Contribuyentes</button><button class="nav-item" data-view="inmuebles"><i>⌂</i>Inmuebles</button><button class="nav-item" data-view="organizaciones"><i>▤</i>Organizaciones residenciales</button><button class="nav-item" data-view="pagos"><i>＋</i>Recaudación y pagos</button><button class="nav-item" data-view="facturacion"><i>▧</i>Facturación</button><div class="nav-label">CONTROL Y ANÁLISIS</div><button class="nav-item" data-view="reportes"><i>▥</i>Reportes</button><button class="nav-item" data-view="mapa"><i>⌖</i>Mapa territorial</button><button class="nav-item" data-view="ordenanza"><i>§</i>Ordenanza y tarifas</button><button class="nav-item" data-view="funcionarios"><i>♧</i>Funcionarios y permisos</button><button class="nav-item" data-view="bitacora"><i>◷</i>Bitácora</button></nav><div class="sidebar-bottom"><div class="secure-dot"></div><span>Acceso autenticado</span><span class="version">v0.2</span></div></aside><main class="main"><header class="topbar"><button class="menu-toggle" id="menuToggle">☰</button><div class="breadcrumb">IMАUD <span>/</span> <b id="crumb">Inicio</b></div><div class="top-actions"><button class="icon-btn" id="logoutButton" title="Cerrar sesión">↪</button><div class="user-chip"><div class="avatar">IM</div><div><b>Funcionario</b><small>Personal autorizado</small></div><span>⌄</span></div></div></header><div class="demo-banner"><b>ENTORNO DE PRUEBAS</b><span>No registrar información real ni procesar pagos.</span></div><section class="content" id="content"></section><footer>IMАUD · Alcaldía del Municipio Miranda · Coro, estado Falcón <span>Plataforma en desarrollo</span></footer></main></div><div class="toast" id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="auth.js"></script><script src="app.js"></script><script>document.getElementById('logoutButton')?.addEventListener('click',async()=>{await imaudClient.auth.signOut();location.reload()});</script></body></html>

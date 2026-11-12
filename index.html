@@ -34,15 +34,7 @@ document.querySelectorAll('[data-portal]').forEach(button=>{
       window.location.href='./funcionario.html';
       return;
     }
-    publicHome.hidden=true;
-    authGate.hidden=false;
-    portalTitle.textContent='PORTAL DEL CONTRIBUYENTE';
-    authHeading.textContent='Accede a tu cuenta';
-    authSubtitle.textContent='Consulta tu cuenta y gestiona tus pagos de forma segura.';
-    loginLabel.textContent='Correo electrónico';
-    loginEmail.placeholder='Tu correo electrónico';
-    authMessage.textContent='';
-    loginEmail.focus();
+    window.location.href='./contribuyente.html';
   });
 });
 document.getElementById('backToPublic').addEventListener('click',()=>{

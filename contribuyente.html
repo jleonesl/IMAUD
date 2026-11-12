@@ -16,23 +16,38 @@
 </style></head>
 <body>
 <main class="staff-page">
-<section class="staff-visual"><div class="visual-copy"><span>SISTEMA INTEGRAL TRIBUTARIO MUNICIPAL</span><h2>Portal del<br>Funcionario</h2><p>Consulta y gestiona tus obligaciones de aseo urbano y domiciliario de manera sencilla, segura y transparente.</p></div></section>
+<section class="staff-visual"><div class="visual-copy"><span>SISTEMA INTEGRAL TRIBUTARIO MUNICIPAL</span><h2>Portal del<br>Contribuyente</h2><p>Consulta tu estado de cuenta, realiza pagos y gestiona tus comprobantes y certificados de solvencia de forma sencilla y segura.</p></div></section>
 <section class="staff-panel"><div class="staff-card">
 <a class="back" href="./index.html">← Volver a la página principal</a>
 <div class="brand"><div class="brand-mark">SIT<span>MAUD</span></div><div class="eyebrow">ALCALDÍA DEL MUNICIPIO MIRANDA · CORO, FALCÓN</div></div>
-<div class="eyebrow">ACCESO CIUDADANO</div><h1>Iniciar sesión</h1><p class="sub">Ingresa con el correo electrónico y la contraseña de tu cuenta SITMAUD.</p>
-<form id="citizenLogin"><label class="field" for="staffEmail">Correo electrónico</label><input id="staffEmail" type="email" autocomplete="username" placeholder="tu correo electrónico" required><label class="field" for="staffPassword">Contraseña</label><input id="staffPassword" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required><button class="submit" id="citizenSubmit" type="submit">Ingresar al sistema</button></form>
+<div class="eyebrow">PORTAL DEL CONTRIBUYENTE</div><h1>Iniciar sesión</h1><p class="sub">Ingresa con tu número de cédula y contraseña para consultar tus contratos y obligaciones.</p>
+<form id="citizenLogin"><label class="field" for="citizenCedula">Usuario / Cédula de identidad</label><input id="citizenCedula" type="text" inputmode="numeric" autocomplete="username" placeholder="Ingresa tu número de cédula" required pattern="[0-9]{5,12}" title="Ingresa tu cédula solo con números"><label class="field" for="citizenPassword">Contraseña</label><input id="citizenPassword" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required><button class="submit" id="citizenSubmit" type="submit">Ingresar al sistema</button></form>
 <a class="forgot" href="#" id="citizenForgot">¿Olvidaste tu contraseña?</a><div class="message" id="citizenMessage" role="status"></div>
 <div class="foot">Acceso personal para contribuyentes registrados.<br>Si aún no tienes cuenta, solicita orientación en la oficina de recaudación.</div>
 </div></section></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase.co","sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm");
-const form=document.getElementById('staffLogin'),button=document.getElementById('staffSubmit'),message=document.getElementById('staffMessage'),email=document.getElementById('staffEmail');
-form.addEventListener('submit',async e=>{e.preventDefault();button.disabled=true;button.textContent='Verificando acceso…';message.textContent='';
-const {data,error}=await client.auth.signInWithPassword({email:email.value.trim(),password:document.getElementById('staffPassword').value});
-if(error){message.textContent='No se pudo iniciar sesión. Verifica tus credenciales.';button.disabled=false;button.textContent='Ingresar al sistema';return;}
-message.textContent='Acceso validado. El espacio personal del contribuyente estará disponible al completar su configuración.';button.disabled=false;button.textContent='Acceso validado';
+const form=document.getElementById('citizenLogin');
+const button=document.getElementById('citizenSubmit');
+const message=document.getElementById('citizenMessage');
+const cedula=document.getElementById('citizenCedula');
+const password=document.getElementById('citizenPassword');
+// Convención de acceso: cédula normalizada como identificador de inicio de sesión en Supabase.
+// Las cuentas ciudadanas deberán provisionarse con este alias y una contraseña definida por el titular.
+const citizenLoginEmail=value=>value.replace(/[^0-9]/g,'')+'@contribuyentes.sitmaud.local';
+form.addEventListener('submit',async e=>{
+ e.preventDefault();
+ const id=cedula.value.replace(/[^0-9]/g,'');
+ if(!/^[0-9]{5,12}$/.test(id)){message.textContent='Verifica el número de cédula ingresado.';return;}
+ button.disabled=true;button.textContent='Verificando acceso…';message.textContent='';
+ const {data,error}=await client.auth.signInWithPassword({email:citizenLoginEmail(id),password:password.value});
+ if(error){message.textContent='No se pudo iniciar sesión. Verifica tu cédula y contraseña o acude a la oficina de recaudación para activar tu cuenta.';button.disabled=false;button.textContent='Ingresar al sistema';return;}
+ message.textContent='Identidad autenticada. La habilitación del espacio personal y sus contratos se completará al activar el módulo ciudadano.';
+ button.disabled=false;button.textContent='Acceso validado';
 });
-document.getElementById('staffForgot').addEventListener('click',async e=>{e.preventDefault();if(!email.value.trim()){message.textContent='Escribe tu correo institucional para solicitar la recuperación.';return;}const {error}=await client.auth.resetPasswordForEmail(email.value.trim(),{redirectTo:location.origin+location.pathname});message.textContent=error?'No se pudo enviar el enlace.':'Si el correo está registrado, recibirás instrucciones para recuperar tu contraseña.';});
+document.getElementById('citizenForgot').addEventListener('click',e=>{
+ e.preventDefault();
+ message.textContent='Para recuperar el acceso mediante cédula, solicita asistencia en la oficina de recaudación mientras se habilita la recuperación ciudadana.';
+});
 </script></body></html>

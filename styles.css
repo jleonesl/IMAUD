@@ -6,6 +6,7 @@
 @media(max-width:420px){.kpis{grid-template-columns:1fr 1fr;gap:9px}.kpi-value{font-size:18px}.kpi-top{font-size:9px}.module-grid{grid-template-columns:1fr}}
 
 /* PORTADA PÚBLICA SITMAUD — implementada en la web real */
+[hidden]{display:none!important}
 .public-home{min-height:100vh;display:grid;grid-template-columns:minmax(380px,46%) 1fr;background:#fff;color:#102f50}
 .public-visual{position:relative;overflow:hidden;min-height:720px;background:linear-gradient(145deg,#0a4775 0%,#079db3 54%,#8ddde0 100%)}
 .visual-sky{position:absolute;inset:0;background:radial-gradient(circle at 75% 15%,#d5f6e8 0 7%,transparent 7.5%),linear-gradient(160deg,transparent 38%,#b9eff0 38% 49%,transparent 49%)}

@@ -86,5 +86,14 @@ function exportCSV(){const rows=[['Referencia','Contribuyente','Periodo','Import
 document.addEventListener('submit',e=>{if(e.target.id==='personForm'){e.preventDefault();const f=new FormData(e.target);state.people.unshift({name:f.get('name'),id:f.get('id'),type:f.get('type'),property:'Pendiente de asociar',status:'Nuevo'});go('contribuyentes');toast('Registro ficticio agregado a esta sesión')}if(e.target.id==='paymentForm'){e.preventDefault();const f=new FormData(e.target);state.payments.unshift({ref:'DEMO-'+String(32+state.payments.length).padStart(5,'0'),person:f.get('person'),period:f.get('period'),amount:money(Number(f.get('amount'))),date:new Date().toLocaleDateString('es-VE'),status:'Registrado'});go('pagos');toast('Pago de demostración registrado localmente')}});
 document.addEventListener('input',e=>{if(e.target.id==='personSearch'){const q=e.target.value.toLowerCase();$('#peopleTable').innerHTML=table(['Nombre / Razón social','Identificación','Tipo','Inmuebles asociados','Estado'],state.people.filter(p=>(p.name+p.id).toLowerCase().includes(q)).map(p=>`<tr><td><strong>${p.name}</strong></td><td>${p.id}</td><td>${p.type}</td><td>${p.property}</td><td><span class="status">${p.status}</span></td></tr>`).join(''))}});
 const originalRender=render;render=function(){if(state.view==='contribuyentes-form'){ $('#crumb').textContent='Nuevo contribuyente';$('#content').innerHTML=personForm();$('#sidebar').classList.remove('open');return}if(state.view==='pago-form'){ $('#crumb').textContent='Registrar pago';$('#content').innerHTML=paymentForm();$('#sidebar').classList.remove('open');return}originalRender()};
+// Register authentication handling before the first render to avoid a blank Inicio
+// if the session resolves while the application bundle is initializing.
+window.addEventListener('imaud:authenticated',()=>{
+  state.view='inicio';
+  render();
+});
 render();
-window.addEventListener('imaud:authenticated',()=>{state.view='inicio';render()});
+if(document.body.classList.contains('sitmaud-authenticated')){
+  state.view='inicio';
+  render();
+}

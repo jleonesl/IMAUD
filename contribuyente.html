@@ -32,7 +32,7 @@ const form=document.getElementById('staffLogin'),button=document.getElementById(
 form.addEventListener('submit',async e=>{e.preventDefault();button.disabled=true;button.textContent='Verificando acceso…';message.textContent='';
 const {data,error}=await client.auth.signInWithPassword({email:email.value.trim(),password:document.getElementById('staffPassword').value});
 if(error){message.textContent='No se pudo iniciar sesión. Verifica tus credenciales.';button.disabled=false;button.textContent='Ingresar al sistema';return;}
-location.href='./contribuyente.html?sesion=activa';
+message.textContent='Acceso validado. El espacio personal del contribuyente estará disponible al completar su configuración.';button.disabled=false;button.textContent='Acceso validado';
 });
 document.getElementById('staffForgot').addEventListener('click',async e=>{e.preventDefault();if(!email.value.trim()){message.textContent='Escribe tu correo institucional para solicitar la recuperación.';return;}const {error}=await client.auth.resetPasswordForEmail(email.value.trim(),{redirectTo:location.origin+location.pathname});message.textContent=error?'No se pudo enviar el enlace.':'Si el correo está registrado, recibirás instrucciones para recuperar tu contraseña.';});
 </script></body></html>

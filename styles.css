@@ -168,3 +168,12 @@ body.sitmaud-authenticated #publicHome,
 body.sitmaud-authenticated #authGate { display:none !important; }
 body.sitmaud-authenticated .app-shell { display:block !important; }
 body:not(.sitmaud-authenticated) .app-shell { display:none !important; }
+
+
+/* Route isolation: staff login must never render the public landing beside the admin app. */
+html.staff-portal-route #publicHome,
+html.staff-portal-route #authGate { display:none !important; }
+html.staff-portal-route body:not(.sitmaud-authenticated) .app-shell { display:none !important; }
+html.staff-portal-route body.sitmaud-authenticated #publicHome,
+html.staff-portal-route body.sitmaud-authenticated #authGate { display:none !important; }
+html.staff-portal-route body.sitmaud-authenticated .app-shell { display:block !important; }

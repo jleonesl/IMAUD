@@ -168,7 +168,7 @@ document.addEventListener('submit',e=>{if(e.target.id==='personForm'){e.preventD
 document.addEventListener('input',e=>{if(e.target.id==='personSearch')filterContributors()});
 document.addEventListener('change',e=>{if(['typeFilter','statusFilter','parishFilter'].includes(e.target.id))filterContributors()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('contributorModal'))closeContributorModal()});
-const originalRender=render;render=function(){if(state.view==='contribuyentes-form'){ $('#crumb').textContent='Nuevo contribuyente';$('#content').innerHTML=personForm();$('#sidebar').classList.remove('open');return}if(state.view==='pago-form'){ $('#crumb').textContent='Registrar pago';$('#content').innerHTML=paymentForm();$('#sidebar').classList.remove('open');return}originalRender()};
+const originalRender=render;render=function(){if(state.view==='pago-form'){ $('#crumb').textContent='Registrar pago';$('#content').innerHTML=paymentForm();$('#sidebar').classList.remove('open');return}originalRender()};
 // Register authentication handling before the first render to avoid a blank Inicio
 // if the session resolves while the application bundle is initializing.
 window.addEventListener('imaud:authenticated',()=>{

@@ -287,8 +287,7 @@ async function findPropertyContributor(){
  target.innerHTML='<div class="property-lookup-message success">✓ Contribuyente encontrado. Puedes agregarle un inmueble.</div>';
  document.getElementById('propertyNewPanel').hidden=false;
  document.getElementById('propertyLinkedCard').innerHTML='<span class="property-linked-icon">♙</span><div><b>'+escapeHTML(propertyContributorName(contributor))+'</b><small>'+escapeHTML(contributor.identification_type+'-'+contributor.identification_number)+'</small></div>';
- document.getElementById('propertyLinkedCount').textContent+='';
- document.getElementById('propertyLinkedCount').textContent=matches.length+' inmuebles registrados'.replace(String(matches.length),String((existing.data||[]).length));
+ document.getElementById('propertyLinkedCount').textContent=(existing.data||[]).length+' inmuebles registrados';
  renderExistingPropertyList(existing.data||[]);
 }
 function renderExistingPropertyList(rows){

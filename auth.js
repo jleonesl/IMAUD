@@ -9,8 +9,13 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
  const msg=document.getElementById('authMessage');
  const form=document.getElementById('loginForm');
  const btn=document.getElementById('loginButton');
- root.hidden=true; root.style.display='none'; app.style.display='none'; const landing=document.getElementById('publicHome'); if(landing){landing.hidden=false; landing.style.display='';}
+ const landing=document.getElementById('publicHome');
+ const staffEntry=new URLSearchParams(location.search).get('portal')==='funcionario';
+ root.hidden=true; root.style.setProperty('display','none','important');
+ app.style.setProperty('display','none','important');
+ if(landing){landing.hidden=staffEntry; landing.style.setProperty('display',staffEntry?'none':'grid','important');}
  const {data:{session}}=await imaudClient.auth.getSession();
+ if(staffEntry&&!session){location.replace('./funcionario.html');return;}
  async function enter(user){
    const {data:profile,error}=await imaudClient.from('staff_profiles').select('display_name,role,is_active').eq('user_id',user.id).maybeSingle();
    if(error||!profile||!profile.is_active){
@@ -18,7 +23,7 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
      msg.textContent='Tu cuenta aún no tiene un perfil administrativo habilitado. Solicita la activación al intendente principal.';
      return;
    }
-   root.hidden=true; root.style.display='none'; if(landing){landing.hidden=true; landing.style.display='none';} app.style.display='block';
+   root.hidden=true; root.style.setProperty('display','none','important'); if(landing){landing.hidden=true; landing.style.setProperty('display','none','important');} app.hidden=false; app.style.setProperty('display','block','important');
    const name=document.querySelector('.user-chip b'); const role=document.querySelector('.user-chip small');
    if(name) name.textContent=profile.display_name;
    if(role) role.textContent=profile.role.replaceAll('_',' ');

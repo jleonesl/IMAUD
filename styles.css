@@ -60,3 +60,27 @@
 .portal-arrow{border-radius:13px}
 .public-links{margin-top:30px}
 @media(max-width:900px){.public-visual{min-height:300px;max-height:340px}.public-visual:after{font-size:220px;right:5%;top:8%}.public-brand .sitmaud-logo{width:250px}}
+
+/* AJUSTE REAL DE COMPOSICIÓN — portada pública SITMAUD */
+.public-home{grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);min-height:100vh;overflow:hidden}
+.public-visual{min-height:100vh;height:100%;background:#07517d}
+.public-visual:before,.public-visual:after{display:none!important;content:none!important}
+.hero-art{position:absolute;inset:0;width:100%;height:100%;display:block}
+.public-content{width:100%;max-width:760px;padding:34px clamp(30px,3.2vw,62px) 20px;justify-self:center}
+.public-brand{margin-bottom:30px}
+.public-brand .sitmaud-logo{width:min(300px,72%);margin-bottom:8px}
+.public-welcome{margin-bottom:23px}
+.public-welcome h1{font-size:clamp(26px,2.1vw,34px)}
+.public-welcome p{max-width:490px}
+.portal-options{gap:13px}
+.portal-card{padding:15px 17px;gap:15px;border-radius:13px}
+.portal-icon{width:54px;height:54px}
+.portal-copy b{font-size:17px}
+.portal-copy small{font-size:11px}
+.portal-arrow{width:44px;height:44px}
+.public-links{margin-top:23px;padding-top:15px}
+.public-footer{margin-top:18px}
+.visual-caption{left:8%;bottom:5%;z-index:2}
+@media(max-width:1000px){.public-home{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.public-content{padding-left:25px;padding-right:25px}.portal-copy b{font-size:15px}}
+@media(max-width:760px){.public-home{grid-template-columns:1fr;overflow:visible}.public-visual{min-height:390px;height:390px}.public-content{max-width:650px;padding:30px 22px}.public-brand{margin-bottom:24px}}
+@media(max-width:520px){.public-visual{min-height:300px;height:300px}.public-content{padding:26px 17px}.public-brand .sitmaud-logo{width:225px}}

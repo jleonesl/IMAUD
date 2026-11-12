@@ -292,3 +292,5 @@ body.modal-open{overflow:hidden}
 @media(max-width:1050px){.contributors-toolbar{grid-template-columns:1fr 1fr}.contributors-layout{grid-template-columns:1fr}.contributors-stats{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:760px){.contributors-toolbar{grid-template-columns:1fr}.contributors-stats{grid-template-columns:repeat(2,1fr)}.registration-columns{grid-template-columns:1fr}.contributor-modal{max-height:calc(100vh - 16px);padding:13px}.contributor-modal-backdrop{padding:8px}.registration-steps{grid-template-columns:1fr 1fr}.registration-panel .form-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:480px){.registration-panel .form-grid{grid-template-columns:1fr}.registration-step{padding:8px}.registration-step strong{font-size:9px}.registration-step small{font-size:8px}}
+
+.property-lock[hidden],.property-success[hidden],.saved-contributor-note[hidden],#propertyFormWrap[hidden]{display:none!important}

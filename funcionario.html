@@ -34,7 +34,7 @@ const {data,error}=await client.auth.signInWithPassword({email:email.value.trim(
 if(error){message.textContent='No se pudo iniciar sesión. Verifica tus credenciales.';button.disabled=false;button.textContent='Ingresar al sistema';return;}
 const {data:profile,error:profileError}=await client.from('staff_profiles').select('is_active').eq('user_id',data.user.id).maybeSingle();
 if(profileError||!profile||!profile.is_active){await client.auth.signOut();message.textContent='Tu cuenta no tiene un perfil de funcionario habilitado. Contacta al usuario intendente.';button.disabled=false;button.textContent='Ingresar al sistema';return;}
-location.href='./panel.html';
+location.replace('./index.html?portal=funcionario');
 });
 document.getElementById('staffForgot').addEventListener('click',async e=>{e.preventDefault();if(!email.value.trim()){message.textContent='Escribe tu correo institucional para solicitar la recuperación.';return;}const {error}=await client.auth.resetPasswordForEmail(email.value.trim(),{redirectTo:location.origin+location.pathname});message.textContent=error?'No se pudo enviar el enlace.':'Si el correo está registrado, recibirás instrucciones para recuperar tu contraseña.';});
 </script></body></html>

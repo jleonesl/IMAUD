@@ -9,7 +9,7 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
  const msg=document.getElementById('authMessage');
  const form=document.getElementById('loginForm');
  const btn=document.getElementById('loginButton');
- root.hidden=false; app.style.display='none';
+ root.hidden=true; app.style.display='none'; const landing=document.getElementById('publicHome'); if(landing) landing.hidden=false;
  const {data:{session}}=await imaudClient.auth.getSession();
  async function enter(user){
    const {data:profile,error}=await imaudClient.from('staff_profiles').select('display_name,role,is_active').eq('user_id',user.id).maybeSingle();
@@ -18,7 +18,7 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
      msg.textContent='Tu cuenta aún no tiene un perfil administrativo habilitado. Solicita la activación al intendente principal.';
      return;
    }
-   root.hidden=true; app.style.display='';
+   root.hidden=true; app.style.display=''; if(landing) landing.hidden=true;
    const name=document.querySelector('.user-chip b'); const role=document.querySelector('.user-chip small');
    if(name) name.textContent=profile.display_name;
    if(role) role.textContent=profile.role.replaceAll('_',' ');

@@ -33,6 +33,7 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
    const banner=document.querySelector('.demo-banner');
    if(banner){banner.innerHTML='<b>ENTORNO DE PRUEBAS</b><span>La autenticación está activa. Las operaciones financieras aún no están habilitadas.</span>'}
    window.imaudCurrentProfile=profile;
+   window.dispatchEvent(new Event('imaud:authenticated'));
  }
  if(session) await enter(session.user);
  form.addEventListener('submit',async e=>{

@@ -221,3 +221,15 @@ html.staff-portal-route body.sitmaud-authenticated .app-shell { display:block !i
   color:#557486!important;
 }
 .sidebar .version{color:#7895a5!important}
+
+
+/* SITMAUD — Inicio: solo indicadores generales aprobados */
+.home-indicators{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0}
+.home-kpi{min-height:142px;padding:18px 19px;display:flex;flex-direction:column;justify-content:space-between}
+.home-kpi .kpi-top{gap:10px;align-items:flex-start;line-height:1.4;color:#536d7e;font-weight:700;font-size:11px}
+.home-kpi .kpi-icon{flex:none;background:#e8f4f6;color:#168b9c}
+.home-kpi .kpi-value{font-size:25px;line-height:1.2;margin:14px 0 5px;overflow-wrap:anywhere}
+.home-kpi .kpi-note{font-size:10px;line-height:1.45;color:#8797a2}
+@media(max-width:1100px){.home-indicators{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:720px){.home-indicators{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.home-kpi{min-height:132px;padding:13px}.home-kpi .kpi-value{font-size:20px}}
+@media(max-width:390px){.home-indicators{grid-template-columns:1fr}}

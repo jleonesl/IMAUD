@@ -161,3 +161,10 @@
  #publicHome>.public-visual{grid-column:1;grid-row:1;width:100%;height:38vh;min-height:250px;max-height:380px}
  #publicHome>.public-content{grid-column:1;grid-row:2;width:100%;height:auto;max-width:650px;margin:0 auto;padding:24px 18px;overflow:visible}
 }
+
+
+/* SITMAUD: enforce mutually exclusive public and authenticated views. */
+body.sitmaud-authenticated #publicHome,
+body.sitmaud-authenticated #authGate { display:none !important; }
+body.sitmaud-authenticated .app-shell { display:block !important; }
+body:not(.sitmaud-authenticated) .app-shell { display:none !important; }

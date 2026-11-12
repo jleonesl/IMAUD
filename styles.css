@@ -467,3 +467,34 @@ body.modal-open{overflow:hidden}
  .payment-total-row{justify-content:space-between;gap:10px}
  .payment-register-fields{grid-template-columns:1fr}
 }
+
+
+/* SITMAUD UDC — panel de tasa BCV y coeficientes */
+.udc-panel,.udc-tariffs{padding:20px;margin-bottom:16px}
+.udc-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.udc-panel-head h2{margin:7px 0 5px;color:#153b56;font:800 23px Manrope,sans-serif}
+.udc-panel-head p{margin:0;color:#718795;font-size:11px;line-height:1.6}
+.udc-rate-content{display:grid;grid-template-columns:1fr 1.2fr;gap:20px;align-items:center;margin-top:18px;padding:17px;background:#f3f7f9;border:1px solid #e4edf1;border-radius:11px}
+.udc-main-value{display:grid;gap:4px}
+.udc-main-value span,.udc-rate-meta span{font-size:10px;color:#6f8492}
+.udc-main-value strong{font:800 30px Manrope,sans-serif;color:#138c72;letter-spacing:-.6px}
+.udc-main-value small{font-size:10px;color:#718795}
+.udc-rate-meta{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.udc-rate-meta div{display:grid;gap:5px}
+.udc-rate-meta b{font-size:11px;color:#25465d}
+.udc-all-rates{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;padding-top:12px;border-top:1px solid #e0e9ee}
+.udc-all-rates span{padding:6px 9px;border:1px solid #dce7ec;border-radius:7px;background:#fff;color:#6a7f8c;font-size:10px}
+.udc-all-rates b{color:#24465e}
+.udc-source-note{margin:12px 0 0;color:#7a8e9a;font-size:10px;line-height:1.6}
+.udc-rate-loading{grid-column:1/-1;color:#708592;font-size:11px;padding:18px 4px}
+.udc-tariffs .panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.udc-tariffs .panel-head h3{margin:0;color:#24465e;font:800 14px Manrope,sans-serif}
+.udc-formula{margin:12px 0 14px;padding:10px 12px;border-radius:8px;background:#f3f7f9;color:#31556b;font-size:12px;font-weight:700}
+.udc-tariff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.udc-tariff-grid article{display:grid;gap:7px;padding:14px;border:1px solid #e3ebef;border-radius:9px}
+.udc-tariff-grid article span{font-size:10px;color:#718795}
+.udc-tariff-grid article strong{font:800 17px Manrope,sans-serif;color:#173b56}
+.udc-tariff-grid article small{font-size:11px;color:#159b70;font-weight:700}
+.udc-history-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #edf1f3;color:#6f8492;font-size:10px}
+.udc-history-row b{color:#25465d}
+@media(max-width:760px){.udc-panel-head{flex-direction:column}.udc-panel-head .btn{width:100%}.udc-rate-content{grid-template-columns:1fr}.udc-rate-meta{grid-template-columns:1fr 1fr}.udc-tariff-grid{grid-template-columns:1fr}.udc-panel,.udc-tariffs{padding:15px}}

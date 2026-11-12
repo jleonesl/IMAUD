@@ -80,7 +80,7 @@ function peopleTable(rows=state.people){
 async function loadContributors(){
  const target=document.getElementById('peopleTable'); if(!target)return;
  target.innerHTML='<div class="contributors-loading">Consultando contribuyentes…</div>';
- const {data,error}=await imaudClient.from('contributors').select('id,kind,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,status,created_at,properties(id,contract_number,is_active,parish_name,sector_name)').order('created_at',{ascending:false});
+ const {data,error}=await imaudClient.from('contributors').select('id,kind,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,created_at,properties(id,contract_number,is_active,parish_name,sector_name)').order('created_at',{ascending:false});
  if(state.view!=='contribuyentes')return;
  if(error){console.error('SITMAUD contributors:',error);target.innerHTML='<div class="contributors-empty"><b>No se pudieron cargar los contribuyentes</b><span>Verifica que tu usuario tenga permiso de consulta y vuelve a intentarlo.</span></div>';return;}
  state.people=data||[];

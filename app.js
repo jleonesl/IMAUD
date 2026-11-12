@@ -268,18 +268,27 @@ async function openPropertyRegistrationModal(){
 }
 async function findPropertyContributor(){
  const input=document.getElementById('propertyContributorId'),target=document.getElementById('propertyContributorResult');
- const digits=input.value.trim().replace(/[^0-9]/g,'');
- if(!digits){toast('Introduce una cédula o RIF.');return;}
+ const raw=input.value.trim().toUpperCase();
+ const match=raw.match(/^([VEJPG])?[-\\s.]*(\\d+)$/);
+ if(!match){toast('Introduce una cédula o RIF válido, por ejemplo V-26310820.');return;}
+ const prefix=match[1]||null,digits=match[2];
  target.innerHTML='<div class="contributors-loading">Buscando contribuyente…</div>';
- const {data,error}=await imaudClient.from('contributors').select('id,kind,identification_type,identification_number,legal_name,first_name,last_name,is_property_owner').eq('identification_number',digits).maybeSingle();
+ let query=imaudClient.from('contributors').select('id,kind,identification_type,identification_number,legal_name,first_name,last_name,is_property_owner').ilike('identification_number','%'+digits).limit(3);
+ if(prefix)query=query.eq('identification_type',prefix);
+ const {data,error}=await query;
  if(error){console.error(error);target.innerHTML='<div class="property-lookup-message error">No se pudo consultar: '+escapeHTML(error.message)+'</div>';return;}
- if(!data){state.propertySelectedContributor=null;document.getElementById('propertyNewPanel').hidden=true;target.innerHTML='<div class="property-lookup-message">No encontramos esa identificación. Primero registra al contribuyente en el módulo Contribuyentes.</div>';return;}
- state.propertySelectedContributor=data;
- const existing=await imaudClient.from('properties').select('id,contract_number,address,parish_name,sector_name,is_active').eq('contributor_id',data.id).order('created_at',{ascending:false});
+ const matches=data||[];
+ if(matches.length>1){state.propertySelectedContributor=null;document.getElementById('propertyNewPanel').hidden=true;target.innerHTML='<div class="property-lookup-message">Encontramos más de un registro con esos dígitos. Introduce también el tipo de identificación (V, E, J, G o P) para identificar al titular.</div>';return;}
+ const contributor=matches[0];
+ if(!contributor){state.propertySelectedContributor=null;document.getElementById('propertyNewPanel').hidden=true;target.innerHTML='<div class="property-lookup-message">No encontramos un contribuyente con esa identificación. Verifica el número o regístralo primero en el módulo Contribuyentes.</div>';return;}
+ state.propertySelectedContributor=contributor;
+ const existing=await imaudClient.from('properties').select('id,contract_number,address,parish_name,sector_name,is_active').eq('contributor_id',contributor.id).order('created_at',{ascending:false});
+ if(existing.error){console.error(existing.error);target.innerHTML='<div class="property-lookup-message error">El contribuyente existe, pero no se pudieron consultar sus inmuebles: '+escapeHTML(existing.error.message)+'</div>';return;}
  target.innerHTML='<div class="property-lookup-message success">✓ Contribuyente encontrado. Puedes agregarle un inmueble.</div>';
  document.getElementById('propertyNewPanel').hidden=false;
- document.getElementById('propertyLinkedCard').innerHTML='<span class="property-linked-icon">♙</span><div><b>'+escapeHTML(propertyContributorName(data))+'</b><small>'+escapeHTML(data.identification_type+'-'+data.identification_number)+'</small></div>';
- document.getElementById('propertyLinkedCount').textContent=(existing.data||[]).length+' inmuebles registrados';
+ document.getElementById('propertyLinkedCard').innerHTML='<span class="property-linked-icon">♙</span><div><b>'+escapeHTML(propertyContributorName(contributor))+'</b><small>'+escapeHTML(contributor.identification_type+'-'+contributor.identification_number)+'</small></div>';
+ document.getElementById('propertyLinkedCount').textContent+='';
+ document.getElementById('propertyLinkedCount').textContent=matches.length+' inmuebles registrados'.replace(String(matches.length),String((existing.data||[]).length));
  renderExistingPropertyList(existing.data||[]);
 }
 function renderExistingPropertyList(rows){

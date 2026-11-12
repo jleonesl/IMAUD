@@ -4,15 +4,66 @@ function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show')
 const titleMap={inicio:'Inicio',contribuyentes:'Contribuyentes',inmuebles:'Inmuebles',organizaciones:'Organizaciones residenciales',pagos:'Recaudación y pagos',facturacion:'Facturación',reportes:'Reportes',mapa:'Mapa territorial',ordenanza:'Ordenanza y tarifas',funcionarios:'Funcionarios y permisos',bitacora:'Bitácora'};
 function head(title,sub,action=''){return `<div class="page-head"><div><div class="eyebrow">SITMAUD · GESTIÓN MUNICIPAL</div><h1>${title}</h1><p>${sub}</p></div>${action}</div>`}
 function table(headers,rows){return `<div class="card table-card"><table><thead><tr>${headers.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`}
-function dashboard(){return head('Panel general','Resumen de la gestión de recaudación y aseo domiciliario.', '<button class="btn btn-primary" data-go="pagos">＋ Registrar pago</button>')+`
-<div class="grid kpis">
-<div class="card kpi"><div class="kpi-top">Recaudado hoy <span class="kpi-icon">↗</span></div><div class="kpi-value">Bs. 18.450,00</div><div class="kpi-note"><strong>+8,4%</strong> respecto al día anterior</div></div>
-<div class="card kpi"><div class="kpi-top">Recaudado en el mes <span class="kpi-icon">▤</span></div><div class="kpi-value">Bs. 284.760,00</div><div class="kpi-note"><strong>+12,6%</strong> respecto al mes anterior</div></div>
-<div class="card kpi"><div class="kpi-top">Contribuyentes <span class="kpi-icon">♙</span></div><div class="kpi-value">8.426</div><div class="kpi-note">Registros de demostración</div></div>
-<div class="card kpi"><div class="kpi-top">Inmuebles registrados <span class="kpi-icon">⌂</span></div><div class="kpi-value">9.183</div><div class="kpi-note">Incluye inmuebles agrupados</div></div></div>
-<div class="grid dashboard-grid"><div class="card panel"><div class="panel-head"><h3>Comportamiento de recaudación</h3><span>Últimos 6 meses · DEMO</span></div><div class="chart">${[45,58,52,70,63,86,72,92,78,96,84,100].map((h,i)=>`<div class="bar-group"><div class="bar ${i%2?'alt':''}" style="height:${h}%"></div><span class="bar-label">${['J','F','M','A','M','J','J','A','S','O','N','D'][i]}</span></div>`).join('')}</div><div class="legend"><span><i></i> Año anterior</span><span><i class="alt"></i> Año actual</span></div></div>
-<div class="card panel"><div class="panel-head"><h3>Estado de obligaciones</h3><span>Distribución DEMO</span></div><div class="progress-list"><div class="progress-row"><span>Al día</span><strong>68%</strong><div class="track"><span style="width:68%"></span></div></div><div class="progress-row"><span>Con deuda pendiente</span><strong>24%</strong><div class="track"><span style="width:24%;background:#d6a34d"></span></div></div><div class="progress-row"><span>Sin liquidación</span><strong>8%</strong><div class="track"><span style="width:8%;background:#9baab4"></span></div></div></div><div class="notice" style="margin-top:23px">Los indicadores son datos ilustrativos. Se conectarán a la base de datos cuando se implemente el backend.</div></div></div>
-<div class="card"><div class="table-toolbar"><h3>Movimientos recientes</h3><button class="btn btn-light" data-go="pagos">Ver recaudación →</button></div>${table(['Referencia','Contribuyente','Período','Importe','Fecha','Estado'],state.payments.map(p=>`<tr><td><strong>${p.ref}</strong></td><td>${p.person}</td><td>${p.period}</td><td>Bs. ${p.amount}</td><td>${p.date}</td><td><span class="status">${p.status}</span></td></tr>`).join(''))}</div>`}
+function dashboard(){
+  const metrics=[
+    {key:'contributors_total',label:'Total de contribuyentes',icon:'♙',note:'Personas y organizaciones registradas'},
+    {key:'properties_total',label:'Total de inmuebles',icon:'⌂',note:'Inmuebles activos registrados'},
+    {key:'payments_total',label:'Pagos registrados',icon:'▧',note:'Total histórico de operaciones'},
+    {key:'payments_today',label:'Pagos registrados hoy',icon:'◷',note:'Operaciones creadas durante el día'},
+    {key:'revenue_today',label:'Recaudación del día',icon:'↗',note:'Pagos confirmados hoy · hora local de Coro'},
+    {key:'revenue_total',label:'Recaudación total',icon:'▤',note:'Acumulado de pagos confirmados'},
+    {key:'debts_pending',label:'Deudas pendientes',icon:'!',note:'Obligaciones pendientes o parcialmente pagadas'},
+    {key:'certificates_total',label:'Certificados de solvencia emitidos',icon:'▣',note:'Indicador pendiente de habilitar el módulo'}
+  ];
+  return head('Indicadores generales','Resumen de los principales datos de SITMAUD.')+
+    '<div class="grid kpis home-indicators">'+metrics.map(m=>`
+      <article class="card kpi home-kpi">
+        <div class="kpi-top"><span>${m.label}</span><span class="kpi-icon">${m.icon}</span></div>
+        <div class="kpi-value" data-metric-value="${m.key}">—</div>
+        <div class="kpi-note" data-metric-note="${m.key}">${m.note}</div>
+      </article>`).join('')+'</div>';
+}
+function formatDashboardCount(value){
+  return new Intl.NumberFormat('es-VE',{maximumFractionDigits:0}).format(Number(value||0));
+}
+function formatDashboardMoney(value){
+  return new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value||0));
+}
+function formatDashboardCurrencyMap(map){
+  const entries=Object.entries(map||{}).filter(([,amount])=>Number(amount)!==0);
+  if(!entries.length) return '0,00';
+  return entries.map(([currency,amount])=>{
+    const code=String(currency||'').toUpperCase();
+    const prefix=code==='VES'?'Bs. ':code==='USD'?'$ ':code+' ';
+    return prefix+formatDashboardMoney(amount);
+  }).join(' · ');
+}
+async function loadDashboardMetrics(){
+  if(state.view!=='inicio'||!document.body.classList.contains('sitmaud-authenticated')) return;
+  const values=document.querySelectorAll('[data-metric-value]');
+  values.forEach(el=>{el.textContent='…';});
+  const {data,error}=await imaudClient.rpc('get_dashboard_metrics');
+  if(state.view!=='inicio') return;
+  if(error||!data){
+    values.forEach(el=>{el.textContent='No disponible';});
+    document.querySelectorAll('[data-metric-note]').forEach(el=>{el.textContent='No se pudo consultar la base de datos. Verifica los permisos del Dashboard.';});
+    console.error('SITMAUD dashboard metrics:',error);
+    return;
+  }
+  const countKeys=['contributors_total','properties_total','payments_total','payments_today','debts_pending'];
+  countKeys.forEach(key=>{
+    const el=document.querySelector('[data-metric-value="'+key+'"]');
+    if(el) el.textContent=formatDashboardCount(data[key]);
+  });
+  ['revenue_today','revenue_total'].forEach(key=>{
+    const el=document.querySelector('[data-metric-value="'+key+'"]');
+    if(el) el.textContent=formatDashboardCurrencyMap(data[key]);
+  });
+  const certificateValue=document.querySelector('[data-metric-value="certificates_total"]');
+  const certificateNote=document.querySelector('[data-metric-note="certificates_total"]');
+  if(certificateValue) certificateValue.textContent=data.certificates_configured?formatDashboardCount(data.certificates_total):'Pendiente';
+  if(certificateNote) certificateNote.textContent=data.certificates_configured?'Total histórico de certificados emitidos':'El módulo de certificados aún no está creado';
+}
 function listPeople(){return head('Contribuyentes','Expedientes de personas naturales, extranjeras y jurídicas.','<button class="btn btn-primary" data-action="new-person">＋ Nuevo contribuyente</button>')+`<div class="notice">Un único registro de contribuyente permite asociar uno o varios inmuebles. Las organizaciones residenciales se registran como personas jurídicas cuando corresponda, sin crear categorías principales separadas.</div><div class="card"><div class="table-toolbar"><h3>Directorio de contribuyentes</h3><input class="search" id="personSearch" placeholder="Buscar nombre o identificación…"></div><div id="peopleTable">${peopleTable()}</div></div>`}
 function peopleTable(){return table(['Nombre / Razón social','Identificación','Tipo','Inmuebles asociados','Estado'],state.people.map(p=>`<tr><td><strong>${p.name}</strong></td><td>${p.id}</td><td>${p.type}</td><td>${p.property}</td><td><span class="status ${p.status==='Pendiente'?'pending':''}">${p.status}</span></td></tr>`).join(''))}
 function personForm(){return head('Nuevo contribuyente','Registro unificado de contribuyentes.','<button class="btn btn-light" data-go="contribuyentes">← Volver</button>')+`<div class="card form-card"><div class="notice">Formulario de demostración. Los datos no se envían a un servidor ni crean una cuenta ciudadana real.</div><form id="personForm"><div class="form-grid"><div class="field"><label>Tipo de contribuyente *</label><select name="type" id="personType"><option>Persona natural</option><option>Persona extranjera</option><option>Persona jurídica</option></select></div><div class="field"><label>Cédula / RIF *</label><input name="id" required placeholder="Ej. V-12.345.678"></div><div class="field full"><label>Nombre completo / Razón social *</label><input name="name" required placeholder="Nombre del contribuyente"></div><div class="field"><label>Correo electrónico</label><input type="email" name="email" placeholder="correo@ejemplo.com"></div><div class="field"><label>Teléfono</label><input name="phone" placeholder="+58"></div><div class="field"><label>Parroquia</label><select name="parish"><option value="">Seleccione</option><option>San Antonio</option><option>Santa Ana</option><option>San Gabriel</option><option>Guzmán Guillermo</option><option>Mitare</option><option>Río Seco</option></select></div><div class="field"><label>Sector</label><input name="sector" placeholder="Sector o comunidad"></div><div class="field full"><label>Dirección de contacto</label><input name="address" placeholder="Dirección completa"></div><div class="field"><label>¿Es propietario?</label><select name="owner"><option>Sí</option><option>No</option><option>Representante / administrador</option></select></div><div class="field"><label>Tipo jurídico / organización (si aplica)</label><select name="legal"><option>No aplica</option><option>Empresa o sociedad</option><option>Condominio</option><option>Villa o urbanización privada</option><option>Organización residencial</option><option>Consejo comunal</option><option>Otra organización</option></select></div></div><div class="form-actions"><button type="button" class="btn btn-light" data-go="contribuyentes">Cancelar</button><button class="btn btn-primary">Guardar registro de prueba</button></div></form></div>`}
@@ -27,7 +78,7 @@ function mapView(){return head('Mapa territorial','Ubicación de inmuebles y org
 function ordinance(){return head('Ordenanza y tarifas','Administración de reglas tributarias con vigencias y respaldo normativo.')+`<div class="notice">No se han cargado tarifas legales. Los valores mencionados durante la planificación son referencias pendientes de comprobar con la ordenanza vigente del municipio Miranda.</div><div class="grid two-col"><div class="card panel"><div class="panel-head"><h3>Normativa municipal</h3><span class="status pending">Pendiente de carga</span></div><p style="font-size:11px;color:#748695;line-height:1.7">Adjuntar ordenanza vigente, reformas, anexos tarifarios y actos administrativos aplicables.</p><button class="btn btn-light" data-action="demo-save">Registrar documento (demo)</button></div><div class="card panel"><div class="panel-head"><h3>Motor de reglas</h3><span class="status inactive">Sin activar</span></div><p style="font-size:11px;color:#748695;line-height:1.7">Tipologías, unidad de cuenta, fórmula de conversión, fecha de vigencia, exenciones y modalidad de liquidación.</p><button class="btn btn-light" data-action="demo-save">Configurar reglas (demo)</button></div></div>`}
 function staff(){return head('Funcionarios y permisos','Gestión exclusiva de cuentas y autorizaciones por usuarios intendentes.','<button class="btn btn-primary" data-action="new-staff">＋ Crear funcionario</button>')+`<div class="notice">Solo los usuarios intendentes pueden crear funcionarios y conceder o revocar permisos. La pantalla actual es un prototipo local; no crea cuentas autenticadas.</div><div class="grid module-grid"><div class="card panel"><h3 style="margin-top:0">Usuarios intendentes</h3><div class="kpi-value">Hasta 5</div><p style="font-size:10px;color:#82919c">Superusuarios con acceso integral y autenticación reforzada.</p></div><div class="card panel"><h3 style="margin-top:0">Administradores analistas</h3><div class="kpi-value">Permisos a medida</div><p style="font-size:10px;color:#82919c">Permisos por módulo y acción asignados por intendentes.</p></div><div class="card panel"><h3 style="margin-top:0">Recaudadores</h3><div class="kpi-value">Acceso operativo</div><p style="font-size:10px;color:#82919c">Consultar obligaciones, registrar cobros y comprobantes autorizados.</p></div></div><div class="card panel" style="margin-top:16px"><div class="panel-head"><h3>Matriz conceptual de permisos</h3><span>Solo demostración</span></div>${['Contribuyentes: consultar, registrar, editar','Inmuebles: consultar, registrar, editar','Pagos: consultar, registrar, reversar','Facturación: consultar, emitir muestra, reimprimir','Reportes: consultar, exportar','Ordenanza: consultar, administrar tarifas','Funcionarios: crear cuentas, asignar permisos'].map(x=>`<div class="permission-group"><h4>${x.split(':')[0]}</h4><div class="checks">${x.split(':')[1].split(',').map(v=>`<label><input type="checkbox" disabled> ${v.trim()}</label>`).join('')}</div></div>`).join('')}</div>`}
 function log(){return head('Bitácora de auditoría','Registro demostrativo de eventos y trazabilidad administrativa.')+`<div class="notice">En producción, la bitácora deberá ser de solo anexado, con fecha/hora del servidor, actor, IP, acción, entidad afectada y valores anteriores/nuevos cuando corresponda.</div>${table(['Fecha y hora','Usuario','Módulo','Acción','Resultado'],[['11/11/2026 09:42','Usuario intendente','Contribuyentes','Consulta de expediente','<span class="status">Correcto</span>'],['11/11/2026 09:18','Recaudador demo','Pagos','Registro de pago ficticio','<span class="status">Correcto</span>'],['10/11/2026 16:03','Administrador demo','Reportes','Exportación CSV de prueba','<span class="status">Correcto</span>']].map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''))}`}
-function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,pagos:payments,facturacion:invoices,reportes:reports,mapa:mapView,ordenanza,funcionarios:staff,bitacora:log};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open')}
+function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,pagos:payments,facturacion:invoices,reportes:reports,mapa:mapView,ordenanza,funcionarios:staff,bitacora:log};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics()}
 function go(v){state.view=v;render();window.scrollTo(0,0)}
 document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')go('contribuyentes-form');else if(act==='new-payment')go('pago-form');else if(act==='new-property'||act==='new-org'||act==='new-staff')toast('Formulario ampliado en la siguiente iteración.');else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
 document.addEventListener('click',e=>{if(e.target.closest('#menuToggle'))$('#sidebar').classList.toggle('open')});
@@ -36,3 +87,4 @@ document.addEventListener('submit',e=>{if(e.target.id==='personForm'){e.preventD
 document.addEventListener('input',e=>{if(e.target.id==='personSearch'){const q=e.target.value.toLowerCase();$('#peopleTable').innerHTML=table(['Nombre / Razón social','Identificación','Tipo','Inmuebles asociados','Estado'],state.people.filter(p=>(p.name+p.id).toLowerCase().includes(q)).map(p=>`<tr><td><strong>${p.name}</strong></td><td>${p.id}</td><td>${p.type}</td><td>${p.property}</td><td><span class="status">${p.status}</span></td></tr>`).join(''))}});
 const originalRender=render;render=function(){if(state.view==='contribuyentes-form'){ $('#crumb').textContent='Nuevo contribuyente';$('#content').innerHTML=personForm();$('#sidebar').classList.remove('open');return}if(state.view==='pago-form'){ $('#crumb').textContent='Registrar pago';$('#content').innerHTML=paymentForm();$('#sidebar').classList.remove('open');return}originalRender()};
 render();
+window.addEventListener('imaud:authenticated',()=>{state.view='inicio';render()});

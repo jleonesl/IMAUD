@@ -178,6 +178,7 @@ html.staff-portal-route body.sitmaud-authenticated #publicHome,
 html.staff-portal-route body.sitmaud-authenticated #authGate { display:none !important; }
 html.staff-portal-route body.sitmaud-authenticated .app-shell { display:block !important; }
 
-/* Official supplied SITMAUD logo in the administrative sidebar */
-.sidebar .brand{padding:8px 0 17px;}
-.sidebar-logo{display:block;width:100%;max-width:224px;height:auto;object-fit:contain;margin:0 auto;border-radius:5px;background:#fff;}
+
+/* SITMAUD official logo — contained in the sidebar brand slot */
+.sidebar .brand{width:100%;min-height:0;padding:8px 8px 18px;margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.sidebar .brand .sidebar-logo{display:block;width:100%;max-width:210px;height:auto;max-height:112px;object-fit:contain;object-position:center;margin:0 auto;background:transparent;border:0;border-radius:0;}

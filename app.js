@@ -180,6 +180,78 @@ function properties(){
  '<div class="card property-toolbar"><input class="search" id="propertySearch" placeholder="⌕  Buscar por contrato, cédula, contribuyente o dirección"><select id="propertyParishFilter" class="filter-select"><option value="">Parroquia · Todas</option></select><select id="propertySectorFilter" class="filter-select"><option value="">Sector · Todos</option></select><select id="propertyStatusFilter" class="filter-select"><option value="">Estado · Todos</option><option value="active">Activo</option><option value="pending">Pendiente</option><option value="inactive">Inactivo</option></select></div>'+
  '<section class="card property-directory"><div class="table-toolbar"><div><h3>Directorio de inmuebles</h3><p>Listado de todos los inmuebles registrados en el sistema.</p></div><span id="propertiesCount" class="table-count">Consultando…</span></div><div id="propertiesTable" class="property-table-wrap"><div class="contributors-loading">Consultando inmuebles…</div></div><div class="property-pagination" id="propertyPagination"></div></section>';
 }
+
+const PROPERTY_PAGE_SIZE=8;
+state.properties=[];
+state.propertyPage=1;
+state.propertySelectedContributor=null;
+function propertyStatus(p){
+ if(p.is_active===false)return 'inactive';
+ if((p.assessments||[]).some(a=>['pending','partially_paid'].includes(a.status)))return 'pending';
+ return 'active';
+}
+function propertyContributorName(c){
+ if(!c)return 'Sin contribuyente';
+ return c.kind==='juridico'?(c.legal_name||'Sin razón social'):[c.first_name,c.last_name].filter(Boolean).join(' ')||c.legal_name||'Sin nombre';
+}
+async function loadProperties(){
+ const target=document.getElementById('propertiesTable');if(!target)return;
+ target.innerHTML='<div class="contributors-loading">Consultando inmuebles…</div>';
+ const results=await Promise.all([
+  imaudClient.from('properties').select('id,contract_number,address,property_type,property_use,parish_id,sector_id,parish_name,sector_name,is_active,created_at,contributor:contributors!properties_contributor_id_fkey(id,kind,identification_type,identification_number,legal_name,first_name,last_name),parish:parishes!properties_parish_id_fkey(name),sector:sectors!properties_sector_id_fkey(name)').order('created_at',{ascending:false}),
+  imaudClient.from('assessments').select('id,property_id,status'),
+  imaudClient.from('parishes').select('id,name').eq('is_active',true).order('name'),
+  imaudClient.from('sectors').select('id,name,parish_id').eq('is_active',true).order('name')
+ ]);
+ if(state.view!=='inmuebles')return;
+ const pr=results[0],ar=results[1],par=results[2],sr=results[3];
+ if(pr.error){console.error('SITMAUD properties:',pr.error);target.innerHTML='<div class="contributors-empty"><b>No se pudieron cargar los inmuebles</b><span>'+escapeHTML(pr.error.message||'Verifica los permisos de consulta del módulo.')+'</span></div>';return;}
+ const rows=pr.data||[],assessments=ar.error?[]:(ar.data||[]);
+ const allocations=await imaudClient.from('payment_allocations').select('assessment_id,payment:payments!payment_allocations_payment_id_fkey(paid_at,status)');
+ const assessmentById=new Map(assessments.map(x=>[x.id,x]));
+ const paymentDates=new Map();
+ (allocations.data||[]).forEach(x=>{const payment=x.payment,a=assessmentById.get(x.assessment_id);if(payment&&payment.status==='confirmed'&&payment.paid_at&&a){if(!paymentDates.has(a.property_id))paymentDates.set(a.property_id,[]);paymentDates.get(a.property_id).push(payment.paid_at)}});
+ state.properties=rows.map(p=>({...p,assessments:assessments.filter(a=>a.property_id===p.id),lastPayment:(paymentDates.get(p.id)||[]).sort((a,b)=>new Date(b)-new Date(a))[0]||null}));
+ state.parishes=par.error?[]:(par.data||[]);
+ const sectors=sr.error?[]:(sr.data||[]);
+ const pf=document.getElementById('propertyParishFilter'),sf=document.getElementById('propertySectorFilter');
+ if(pf)pf.innerHTML='<option value="">Parroquia · Todas</option>'+state.parishes.map(x=>'<option value="'+escapeHTML(x.id)+'">'+escapeHTML(x.name)+'</option>').join('');
+ if(sf)sf.innerHTML='<option value="">Sector · Todos</option>'+sectors.map(x=>'<option value="'+escapeHTML(x.id)+'">'+escapeHTML(x.name)+'</option>').join('');
+ const total=state.properties.length,active=state.properties.filter(p=>p.is_active!==false).length;
+ document.getElementById('propertyTotal').textContent=total.toLocaleString('es-VE');
+ document.getElementById('propertyActive').textContent=active.toLocaleString('es-VE');
+ document.getElementById('propertyPending').textContent=state.properties.filter(p=>propertyStatus(p)==='pending').length.toLocaleString('es-VE');
+ document.getElementById('propertyInactive').textContent=(total-active).toLocaleString('es-VE');
+ renderPropertiesTable();
+}
+function propertyLastPayment(p){
+ if(!p.lastPayment)return '—';
+ return new Intl.DateTimeFormat('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Caracas'}).format(new Date(p.lastPayment));
+}
+function filteredProperties(){
+ const q=(document.getElementById('propertySearch')?.value||'').trim().toLowerCase();
+ const parish=document.getElementById('propertyParishFilter')?.value||'';
+ const sector=document.getElementById('propertySectorFilter')?.value||'';
+ const status=document.getElementById('propertyStatusFilter')?.value||'';
+ return state.properties.filter(p=>{
+  const c=p.contributor||{};
+  const hay=[p.contract_number,p.address,p.parish?.name,p.parish_name,p.sector?.name,p.sector_name,propertyContributorName(c),c.identification_type,c.identification_number].join(' ').toLowerCase();
+  return (!q||hay.includes(q))&&(!parish||p.parish_id===parish)&&(!sector||p.sector_id===sector)&&(!status||propertyStatus(p)===status);
+ });
+}
+function renderPropertiesTable(){
+ const rows=filteredProperties(),pages=Math.max(1,Math.ceil(rows.length/PROPERTY_PAGE_SIZE));
+ state.propertyPage=Math.min(state.propertyPage,pages);
+ const from=(state.propertyPage-1)*PROPERTY_PAGE_SIZE,visible=rows.slice(from,from+PROPERTY_PAGE_SIZE);
+ const labels={active:'Activo',pending:'Pendiente',inactive:'Inactivo'},target=document.getElementById('propertiesTable');
+ if(!rows.length)target.innerHTML='<div class="contributors-empty"><b>No hay inmuebles que mostrar</b><span>Registra un inmueble o ajusta los filtros de búsqueda.</span></div>';
+ else target.innerHTML='<table><thead><tr><th>Contrato</th><th>Contribuyente</th><th>Cédula / RIF</th><th>Dirección</th><th>Parroquia</th><th>Sector</th><th>Estado</th><th>Último pago</th><th>Acciones</th></tr></thead><tbody>'+visible.map(p=>{
+  const c=p.contributor||{},status=propertyStatus(p);
+  return '<tr><td><strong>'+escapeHTML(p.contract_number||'Por asignar')+'</strong></td><td><strong>'+escapeHTML(propertyContributorName(c))+'</strong></td><td>'+escapeHTML((c.identification_type||'')+(c.identification_number?'-'+c.identification_number:'')||'—')+'</td><td class="property-address-cell">'+escapeHTML(p.address||'—')+'</td><td>'+escapeHTML(p.parish?.name||p.parish_name||'—')+'</td><td>'+escapeHTML(p.sector?.name||p.sector_name||'—')+'</td><td><span class="status '+status+'">'+labels[status]+'</span></td><td>'+escapeHTML(propertyLastPayment(p))+'</td><td><div class="property-row-actions"><button type="button" title="Ver inmueble" data-property-action="view" data-property-id="'+p.id+'">◉</button><button type="button" title="Editar inmueble" data-property-action="edit" data-property-id="'+p.id+'">✎</button><button type="button" title="Más opciones" data-property-action="more" data-property-id="'+p.id+'">⋮</button></div></td></tr>';
+ }).join('')+'</tbody></table>';
+ document.getElementById('propertiesCount').textContent='Mostrando '+(rows.length?from+1:0)+'–'+Math.min(from+PROPERTY_PAGE_SIZE,rows.length)+' de '+rows.length;
+ document.getElementById('propertyPagination').innerHTML=rows.length?'<span>'+rows.length.toLocaleString('es-VE')+' inmuebles filtrados</span><div><button type="button" data-property-page="'+Math.max(1,state.propertyPage-1)+'" '+(state.propertyPage===1?'disabled':'')+'>‹</button><b>'+state.propertyPage+' / '+pages+'</b><button type="button" data-property-page="'+Math.min(pages,state.propertyPage+1)+'" '+(state.propertyPage===pages?'disabled':'')+'>›</button></div>':'';
+}
 function organizations(){return head('Organizaciones residenciales','Agrupa conjuntos, villas y condominios dentro de una sola ficha jurídica cuando corresponda.','<button class="btn btn-primary" data-action="new-org">＋ Nueva organización</button>')+`<div class="notice">La organización agrupa inmuebles sin sustituir el registro individual de cada unidad. La responsabilidad tributaria y modalidad de liquidación deben validarse contra la ordenanza vigente.</div><div class="grid module-grid"><div class="card module-card"><div class="module-icon">▤</div><h3>Condominio Villa Jardines</h3><p>RIF jurídico · 45 unidades · Sector Las Velitas</p><p style="margin-top:12px"><span class="status pending">Saldo pendiente · DEMO</span></p></div><div class="card module-card"><div class="module-icon">⌂</div><h3>Residencias Los Médanos</h3><p>RIF jurídico · 32 unidades · Ubicación por validar</p><p style="margin-top:12px"><span class="status">Al día · DEMO</span></p></div><div class="card module-card"><div class="module-icon">♧</div><h3>Consejo Comunal Centro</h3><p>Organización comunitaria · Representación territorial</p><p style="margin-top:12px"><span class="status inactive">Representación · DEMO</span></p></div></div>`}
 function payments(){return head('Recaudación y pagos','Registro de operaciones y consulta de obligaciones.','<button class="btn btn-primary" data-action="new-payment">＋ Registrar pago</button>')+`<div class="grid kpis"><div class="card stat-mini"><span>Operaciones de hoy</span><strong>38</strong></div><div class="card stat-mini"><span>Total del día</span><strong>Bs. 18.450</strong></div><div class="card stat-mini"><span>Medios de pago</span><strong>4</strong></div><div class="card stat-mini"><span>Reversiones</span><strong>0</strong></div></div><div class="card"><div class="table-toolbar"><h3>Operaciones recientes</h3><input class="search" placeholder="Buscar referencia…" id="paySearch"></div><div id="paymentsTable">${paymentTable()}</div></div>`}
 function paymentTable(){return table(['Referencia','Contribuyente','Período','Importe demo','Fecha','Estado'],state.payments.map(p=>`<tr><td><strong>${p.ref}</strong></td><td>${p.person}</td><td>${p.period}</td><td>Bs. ${p.amount}</td><td>${p.date}</td><td><span class="status">${p.status}</span></td></tr>`).join(''))}

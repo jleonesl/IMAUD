@@ -38,4 +38,30 @@ document.querySelectorAll('[data-info]').forEach(link=>link.addEventListener('cl
   event.preventDefault();
   alert(link.dataset.info+' estará disponible próximamente.');
 }));
-</script><script src="auth.js?v=20261112f"></script><script src="app.js?v=20261112c"></script><script>document.getElementById('logoutButton')?.addEventListener('click',async()=>{await imaudClient.auth.signOut();location.reload()});</script></body></html>
+</script><script>
+/* SITMAUD diagnostic guard: expose the real startup failure instead of leaving a blank workspace. */
+(function(){
+  function show(message,detail){
+    const host=document.getElementById('content');
+    if(!host || host.children.length) return;
+    host.innerHTML='<div style="max-width:760px;margin:28px auto;padding:24px;background:#fff;border:1px solid #e3b7b7;border-left:5px solid #c94b4b;border-radius:10px;color:#243747;font:14px/1.6 Arial,sans-serif"><h2 style="margin:0 0 10px;color:#a52e2e">SITMAUD no pudo iniciar la pantalla</h2><p style="margin:0 0 8px">'+String(message).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f8fa;padding:12px;border-radius:6px;font-size:12px">'+String(detail||'Sin detalle adicional').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</pre><p style="margin:10px 0 0;color:#657786">Este diagnóstico no modifica tus datos. Envíanos una captura de este mensaje para corregir el error exacto.</p></div>';
+  }
+  window.addEventListener('error',function(e){
+    if(e.target && e.target.tagName==='SCRIPT'){
+      show('No se pudo cargar un archivo JavaScript.',e.target.src||'Script externo');
+    }else if(e.message){
+      show('Error de JavaScript: '+e.message,(e.filename||'')+':'+(e.lineno||''));
+    }
+  },true);
+  window.addEventListener('unhandledrejection',function(e){
+    const r=e.reason; show('Falló una operación al iniciar la aplicación.',r&&r.stack?r.stack:String(r));
+  });
+  setTimeout(function(){
+    const host=document.getElementById('content');
+    if(host && !host.children.length){
+      show('El menú y la sesión cargaron, pero el módulo principal no ejecutó su renderizado.','Revisión necesaria: carga de app.js, error de sintaxis o inicialización interrumpida.');
+    }
+  },2500);
+})();
+</script>
+<script src="auth.js?v=20261112f"></script><script src="app.js?v=20261112c"></script><script>document.getElementById('logoutButton')?.addEventListener('click',async()=>{await imaudClient.auth.signOut();location.reload()});</script></body></html>

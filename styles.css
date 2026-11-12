@@ -182,3 +182,42 @@ html.staff-portal-route body.sitmaud-authenticated .app-shell { display:block !i
 /* SITMAUD official logo — contained in the sidebar brand slot */
 .sidebar .brand{width:100%;min-height:0;padding:8px 8px 18px;margin:0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 .sidebar .brand .sidebar-logo{display:block;width:100%;max-width:210px;height:auto;max-height:112px;object-fit:contain;object-position:center;margin:0 auto;background:transparent;border:0;border-radius:0;}
+
+
+/* SITMAUD — identidad lateral: logo sin placa blanca visible y panel claro */
+.sidebar{
+  background:#eaf1f5!important;
+  color:#173f5d!important;
+  border-right:1px solid #d7e3ea;
+}
+.sidebar .brand{
+  border-bottom:1px solid #cbdbe4!important;
+}
+.sidebar .brand .sidebar-logo{
+  mix-blend-mode:multiply;
+  filter:contrast(1.04) saturate(1.04);
+}
+.sidebar .nav-label{
+  color:#638092!important;
+}
+.sidebar .nav-item{
+  color:#24475f!important;
+}
+.sidebar .nav-item i{
+  color:#47869b!important;
+}
+.sidebar .nav-item:hover{
+  background:#dce9ef!important;
+  color:#103b59!important;
+}
+.sidebar .nav-item.active{
+  background:linear-gradient(90deg,#247da0,#218f9b)!important;
+  color:#fff!important;
+  box-shadow:0 5px 14px rgba(16,59,89,.13)!important;
+}
+.sidebar .nav-item.active i{color:#fff!important}
+.sidebar .sidebar-bottom{
+  border-top:1px solid #cbdbe4!important;
+  color:#557486!important;
+}
+.sidebar .version{color:#7895a5!important}

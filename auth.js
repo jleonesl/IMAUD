@@ -11,6 +11,7 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
  const btn=document.getElementById('loginButton');
  const landing=document.getElementById('publicHome');
  const staffEntry=new URLSearchParams(location.search).get('portal')==='funcionario';
+ if(staffEntry){ document.documentElement.classList.add('staff-portal-route'); if(landing){landing.hidden=true;landing.style.display='none';} root.hidden=true;root.style.display='none';app.hidden=true;app.style.display='none'; }
  root.hidden=true; root.style.setProperty('display','none','important');
  app.style.setProperty('display','none','important');
  if(landing){landing.hidden=staffEntry; landing.style.setProperty('display',staffEntry?'none':'grid','important');}
@@ -20,6 +21,7 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
    const {data:profile,error}=await imaudClient.from('staff_profiles').select('display_name,role,is_active').eq('user_id',user.id).maybeSingle();
    if(error||!profile||!profile.is_active){
      await imaudClient.auth.signOut();
+     if(staffEntry){ location.replace('./funcionario.html?acceso=pendiente'); return; }
      msg.textContent='Tu cuenta aún no tiene un perfil administrativo habilitado. Solicita la activación al intendente principal.';
      return;
    }

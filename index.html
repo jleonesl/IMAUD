@@ -1,14 +1,45 @@
 <!doctype html>
-<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#102d46"><meta name="description" content="SITMAUD — Sistema Integral de Recaudación de Aseo Domiciliario"><title>SITMAUD | Gestión municipal</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="auth.css"></head>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#102d46"><meta name="description" content="SITMAUD — Sistema Integral de Recaudación de Aseo Domiciliario"><title>SITMAUD | Gestión municipal</title><link rel="stylesheet" href="styles.css?v=20261112b"><link rel="stylesheet" href="auth.css"></head>
 <body>
 <section id="publicHome" class="public-home">
-  <div class="public-visual" aria-label="Servicios municipales de aseo urbano">
-    <div class="visual-sky"></div><div class="visual-sun"></div><div class="visual-hill hill-a"></div><div class="visual-hill hill-b"></div>
-    <div class="visual-city"><div class="city-roof"></div><div class="city-building"><i></i><i></i><i></i></div><div class="city-tower"><b></b></div></div>
-    <div class="visual-tree"><i></i><b></b></div>
-    <div class="visual-truck"><div class="truck-bin"><span>♻</span></div><div class="truck-body"><b>ASEO URBANO</b></div><div class="truck-cab"></div><div class="wheel w1"></div><div class="wheel w2"></div></div>
-    <div class="visual-caption"><span>CIUDAD LIMPIA</span><b>COMPROMISO DE TODOS</b></div>
-  </div>
+<div class="public-visual" aria-label="Ilustración institucional de aseo urbano">
+  <svg class="hero-art" viewBox="0 0 900 1080" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Ciudad limpia, edificios y camión de recolección">
+    <defs>
+      <linearGradient id="heroBg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07517d"/><stop offset=".55" stop-color="#078da5"/><stop offset="1" stop-color="#16a58d"/></linearGradient>
+      <linearGradient id="heroHill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#65c83d"/><stop offset="1" stop-color="#079c79"/></linearGradient>
+      <linearGradient id="heroTruck" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#dff8f3"/></linearGradient>
+      <filter id="heroShadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#073b5b" flood-opacity=".24"/></filter>
+    </defs>
+    <rect width="900" height="1080" fill="url(#heroBg)"/>
+    <circle cx="675" cy="170" r="76" fill="#d9f7ed" opacity=".95"/>
+    <path d="M0 455 Q230 365 460 415 T900 355 L900 580 L0 700Z" fill="#b7eff0"/>
+    <path d="M0 655 Q210 530 445 590 T900 570 L900 1080H0Z" fill="url(#heroHill)"/>
+    <path d="M0 865 Q280 720 560 800 T900 760V1080H0Z" fill="#087d8d" opacity=".45"/>
+    <g opacity=".96">
+      <path d="M275 490 L390 365 L505 490V770H275Z" fill="#f7ffff"/>
+      <rect x="300" y="485" width="180" height="285" rx="8" fill="#f7ffff"/>
+      <path d="M510 475 L595 375 L680 475V770H510Z" fill="#e8fbf8"/>
+      <rect x="540" y="500" width="115" height="270" fill="#e8fbf8"/>
+      <g fill="#087c99"><path d="M330 575a23 23 0 0 1 46 0v130h-46z"/><path d="M395 575a23 23 0 0 1 46 0v130h-46z"/><path d="M560 560a19 19 0 0 1 38 0v145h-38z"/></g>
+      <path d="M275 490L390 365 505 490" fill="none" stroke="#d5f5f0" stroke-width="13" stroke-linejoin="round"/>
+    </g>
+    <g opacity=".8">
+      <path d="M88 505c-68-9-95-83-50-132 27-29 68-31 98-12 38-54 120-31 129 29 53 13 62 88 15 117-37 23-72 8-91-9z" fill="#075579"/>
+      <rect x="155" y="570" width="16" height="175" rx="8" fill="#075579"/>
+    </g>
+    <g filter="url(#heroShadow)" transform="translate(95 675)">
+      <rect x="0" y="0" width="160" height="178" rx="15" fill="#21a84f" stroke="#e8fff4" stroke-width="10"/>
+      <text x="80" y="106" text-anchor="middle" font-size="58" fill="#fff">♻</text>
+      <path d="M180 30Q180 8 205 8H540Q565 8 565 34V166H180Z" fill="url(#heroTruck)" stroke="#d7f5ef" stroke-width="10"/>
+      <path d="M565 42H670Q692 42 705 67L740 166H565Z" fill="#f5ffff" stroke="#d7f5ef" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M600 60H661L684 111H600Z" fill="#0b7795"/>
+      <text x="385" y="111" text-anchor="middle" font-size="25" font-weight="800" letter-spacing="1" fill="#087d70">ASEO URBANO</text>
+      <circle cx="285" cy="178" r="34" fill="#e9fbf7"/><circle cx="285" cy="178" r="19" fill="#124765"/>
+      <circle cx="630" cy="178" r="34" fill="#e9fbf7"/><circle cx="630" cy="178" r="19" fill="#124765"/>
+    </g>
+  </svg>
+  <div class="visual-caption"><span>CIUDAD LIMPIA</span><b>COMPROMISO DE TODOS</b></div>
+</div>
   <div class="public-content">
     <header class="public-brand"><svg class="sitmaud-logo" viewBox="0 0 520 210" role="img" aria-label="Logo SITMAUD"><defs><linearGradient id="sitBlue" x1="0" x2="1"><stop stop-color="#063d70"/><stop offset="1" stop-color="#0789c9"/></linearGradient><linearGradient id="sitArc" x1="0" x2="1"><stop stop-color="#0789c9"/><stop offset="1" stop-color="#58bd27"/></linearGradient></defs><path d="M165 48 C210 -7 315 -8 359 43" fill="none" stroke="url(#sitArc)" stroke-width="10" stroke-linecap="round"/><path d="M346 23 L382 43 L347 61 Z" fill="#58bd27"/><path d="M175 157 C215 204 318 205 359 158" fill="none" stroke="#0789c9" stroke-width="9" stroke-linecap="round"/><text x="24" y="142" font-family="Arial,sans-serif" font-size="112" font-weight="800" letter-spacing="-7" fill="url(#sitBlue)">SITMAUD</text><path d="M250 114 Q270 78 300 91 Q282 121 250 114Z" fill="#5abf2a"/></svg><p>ALCALDÍA DEL MUNICIPIO MIRANDA <b>Coro · Estado Falcón</b></p></header>
     <div class="public-welcome"><span>PLATAFORMA MUNICIPAL DE SERVICIOS</span><h1>Bienvenido a SITMAUD</h1><p>Gestión tributaria de aseo urbano y domiciliario, de forma sencilla, segura y transparente.</p></div>

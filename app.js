@@ -70,17 +70,25 @@ function contributorName(p){return p.kind==='juridico'?(p.legal_name||'Sin razó
 function contributorType(kind){return ({natural_venezolano:'Persona natural',natural_extranjero:'Persona extranjera',juridico:'Persona jurídica'})[kind]||kind||'—';}
 function listPeople(){
  return head('Gestión de contribuyentes','Administración, consulta y registro de personas y organizaciones inscritas en el sistema.','<button class="btn btn-primary" data-action="new-person">＋ Nuevo contribuyente</button>')+
- '<div class="contributors-toolbar card"><input class="search" id="personSearch" placeholder="⌕  Buscar por nombre, cédula o RIF"><select id="typeFilter" class="filter-select"><option value="">Tipo de contribuyente · Todos</option><option value="natural_venezolano">Persona natural</option><option value="natural_extranjero">Persona extranjera</option><option value="juridico">Persona jurídica</option></select><select id="parishFilter" class="filter-select"><option value="">Parroquia · Todas</option></select></div>'+
+ '<div class="contributors-toolbar card"><input class="search" id="personSearch" placeholder="⌕  Buscar por nombre, cédula o RIF"><select id="typeFilter" class="filter-select"><option value="">Tipo de contribuyente · Todos</option><option value="natural_venezolano">Persona natural</option><option value="natural_extranjero">Persona extranjera</option><option value="juridico">Persona jurídica</option></select><select id="statusFilter" class="filter-select"><option value="">Estado · Todos</option><option value="active">Activo</option><option value="pending">Pendiente</option><option value="inactive">Inactivo</option></select><select id="parishFilter" class="filter-select"><option value="">Parroquia · Todas</option></select></div>'+
  '<div class="contributors-layout"><section class="card contributors-table-card"><div class="table-toolbar"><div><h3>Directorio de contribuyentes</h3><p>Registros guardados en SITMAUD</p></div><span id="contributorsCount" class="table-count">Cargando…</span></div><div id="peopleTable" class="contributors-table-wrap"><div class="contributors-loading">Consultando contribuyentes…</div></div></section><aside class="contributors-stats"><article class="card contributor-stat"><span class="stat-icon">♙</span><small>Total contribuyentes</small><strong id="statTotal">—</strong></article><article class="card contributor-stat"><span class="stat-icon blue">♟</span><small>Personas naturales</small><strong id="statNatural">—</strong></article><article class="card contributor-stat"><span class="stat-icon violet">▦</span><small>Personas jurídicas</small><strong id="statLegal">—</strong></article><article class="card contributor-stat"><span class="stat-icon green">✓</span><small>Con correo registrado</small><strong id="statEmail">—</strong></article></aside></div>';
+}
+function contributorPaymentSummary(p){
+ const confirmed=(p.payments||[]).filter(x=>x.status==='confirmed'&&x.paid_at).sort((a,b)=>new Date(b.paid_at)-new Date(a.paid_at));
+ const last=confirmed[0]?.paid_at||null;
+ const assessments=(p.properties||[]).flatMap(x=>x.assessments||[]);
+ const hasDebt=assessments.some(x=>['pending','partially_paid'].includes(x.status));
+ const status=hasDebt?'pending':last?'active':'inactive';
+ return {status,lastPayment:last?new Intl.DateTimeFormat('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Caracas'}).format(new Date(last)):'—'};
 }
 function peopleTable(rows=state.people){
  if(!rows.length)return '<div class="contributors-empty"><b>No hay contribuyentes registrados</b><span>Utiliza «Nuevo contribuyente» para crear el primer expediente.</span></div>';
- return '<table><thead><tr><th>Contribuyente</th><th>Cédula / RIF</th><th>Tipo</th><th>Inmuebles</th><th>Correo</th></tr></thead><tbody>'+rows.map(p=>{const count=(p.properties||[]).length;return '<tr><td><strong>'+escapeHTML(contributorName(p))+'</strong></td><td>'+escapeHTML((p.identification_type||'')+'-'+(p.identification_number||''))+'</td><td><span class="type-pill">'+escapeHTML(contributorType(p.kind))+'</span></td><td>'+count+'</td><td>'+escapeHTML(p.email||'—')+'</td></tr>'}).join('')+'</tbody></table>';
+ return '<table><thead><tr><th>Contribuyente</th><th>Cédula / RIF</th><th>Tipo</th><th>Inmuebles</th><th>Correo</th><th>Estado</th><th>Último pago</th></tr></thead><tbody>'+rows.map(p=>{const count=(p.properties||[]).length;const summary=contributorPaymentSummary(p);const labels={active:'Activo',pending:'Pendiente',inactive:'Inactivo'};return '<tr><td><strong>'+escapeHTML(contributorName(p))+'</strong></td><td>'+escapeHTML((p.identification_type||'')+'-'+(p.identification_number||''))+'</td><td><span class="type-pill">'+escapeHTML(contributorType(p.kind))+'</span></td><td>'+count+'</td><td>'+escapeHTML(p.email||'—')+'</td><td><span class="status '+summary.status+'">'+labels[summary.status]+'</span></td><td>'+escapeHTML(summary.lastPayment)+'</td></tr>'}).join('')+'</tbody></table>';
 }
 async function loadContributors(){
  const target=document.getElementById('peopleTable'); if(!target)return;
  target.innerHTML='<div class="contributors-loading">Consultando contribuyentes…</div>';
- const {data,error}=await imaudClient.from('contributors').select('id,kind,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,created_at,properties(id,contract_number,is_active,parish_name,sector_name)').order('created_at',{ascending:false});
+ const {data,error}=await imaudClient.from('contributors').select('id,kind,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,created_at,properties(id,contract_number,is_active,parish_name,sector_name,assessments(id,status)),payments(id,status,paid_at)').order('created_at',{ascending:false});
  if(state.view!=='contribuyentes')return;
  if(error){console.error('SITMAUD contributors:',error);target.innerHTML='<div class="contributors-empty"><b>No se pudieron cargar los contribuyentes</b><span>Verifica que tu usuario tenga permiso de consulta y vuelve a intentarlo.</span></div>';return;}
  state.people=data||[];
@@ -95,12 +103,12 @@ async function loadContributors(){
 function filterContributors(){
  const q=(document.getElementById('personSearch')?.value||'').toLowerCase();
  const type=document.getElementById('typeFilter')?.value||'';
- 
+ const status=document.getElementById('statusFilter')?.value||'';
  const parish=document.getElementById('parishFilter')?.value||'';
  const rows=state.people.filter(p=>{
   const text=[contributorName(p),p.identification_type,p.identification_number,p.rif,p.email].join(' ').toLowerCase();
-  const hasProperty=(p.properties||[]).length>0;
-  return (!q||text.includes(q))&&(!type||p.kind===type)&&(!parish||p.contact_parish_name===parish);
+  const summary=contributorPaymentSummary(p);
+  return (!q||text.includes(q))&&(!type||p.kind===type)&&(!status||summary.status===status)&&(!parish||p.contact_parish_name===parish);
  });
  const target=document.getElementById('peopleTable');if(target)target.innerHTML=peopleTable(rows);
  const count=document.getElementById('contributorsCount');if(count)count.textContent='Mostrando '+rows.length+' de '+state.people.length;
@@ -185,7 +193,7 @@ function exportCSV(){const rows=[['Referencia','Contribuyente','Periodo','Import
 document.addEventListener('submit',e=>{if(e.target.id==='personForm'){e.preventDefault();saveContributor(e.target)}if(e.target.id==='propertyForm'){e.preventDefault();saveProperty(e.target)}if(e.target.id==='paymentForm'){e.preventDefault();const f=new FormData(e.target);state.payments.unshift({ref:'DEMO-'+String(32+state.payments.length).padStart(5,'0'),person:f.get('person'),period:f.get('period'),amount:money(Number(f.get('amount'))),date:new Date().toLocaleDateString('es-VE'),status:'Registrado'});go('pagos');toast('Pago de demostración registrado localmente')}});
 document.addEventListener('input',e=>{if(e.target.id==='personSearch')filterContributors()});
 document.addEventListener('change',e=>{
- if(['typeFilter','parishFilter'].includes(e.target.id))filterContributors();
+ if(['typeFilter','statusFilter','parishFilter'].includes(e.target.id))filterContributors();
  if(e.target.id==='contactParishSelect')updateSectorOptions('contactParishSelect','contactSectorSelect',true);
  if(e.target.id==='propertyParishSelect')updateSectorOptions('propertyParishSelect','propertySectorSelect',false);
 });

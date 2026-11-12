@@ -317,3 +317,50 @@ body.modal-open{overflow:hidden}
 .property-detail-backdrop{position:fixed;inset:0;z-index:60;background:rgba(9,34,53,.48);display:flex;align-items:center;justify-content:center;padding:18px}.property-detail-modal{width:min(650px,100%);background:#fff;border-radius:15px;padding:20px;box-shadow:0 24px 70px rgba(16,45,70,.28)}.property-detail-modal>header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e6edf1;padding-bottom:12px}.property-detail-modal h2{font:800 18px Manrope;color:#173b56;margin:0}.property-detail-modal p{font-size:10px;color:#718795;margin:4px 0 0}.property-detail-modal>header button{border:0;background:transparent;font-size:25px;color:#718795;cursor:pointer}.property-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;padding-top:17px}.property-detail-grid>div{display:grid;gap:5px}.property-detail-grid small{font-size:9px;color:#8395a0}.property-detail-grid b{font-size:11px;color:#24465e}
 @media(max-width:1050px){.property-toolbar{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){.property-toolbar{grid-template-columns:1fr}.property-registration-modal{max-height:calc(100vh - 16px);padding:14px}.property-lookup-row{grid-template-columns:1fr}.property-add-heading{align-items:flex-start;flex-direction:column}.property-detail-grid{grid-template-columns:1fr}.property-pagination{align-items:flex-start;flex-direction:column}}
+
+
+/* SITMAUD — portada pública: logo institucional original y enlaces sin subrayados */
+#publicHome .public-brand{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  margin:0 0 25px;
+  text-align:center;
+}
+#publicHome .public-brand .public-logo-image{
+  display:block;
+  width:min(330px,82%);
+  max-height:168px;
+  height:auto;
+  object-fit:contain;
+  object-position:center;
+  margin:0 auto;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+  mix-blend-mode:multiply;
+}
+#publicHome .portal-card,
+#publicHome .portal-card:link,
+#publicHome .portal-card:visited,
+#publicHome .portal-card:hover,
+#publicHome .portal-card:focus,
+#publicHome .portal-card:active{
+  color:inherit;
+  text-decoration:none!important;
+}
+#publicHome .portal-card .portal-copy,
+#publicHome .portal-card .portal-copy b,
+#publicHome .portal-card .portal-copy small,
+#publicHome .portal-card .portal-arrow{
+  text-decoration:none!important;
+}
+#publicHome .portal-card:focus-visible{
+  outline:3px solid #39a8b3;
+  outline-offset:3px;
+}
+@media(max-width:760px){
+  #publicHome .public-brand{margin-bottom:20px}
+  #publicHome .public-brand .public-logo-image{width:min(270px,78%);max-height:140px}
+}

@@ -415,8 +415,15 @@ async function findPaymentContributor(form){
  button.disabled=true;button.textContent='Buscando…';message.textContent='Consultando el expediente del contribuyente…';result.hidden=true;
  const select='id,contract_number,kind,identification_type,identification_number,legal_name,first_name,last_name,properties(id,address,property_type,property_use,is_active,assessments(id,period_start,period_end,total_amount,status,payment_allocations(amount,payments(status))))';
  let query=imaudClient.from('contributors').select(select);
- if(type==='contrato') query=query.eq('contract_number',raw.toUpperCase());
- else {const normalized=raw.replace(/^[VEJGP]-?/i,'').replace(/[^0-9]/g,'');query=query.eq('identification_number',normalized);}
+ if(type==='contrato') {
+  query=query.ilike('contract_number',raw);
+ } else {
+  const normalized=raw.replace(/[^0-9]/g,'');
+  if(!normalized){button.disabled=false;button.textContent='⌕ Buscar';message.textContent='Introduce los números de la cédula o RIF.';return;}
+  // En el registro se conserva el prefijo (por ejemplo, V-26310820).
+  // Buscar por los dígitos finales permite encontrar tanto "26310820" como "V-26310820".
+  query=query.ilike('identification_number','%'+normalized);
+ }
  const {data,error}=await query.maybeSingle();
  button.disabled=false;button.textContent='⌕ Buscar';
  if(error){console.error('SITMAUD contributor payment lookup:',error);message.textContent='No se pudo completar la búsqueda. Verifica los permisos e intenta nuevamente.';return;}

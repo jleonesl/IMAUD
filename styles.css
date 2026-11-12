@@ -236,7 +236,7 @@ html.staff-portal-route body.sitmaud-authenticated .app-shell { display:block !i
 
 
 /* SITMAUD · Módulo de contribuyentes */
-.contributors-toolbar{display:grid;grid-template-columns:minmax(220px,1.5fr) repeat(3,minmax(130px,1fr));gap:12px;padding:13px 15px;margin:18px 0 15px;align-items:center}
+.contributors-toolbar{display:grid;grid-template-columns:minmax(260px,1.7fr) repeat(2,minmax(160px,1fr));gap:12px;padding:13px 15px;margin:18px 0 15px;align-items:center}
 .contributors-toolbar .search,.filter-select{height:42px;border:1px solid #dce5ea;border-radius:9px;background:#fff;padding:0 13px;color:#24465e;font:500 12px 'DM Sans',sans-serif;min-width:0;width:100%}
 .contributors-layout{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:15px;align-items:start}
 .contributors-table-card{padding:15px;min-width:0}
@@ -259,19 +259,19 @@ html.staff-portal-route body.sitmaud-authenticated .app-shell { display:block !i
 .contributors-empty b,.contributors-empty span{display:block}.contributors-empty b{color:var(--navy);font:700 14px Manrope;margin-bottom:7px}
 .contributor-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(9,34,53,.48);z-index:50;align-items:center;justify-content:center;padding:20px;overflow:auto}
 .contributor-modal-backdrop.open{display:flex}
-.contributor-modal{width:min(1120px,100%);max-height:calc(100vh - 40px);overflow:auto;background:#f8fbfc;border:1px solid #dce8ed;border-radius:17px;box-shadow:0 24px 70px rgba(11,42,64,.25);padding:20px}
+.contributor-modal{width:min(1120px,100%);max-height:calc(100vh - 40px);overflow:auto;background:#fff;border:1px solid #d6e1e8;border-radius:17px;box-shadow:0 24px 70px rgba(16,45,70,.28);padding:20px}
 .contributor-modal-head{display:flex;align-items:center;gap:13px;padding:0 0 15px;border-bottom:1px solid #e5edf1}
-.modal-heading-icon{width:43px;height:43px;border-radius:13px;background:#e2f5f3;color:#07999e;display:grid;place-items:center;font-size:25px}
+.modal-heading-icon{width:43px;height:43px;border-radius:13px;background:#e8f1f7;color:#247da0;display:grid;place-items:center;font-size:25px}
 .contributor-modal-head h2{font:800 20px Manrope;color:var(--navy);margin:0}
 .contributor-modal-head p{font-size:11px;color:#748997;margin:4px 0 0}
 .modal-close{margin-left:auto;border:0;background:transparent;color:#617b8b;font-size:27px;cursor:pointer}
 .registration-steps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
-.registration-step{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:10px;background:#eaf0f4;color:#8a9ba5}
+.registration-step{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:10px;background:#edf2f6;color:#8496a4;border:1px solid #e1e9ef}
 .registration-step>b{width:29px;height:29px;border:1px solid #c9d8df;border-radius:50%;display:grid;place-items:center;background:white}
 .registration-step strong,.registration-step small{display:block}.registration-step strong{font-size:11px}.registration-step small{font-size:9px;margin-top:3px}
-.registration-step.active,.registration-step.complete{background:#e0f4f2;color:#087f86}.registration-step.active>b,.registration-step.complete>b{background:#119fa2;color:#fff;border-color:#119fa2}
+.registration-step.active,.registration-step.complete{background:#eaf3f8;color:#173f5d;border-color:#c9dce8}.registration-step.active>b,.registration-step.complete>b{background:#247da0;color:#fff;border-color:#247da0}.registration-step.complete>b{background:#53a879;border-color:#53a879}
 .registration-columns{display:grid;grid-template-columns:1fr 1.08fr;gap:13px}
-.registration-panel{background:#fff;border:1px solid #e0e9ed;border-radius:12px;padding:15px;min-width:0;position:relative}
+.registration-panel{background:#fff;border:1px solid #dce6ec;border-radius:12px;padding:15px;min-width:0;position:relative}
 .registration-panel h3{font:700 13px Manrope;color:var(--navy);margin:0 0 5px}
 .panel-hint{font-size:10px;color:#7e909d;margin:0 0 14px}
 .registration-panel .form-grid{gap:11px}
@@ -280,11 +280,11 @@ html.staff-portal-route body.sitmaud-authenticated .app-shell { display:block !i
 .registration-panel .form-actions{margin-top:15px}
 .property-panel{min-height:100%}
 .property-lock{position:absolute;inset:0;background:rgba(245,249,251,.92);z-index:2;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:35px;color:#718796;gap:12px}
-.property-lock span{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#e6eff3;color:#54788c;font-weight:800;font-size:17px}
+.property-lock span{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#e6f0f6;color:#247da0;font-weight:800;font-size:17px}
 .property-lock b{font-size:11px;max-width:260px;line-height:1.5}
-.contract-preview{background:linear-gradient(110deg,#e5f6f5,#d9f1ef);border:1px solid #cce9e7;border-radius:10px;padding:11px 14px;margin:12px 0}
-.contract-preview small,.contract-preview strong{display:block}.contract-preview small{font-size:9px;color:#427d82}.contract-preview strong{font:800 20px Manrope;color:#12445e;margin-top:3px}
-.linked-contributor{font-size:10px;color:#285d7b;background:#edf5fa;padding:9px 11px;border-radius:8px;margin-bottom:12px}
+.contract-preview{background:linear-gradient(110deg,#eaf3f8,#edf7ee);border:1px solid #d3e4e9;border-radius:10px;padding:11px 14px;margin:12px 0}
+.contract-preview small,.contract-preview strong{display:block}.contract-preview small{font-size:9px;color:#537487}.contract-preview strong{font:800 20px Manrope;color:#12445e;margin-top:3px}
+.linked-contributor{font-size:10px;color:#244d69;background:#edf4f8;padding:9px 11px;border-radius:8px;margin-bottom:12px}
 .saved-contributor-note{margin-top:12px;padding:10px;border-radius:8px;background:#e9f7ef;color:#26774f;font-size:10px}
 .property-success{padding:17px;border:1px solid #cce9d8;background:#effaf3;border-radius:10px;color:#26774f;font-size:11px}
 .property-success span{display:block;margin:10px 0}
@@ -294,3 +294,12 @@ body.modal-open{overflow:hidden}
 @media(max-width:480px){.registration-panel .form-grid{grid-template-columns:1fr}.registration-step{padding:8px}.registration-step strong{font-size:9px}.registration-step small{font-size:8px}}
 
 .property-lock[hidden],.property-success[hidden],.saved-contributor-note[hidden],#propertyFormWrap[hidden]{display:none!important}
+
+/* Institutional palette alignment: SITMAUD blue, navy and green */
+.contributor-modal-head{border-bottom-color:#dce6ec}
+.contributor-modal-head h2{color:#102d46}
+.registration-panel h3{color:#173f5d}
+.registration-panel .field input:focus,.registration-panel .field select:focus,.registration-panel .field textarea:focus{outline:none;border-color:#247da0;box-shadow:0 0 0 3px rgba(36,125,160,.12)}
+.registration-panel .btn-primary{background:#173f5d;border-color:#173f5d}
+.registration-panel .btn-primary:hover{background:#247da0;border-color:#247da0}
+.registration-step.active{box-shadow:inset 3px 0 0 #58bd27}

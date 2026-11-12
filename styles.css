@@ -141,3 +141,23 @@
   #publicHome > .public-visual { grid-column: 1; grid-row: 1; width: 100%; height: clamp(260px, 42vh, 390px); min-height: 260px; max-height: none; }
   #publicHome > .public-content { grid-column: 1; grid-row: 2; width: 100%; max-width: 650px; height: auto; margin: 0 auto; padding: 26px 20px; overflow: visible; }
 }
+
+/* SITMAUD — composición final solicitada: arte de render 65/35 */
+@media (min-width:761px){
+ #publicHome.public-home{display:grid!important;grid-template-columns:65% 35%!important;grid-template-rows:100vh!important;width:100%;height:100vh;min-height:100vh;overflow:hidden}
+ #publicHome>.public-visual{grid-column:1;grid-row:1;position:relative;width:100%;height:100vh;min-height:100vh;max-height:none;overflow:hidden;background:#07517d}
+ #publicHome>.public-content{grid-column:2;grid-row:1;width:100%;max-width:none;min-width:0;height:100vh;box-sizing:border-box;margin:0;padding:22px 22px 16px;display:flex;flex-direction:column;justify-content:center;overflow-y:auto}
+}
+#publicHome .hero-art{display:none!important}
+#publicHome .hero-render-image{display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+#publicHome .public-visual:before,#publicHome .public-visual:after{display:none!important}
+#publicHome .public-brand .sitmaud-logo{width:min(250px,90%);height:auto}
+#publicHome .public-welcome{margin-bottom:18px}
+#publicHome .portal-options{gap:11px}
+#publicHome .portal-card{padding:12px 13px;gap:10px}
+#publicHome .public-links{margin-top:17px;padding-top:12px}
+@media(max-width:760px){
+ #publicHome.public-home{display:grid!important;grid-template-columns:1fr!important;grid-template-rows:38vh auto!important;height:auto;min-height:100vh;overflow:visible}
+ #publicHome>.public-visual{grid-column:1;grid-row:1;width:100%;height:38vh;min-height:250px;max-height:380px}
+ #publicHome>.public-content{grid-column:1;grid-row:2;width:100%;height:auto;max-width:650px;margin:0 auto;padding:24px 18px;overflow:visible}
+}

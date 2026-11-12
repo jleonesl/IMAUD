@@ -121,7 +121,7 @@ async function saveContributor(form){
  const payload={kind,identification_type:f.get('identification_type'),identification_number:String(f.get('identification_number')).trim(),email:String(f.get('email')||'').trim()||null,phone:String(f.get('phone')||'').trim()||null,contact_address:String(f.get('contact_address')||'').trim()||null,contact_parish_name:String(f.get('contact_parish_name')||'').trim()||null,contact_sector_name:String(f.get('contact_sector_name')||'').trim()||null,status:f.get('status')||'active',is_property_owner:f.get('is_property_owner')==='true',created_by:user?.id||null};
  if(kind==='juridico'){payload.legal_name=fullName;payload.rif=payload.identification_number;}else{payload.first_name=parts.shift()||fullName;payload.last_name=parts.join(' ');}
  const button=document.getElementById('saveContributorButton');button.disabled=true;button.textContent='Guardando…';
- const {data,error}=await imaudClient.from('contributors').insert(payload).select('id,kind,identification_type,identification_number,legal_name,first_name,last_name').single();
+ const {data,error}=await imaudClient.from('contributors').insert(payload).select('id,kind,identification_type,identification_number,legal_name,first_name,last_name,is_property_owner').single();
  button.disabled=false;button.textContent='Guardar contribuyente';
  if(error){console.error(error);toast('No se pudo guardar el contribuyente: '+error.message);return;}
  state.currentContributor=data;

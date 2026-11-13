@@ -26,7 +26,7 @@ async function open(id){
  '<label class="field"><span>Operación de Tesorería</span><select name="action" id="treasuryAction" required>'+
  (status!=='validated'?'<option value="validate">Validar ingreso bancario</option>':'')+
  (status!=='incident'?'<option value="incident">Registrar incidencia bancaria</option>':'')+
- (canReverse&&status!=='validated'?'<option value="reverse">Revertir pago y reabrir deuda DEMO</option>':'')+
+ (canReverse&&status==='incident'?'<option value="reverse">Revertir pago y reabrir deuda DEMO</option>':'')+
  '</select></label>'+
  '<label class="field"><span>Referencia de acreditación / movimiento bancario</span><input name="reference" id="treasuryBankReference" placeholder="Referencia verificada en estado de cuenta" value="'+esc(p.treasury_bank_reference||'')+'"></label>'+
  '<label class="field"><span>Observaciones y evidencia de Tesorería</span><textarea name="notes" id="treasuryNotes" rows="3" maxlength="1200" placeholder="Motivo de la incidencia, devolución o conciliación"></textarea></label>'+

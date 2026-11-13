@@ -38,7 +38,7 @@ async function getRecord(id){
  const allocations=alloc.data||[];if(!allocations.length)throw Error('No se encontraron los períodos vinculados al pago');
  const {data:assessments,error:ae}=await imaudClient.from('assessments').select('id,property_id,period_start,period_end,total_amount,coefficient_snapshot').in('id',allocations.map(a=>a.assessment_id));
  if(ae)throw Error(ae.message);
- const {data:properties,error:pe}=await imaudClient.from('properties').select('id,address,parish_name,sector_name,parish:parishes!properties_parish_id_fkey(name),sector:sectors!properties_sector_id_fkey(name,default_typology)').in('id',[...new Set((assessments||[]).map(a=>a.property_id))]);
+ const {data:properties,error:pe}=await imaudClient.from('properties').select('id,address,parish_name,sector_name,typology_override,parish:parishes!properties_parish_id_fkey(name),sector:sectors!properties_sector_id_fkey(name,default_typology)').in('id',[...new Set((assessments||[]).map(a=>a.property_id))]);
  if(pe)throw Error(pe.message);
  const props=new Map((properties||[]).map(x=>[x.id,x]));
  const amounts=new Map(allocations.map(x=>[x.assessment_id,Number(x.amount)]));
@@ -51,7 +51,7 @@ function paper(rec){
  const one=lines.every(line=>line.assessment.property_id===lines[0]?.assessment.property_id);
  const name=contributorName(c);
  const textMethod={tarjeta:'Punto de venta / Tarjeta',efectivo:'Efectivo',transferencia:'Transferencia',pago_movil:'Pago móvil'}[p.payment_method]||p.payment_method;
- const ident=[c.identification_type,c.identification_number].filter(Boolean).join('-');
+ const rawIdent=String(c.identification_number||'');const prefix=String(c.identification_type||'');const ident=(prefix&&rawIdent.toUpperCase().startsWith(prefix.toUpperCase()+'-'))?rawIdent:[prefix,rawIdent].filter(Boolean).join('-');
  const rows=lines.map(l=>{
   const a=l.assessment,sector=l.property.sector?.name||l.property.sector_name||'Inmueble';
   const period=month(a.period_start)+(a.period_end&&a.period_end.slice(0,7)!==a.period_start.slice(0,7)?' – '+month(a.period_end):'');
@@ -61,7 +61,7 @@ function paper(rec){
  '<div class="bill-watermark">DEMO</div>'+
  '<header class="bill-header"><div class="bill-brand bill-miranda"><div class="bill-brand-art">✦</div><small>ALCALDÍA DEL MUNICIPIO</small><strong>MIRANDA</strong><span>Coro · Estado Falcón</span></div><div class="bill-heading"><h1>COMPROBANTE DE PAGO</h1><h2>Sistema Integral Tributario Municipal<br>de Aseo Urbano y Domiciliario (SITMAUD)</h2><b>DOCUMENTO DEMO · NO FISCAL</b></div><div class="bill-brand bill-imaud"><strong>imaud</strong><span>Instituto Municipal de Aseo<br>Urbano y Domiciliario</span></div></header>'+
  '<section class="bill-ref">'+field('N.º de comprobante DEMO',p.receipt_number)+field('N.º de contrato',c.contract_number)+field('Fecha de emisión',date(p.paid_at))+field('Fecha de pago',date(p.paid_at))+'</section>'+
- '<section class="bill-parties"><div><h3>Datos del Contribuyente</h3>'+field('Nombre / Razón social',name)+field('Cédula / RIF',ident)+field('Teléfono',c.phone)+field('Correo',c.email)+'</div><div><h3>Datos del Inmueble</h3>'+field('Dirección',one?first.address:'Varios inmuebles; ver detalle')+field('Sector',one?(first.sector?.name||first.sector_name):'Ver desglose')+field('Parroquia',one?(first.parish?.name||first.parish_name):'Ver desglose')+field('Tipología',one?(first.sector?.default_typology):'Varios inmuebles')+'</div></section>'+
+ '<section class="bill-parties"><div><h3>Datos del Contribuyente</h3>'+field('Nombre / Razón social',name)+field('Cédula / RIF',ident)+field('Teléfono',c.phone)+field('Correo',c.email)+'</div><div><h3>Datos del Inmueble</h3>'+field('Dirección',one?first.address:'Varios inmuebles; ver detalle')+field('Sector',one?(first.sector?.name||first.sector_name):'Ver desglose')+field('Parroquia',one?(first.parish?.name||first.parish_name):'Ver desglose')+field('Tipología',one?({'3':'TIPO I','1.5':'TIPO II','0.5':'TIPO III'}[String(Number(lines[0]?.assessment?.coefficient_snapshot))]||first.typology_override||first.sector?.default_typology):'Según cada inmueble')+'</div></section>'+
  '<div class="bill-items"><table><thead><tr><th>Concepto</th><th>Período</th><th>Tarifa (Bs.)</th><th>Monto pagado (Bs.)</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
  '<section class="bill-bottom"><div class="bill-qrwrap"><div id="billQr" class="bill-qr">DEMO<br>QR</div><div><b>Consulta del comprobante</b><p>QR informativo de prueba, no verifica autenticidad fiscal.</p></div></div><div class="bill-paid"><span>MONTO PAGADO</span><strong>'+cash(p.amount)+'</strong><small>'+E(textMethod)+' · Ref. '+E(p.external_reference||'No aplica')+'</small></div></section>'+
  '<footer class="bill-foot">DOCUMENTO DE PRUEBA SIN VALIDEZ FISCAL · NO ACREDITA TRANSFERENCIA BANCARIA REAL.<br>Formato media carta horizontal · requisitos fiscales definitivos pendientes de validación.</footer></article>';

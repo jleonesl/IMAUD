@@ -792,3 +792,16 @@ body.modal-open{overflow:hidden}
 .condo-reg-buttons .btn{min-height:40px;white-space:nowrap}
 @media(max-width:1300px){.condo-reg-columns{grid-template-columns:repeat(2,minmax(0,1fr))}.condo-reg-column:last-child{grid-column:1/-1}.condo-reg-footer{align-items:flex-start}}
 @media(max-width:760px){.condo-reg-title{padding:17px 14px 8px}.condo-reg-progress{gap:5px;padding:10px 14px 17px;justify-content:space-between}.condo-reg-progress>div{font-size:9px;white-space:normal}.condo-reg-progress i{min-width:12px}.condo-reg-columns{grid-template-columns:1fr;padding:0 12px}.condo-reg-column:last-child{grid-column:auto}.condo-reg-footer{margin:14px 12px;flex-direction:column}.condo-reg-buttons{width:100%}.condo-reg-buttons .btn{flex:1}}
+
+/* Texto oficial de la ordenanza municipal en módulo de tarifas */
+.ordinance-official-doc{display:flex;gap:12px;align-items:flex-start;margin-top:14px}
+.ordinance-official-icon{display:grid;place-items:center;flex:none;width:44px;height:52px;border-radius:9px;background:#e5f3f5;color:#168092;font-size:25px}
+.ordinance-official-info{display:flex;flex-direction:column;gap:5px;min-width:0}
+.ordinance-official-info h4{font:800 13px Manrope,sans-serif;color:#143e5f;margin:0;line-height:1.5}
+.ordinance-official-info p{font-size:11px;color:#628093;margin:0}
+.ordinance-official-info span{font-size:10px;color:#43657a;font-weight:700}
+.ordinance-official-info small{font-size:10px;color:#8195a4;line-height:1.5}
+.ordinance-official-description{font-size:11px;color:#6b8395;line-height:1.7;margin:15px 0}
+.ordinance-official-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ordinance-official-actions .btn{font-size:11px;white-space:normal;text-align:center}
+@media(max-width:630px){.ordinance-official-actions .btn{width:100%}}

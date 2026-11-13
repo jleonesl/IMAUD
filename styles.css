@@ -718,3 +718,13 @@ body.modal-open{overflow:hidden}
 .contributor-doc-meta b{font-size:11px;color:#174464}
 .contributor-doc-meta span,.contributor-doc-meta small{font-size:10px;color:#7a92a3;overflow-wrap:anywhere}
 @media(max-width:650px){.contributor-extra-head,.contributor-doc-bottom{flex-direction:column;align-items:flex-start}.contributor-doc-item{flex-wrap:wrap}.contributor-doc-item .btn{width:100%}}
+
+/* Comprobante bancario privado para transferencia y pago móvil */
+.payment-proof-field[hidden]{display:none!important}
+.payment-proof-field{border:1px solid #cae0e8;background:#f5fafc;border-radius:9px;padding:13px}
+.payment-proof-field label{font-weight:800;color:#174c67}
+.payment-proof-field input[type=file]{display:block;width:100%;max-width:100%;height:auto;padding:10px;border:1px dashed #accbd6;border-radius:7px;background:#fff}
+.payment-proof-field small{display:block;font-size:10px;color:#648395;line-height:1.6;margin-top:7px}
+.payment-proof-selected{margin-top:6px;color:#1b7182;font-size:10px;word-break:break-word;font-weight:700}
+.payment-proof-empty{color:#889ba7}
+.bill-actions{flex-wrap:wrap}

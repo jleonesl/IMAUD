@@ -1,0 +1,64 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mi cuenta | SITMAUD</title><style>
+:root{--navy:#113a58;--teal:#0e8995;--text:#1d425d;--muted:#7790a3;--line:#e2eaf0}*{box-sizing:border-box}body{margin:0;background:#f3f7f9;color:var(--text);font-family:Inter,Manrope,Arial,sans-serif;font-size:13px}.shell{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}.side{background:#fff;border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:24px}.brand img{display:block;max-width:195px;margin:auto;height:95px;object-fit:contain}.side nav{display:grid;gap:7px}.side button{border:0;background:none;color:#45667d;font:700 12px inherit;text-align:left;padding:13px;border-radius:9px;cursor:pointer}.side button.active{color:#fff;background:linear-gradient(90deg,#1b8197,#158e97)}.side .exit{margin-top:auto;background:#f2f6f8;border:1px solid var(--line);text-align:center}.top{background:#fff;padding:22px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.tag{background:#fff2dc;color:#96661a;border:1px solid #f0daa7;border-radius:30px;padding:8px 12px;font-size:10px;font-weight:800}.main{padding:30px 35px;max-width:1470px;margin:auto}.eyebrow{font-size:10px;color:#128b9a;letter-spacing:.13em;font-weight:900}.main h1{font-size:29px;margin:8px 0 7px;color:#102f4a}.subtitle{color:var(--muted);line-height:1.65;margin-bottom:20px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:19px;box-shadow:0 8px 26px #123a5508}.metric{display:grid;gap:15px;min-height:122px}.metric span{color:#6d859a;font-size:11px;font-weight:700}.metric strong{font-size:24px;color:#123b5b}.metric small{font-size:10px;color:#8ba0ac}.grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}.card h2{margin:0 0 15px;font-size:16px;color:var(--navy)}.row{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid #edf1f4;align-items:center}.row:last-child{border:0}.row b{color:#214e66}.row small{color:#7890a1}.view{display:none}.view.active{display:block}.view-head{margin-bottom:20px}.view-head h1{font-size:27px;margin:0 0 7px}.view-head p{color:#7e95a3;margin:0}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:650px}th{text-align:left;font-size:10px;letter-spacing:.03em;color:#567589;background:#edf3f6;padding:12px}td{padding:13px 12px;border-bottom:1px solid #edf2f4;font-size:11px;color:#32546c}.notice{background:#fff9e9;color:#8d6928;border:1px solid #f1e2b7;padding:13px 15px;border-radius:10px;margin-bottom:18px;line-height:1.6}.loading{text-align:center;padding:35px;color:#5d8290}.disabled{opacity:.55;pointer-events:none}.footer{font-size:10px;color:#97a8b4;text-align:center;margin:35px 0}
+@media(max-width:1000px){.metrics{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}@media(max-width:660px){.shell{grid-template-columns:1fr}.side{position:static;gap:6px;padding:8px 14px}.brand img{height:65px;width:130px;margin:0}.side nav{display:flex;overflow-x:auto}.side nav button{white-space:nowrap;flex:none}.side .exit{margin-top:0}.top{padding:15px}.main{padding:19px}.metrics{gap:10px}.card{padding:14px}}
+</style></head><body>
+<div class="shell"><aside class="side"><div class="brand"><img src="./assets/logo-sitmaud-sidebar.jpg?v=2" alt="SITMAUD"></div><nav id="nav"><button data-page="inicio" class="active">◫ Inicio</button><button data-page="contratos">⌂ Mis contratos e inmuebles</button><button data-page="cuenta">▤ Estado de cuenta</button><button data-page="pagos">▣ Mis pagos</button><button data-page="comprobantes">▥ Comprobantes</button><button data-page="solicitudes">✉ Solicitudes</button><button data-page="perfil">♙ Mi perfil</button></nav><button class="exit" id="logout">Cerrar sesión</button></aside><div><div class="top"><span>SITMAUD &nbsp;/&nbsp; Portal del Contribuyente &nbsp;/&nbsp; <b id="crumb">Inicio</b></span><span class="tag">ENTORNO DEMO · NO FISCAL</span></div>
+<main class="main"><div class="notice">Este portal solo consulta los datos autorizados de tu propio expediente. Los pagos y obligaciones mostrados corresponden al entorno de pruebas. No puedes generar cobros ni certificados fiscales desde aquí.</div><div id="load" class="card loading">Validando expediente y permisos…</div>
+<div id="content" hidden>
+<section class="view active" data-page="inicio"><div class="view-head"><span class="eyebrow">MI ESPACIO PERSONAL</span><h1 id="welcome">Bienvenido</h1><p>Consulta tus contratos, obligaciones, pagos y comprobantes.</p></div>
+<div class="metrics"><div class="card metric"><span>Contratos asociados</span><strong id="metricContracts">0</strong><small>Expediente institucional</small></div><div class="card metric"><span>Obligaciones pendientes DEMO</span><strong id="metricDebt">Bs. 0,00</strong><small>Importe de las obligaciones pendientes</small></div><div class="card metric"><span>Pagos DEMO realizados</span><strong id="metricPayments">0</strong><small>Operaciones registradas por IMAUD</small></div><div class="card metric"><span>Situación del contrato</span><strong id="metricStatus">—</strong><small>Resumen orientativo, no solvencia oficial</small></div></div>
+<div class="grid"><article class="card"><h2>Mi expediente</h2><div id="summaryProfile"></div></article><article class="card"><h2>Actividad registrada</h2><div id="summaryPayments"></div></article></div></section>
+<section class="view" data-page="contratos"><div class="view-head"><h1>Mis contratos e inmuebles</h1><p>Solo los inmuebles pertenecientes al expediente vinculado a tu cuenta.</p></div><div class="card" id="properties"></div></section>
+<section class="view" data-page="cuenta"><div class="view-head"><h1>Estado de cuenta</h1><p>Obligaciones de prueba y períodos registrados.</p></div><div class="card scroll"><table><thead><tr><th>Período</th><th>Contrato</th><th>Importe</th><th>Estado</th></tr></thead><tbody id="debts"></tbody></table></div></section>
+<section class="view" data-page="pagos"><div class="view-head"><h1>Mis pagos</h1><p>Historial de operaciones registradas por el módulo institucional.</p></div><div class="card scroll"><table><thead><tr><th>Fecha</th><th>Comprobante</th><th>Medio</th><th>Monto</th></tr></thead><tbody id="payments"></tbody></table></div></section>
+<section class="view" data-page="comprobantes"><div class="view-head"><h1>Comprobantes</h1><p>Referencias de los pagos DEMO de tu cuenta. La descarga fiscal aún no está habilitada.</p></div><div class="card" id="receipts"></div></section>
+<section class="view" data-page="solicitudes"><div class="view-head"><h1>Solicitudes</h1><p>Trámites que se incorporarán en una fase posterior.</p></div><div class="card"><div class="row"><b>Actualización de datos</b><small>En preparación</small></div><div class="row"><b>Revisión de deuda</b><small>En preparación</small></div><div class="row"><b>Certificados electrónicos</b><small>En preparación</small></div></div></section>
+<section class="view" data-page="perfil"><div class="view-head"><h1>Mi perfil</h1><p>Datos del titular o representante vinculado por el módulo institucional.</p></div><div class="card" id="profile"></div></section>
+<div class="footer">SITMAUD · Alcaldía del Municipio Miranda · Coro, estado Falcón · Acceso a expediente autorizado</div></div></main></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js"></script><script>
+(function(){
+const client=window.supabase.createClient('https://vlgvojndrmvwhfjlpbid.supabase.co','sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm');
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=x=>'Bs. '+Number(x||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const date=x=>new Date(x).toLocaleString('es-VE',{timeZone:'America/Caracas',day:'2-digit',month:'2-digit',year:'numeric'});
+const row=(key,val)=>'<div class="row"><small>'+esc(key)+'</small><b>'+esc(val)+'</b></div>';
+function rows(items,template,colspan){return items.length?items.map(template).join(''):'<tr><td colspan="'+colspan+'">No hay registros asociados al expediente.</td></tr>'}
+function render(data){
+ const props=data.properties||[],assess=data.obligations||[],payments=data.payments||[];
+ const name=data.name||'Contribuyente',contract=data.contract_number||'—';
+ const pending=assess.filter(a=>['pending','partially_paid'].includes(a.status));
+ const sum=pending.reduce((s,a)=>s+Number(a.amount),0);
+ document.getElementById('welcome').textContent='Bienvenido, '+name;
+ document.getElementById('metricContracts').textContent=contract==='—'?'0':'1';
+ document.getElementById('metricDebt').textContent=money(sum);
+ document.getElementById('metricPayments').textContent=payments.length;
+ document.getElementById('metricStatus').textContent=sum>0?'Con deuda DEMO':'Sin deuda DEMO';
+ const details=row('Contribuyente',name)+row('Contrato',contract)+row('Identificación',data.identification)+row('Modalidad',data.service_account_type==='condominio'?'Condominio / pago único':'Individual');
+ document.getElementById('summaryProfile').innerHTML=details;
+ document.getElementById('profile').innerHTML=details+row('Tipo de identificación',data.identity_type)+(data.service_account_type==='condominio'?row('Viviendas en ficha matriz',props.find(p=>p.consolidated)?.units||0):'');
+ document.getElementById('summaryPayments').innerHTML=payments.length?payments.slice(0,3).map(p=>row('Pago '+date(p.paid_at),money(p.amount))).join(''):'<p>No se han registrado pagos DEMO.</p>';
+ document.getElementById('properties').innerHTML=props.length?props.map(p=>'<div class="row"><div><b>'+esc(p.consolidated?'Cuenta matriz del condominio':'Inmueble registrado')+'</b><div style="font-size:11px;color:#7890a1;margin-top:5px">'+esc(p.address||'')+' · '+esc([p.parish,p.sector].filter(Boolean).join(' / '))+'</div></div><small>'+esc(p.consolidated?(p.units||0)+' viviendas':'Individual')+'</small></div>').join(''):'<p>No hay inmuebles o cuentas matrices registrados.</p>';
+ document.getElementById('debts').innerHTML=rows(assess,a=>'<tr><td>'+esc(a.period)+'</td><td>'+esc(contract)+'</td><td>'+esc(money(a.amount))+'</td><td>'+esc(a.status)+'</td></tr>',4);
+ document.getElementById('payments').innerHTML=rows(payments,p=>'<tr><td>'+esc(date(p.paid_at))+'</td><td>'+esc(p.receipt)+'</td><td>'+esc(p.method)+'</td><td>'+esc(money(p.amount))+'</td></tr>',4);
+ document.getElementById('receipts').innerHTML=payments.length?payments.map(p=>row('Comprobante '+p.receipt,money(p.amount)+' · '+date(p.paid_at))).join(''):'<p>No hay comprobantes disponibles.</p>';
+ document.getElementById('load').hidden=true;document.getElementById('content').hidden=false;
+}
+async function initialize(){
+ try{
+  const {data:{session}}=await client.auth.getSession();
+  if(!session||sessionStorage.getItem('sitmaud_citizen_view')!=='authenticated'){location.replace('./contribuyente-v2.html');return;}
+  const {data,error}=await client.rpc('get_my_citizen_portal');
+  if(error||!data?.activated)throw Error('No existe un expediente autorizado para esta sesión.');
+  render(data);
+ }catch(e){document.getElementById('load').textContent=e.message||'No se pudo abrir tu expediente.';}
+}
+document.getElementById('nav').addEventListener('click',event=>{
+ const b=event.target.closest('[data-page]');if(!b)return;
+ document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.dataset.page===b.dataset.page));
+ document.querySelectorAll('.side nav button').forEach(x=>x.classList.toggle('active',x===b));
+ document.getElementById('crumb').textContent=b.textContent.trim();
+});
+document.getElementById('logout').addEventListener('click',async()=>{sessionStorage.removeItem('sitmaud_citizen_view');await client.auth.signOut();location.replace('./contribuyente-v2.html')});
+initialize();
+})();
+</script></body></html>

@@ -81,7 +81,14 @@ function printBillOnly(){
  '<meta name="viewport" content="width=device-width, initial-scale=1">'+
  '<base href="'+location.origin+location.pathname.replace(/[^/]*$/,'')+'">'+
  '<link rel="stylesheet" href="billing.css?v=20261113-print-isolated1">'+
- '<style>@page{size:8.5in 5.5in;margin:0}html,body{margin:0!important;padding:0!important;width:8.5in!important;height:5.5in!important;overflow:hidden!important;background:white!important}#billModal{margin:0!important;padding:0!important;position:static!important;display:block!important;width:8.5in!important;height:5.5in!important;overflow:hidden!important;background:white!important}.bill-dialog{padding:0!important;margin:0!important;width:8.5in!important;height:5.5in!important;overflow:hidden!important;background:white!important;box-shadow:none!important}.bill-paper{margin:0!important;width:8.5in!important;min-height:5.5in!important;height:5.5in!important;overflow:hidden!important;box-shadow:none!important;page-break-after:avoid!important;break-inside:avoid!important}body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}</style>'+
+ '<style>@page{size:8.5in 5.5in;margin:0}'+
+ '@media print{html,body{margin:0!important;padding:0!important;width:100%!important;min-height:5.5in!important;height:5.5in!important;overflow:hidden!important;background:#fff!important;display:block!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}'+
+ '#billModal{width:100%!important;max-width:none!important;height:5.5in!important;margin:0 auto!important;padding:0!important;position:static!important;display:flex!important;justify-content:center!important;align-items:flex-start!important;overflow:hidden!important;background:white!important}'+
+ '#billModal .bill-dialog{width:100%!important;max-width:none!important;height:5.5in!important;display:flex!important;justify-content:center!important;align-items:flex-start!important;padding:0!important;margin:0!important;overflow:hidden!important;background:white!important;box-shadow:none!important}'+
+ '#billModal #billContent{width:100%!important;max-width:none!important;height:5.5in!important;display:flex!important;justify-content:center!important;align-items:flex-start!important;margin:0!important;padding:0!important;overflow:hidden!important}'+
+ '#billModal .bill-paper{box-sizing:border-box!important;width:100%!important;max-width:8.5in!important;flex:0 1 8.5in!important;min-width:0!important;min-height:5.5in!important;height:5.5in!important;margin:0 auto!important;padding:.14in .13in .10in!important;overflow:hidden!important;box-shadow:none!important;break-inside:avoid!important;page-break-after:avoid!important}'+
+ '#billModal .bill-toolbar{display:none!important}}'+
+ '</style>'+
  '</head><body><div id="billModal" class="bill-backdrop"><div class="bill-dialog"><div id="billContent">'+safeHTML+'</div></div></div></body></html>';
  frame.onload=async()=>{
   try{

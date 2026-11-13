@@ -41,6 +41,20 @@ window.openCondoRegistration=function(){
  if(type){type.addEventListener('change',()=>{if(type.value!=='condominio'){type.value='condominio';type.dispatchEvent(new Event('change',{bubbles:true}));}});}
 };
 document.addEventListener('click',async event=>{
+ const profile=event.target.closest('[data-condo-profile]');
+ if(profile){
+  const id=profile.dataset.condoProfile;
+  profile.disabled=true;
+  try{
+   const {data,error}=await imaudClient.from('contributors').select('id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,status,created_at,properties(id,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,assessments(id,status))').eq('id',id).single();
+   if(error||!data)throw(error||Error('Contribuyente no encontrado'));
+   if(!Array.isArray(state.people))state.people=[];
+   state.people=state.people.filter(x=>x.id!==id).concat([data]);
+   openContributorAction(id,'view');
+  }catch(e){console.error('Condominio dossier:',e);toast('No se pudo abrir el expediente: '+(e.message||'Error'))}
+  finally{profile.disabled=false;}
+  return;
+ }
  const complete=event.target.closest('[data-condo-complete]');
  if(complete){
   await openPropertyRegistrationModal();

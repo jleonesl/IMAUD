@@ -728,3 +728,16 @@ body.modal-open{overflow:hidden}
 .payment-proof-selected{margin-top:6px;color:#1b7182;font-size:10px;word-break:break-word;font-weight:700}
 .payment-proof-empty{color:#889ba7}
 .bill-actions{flex-wrap:wrap}
+
+/* Condominios · módulo independiente de registro, sin duplicar datos de inmuebles */
+@media(min-width:1080px){.home-indicators{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.condo-intro-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:0 0 18px}
+.condo-intro-stat{min-width:0;min-height:125px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;gap:8px}
+.condo-intro-stat span{font-size:11px;color:#587389;font-weight:700}
+.condo-intro-stat strong{font:800 25px Manrope,sans-serif;color:#163f60;overflow-wrap:anywhere}
+.condo-intro-stat small{font-size:10px;line-height:1.5;color:#7d93a1}
+.condo-row-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-width:180px}
+.condo-row-actions .btn{white-space:nowrap}
+.condo-fixed-field select{background:#edf5f8;pointer-events:none;color:#24556b}
+@media(max-width:900px){.condo-intro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:570px){.condo-intro-grid{grid-template-columns:1fr}.condo-intro-stat{min-height:95px}.condo-directory-panel .table-toolbar{flex-direction:column;align-items:flex-start}}

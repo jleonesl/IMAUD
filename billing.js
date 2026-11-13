@@ -66,6 +66,34 @@ function paper(rec){
  '<section class="bill-bottom"><div class="bill-qrwrap"><div id="billQr" class="bill-qr">DEMO<br>QR</div><div><b>Consulta del comprobante</b><p>QR informativo de prueba, no verifica autenticidad fiscal.</p></div></div><div class="bill-paid"><span>MONTO PAGADO</span><strong>'+cash(p.amount)+'</strong><small>'+E(textMethod)+' · Ref. '+E(p.external_reference||'No aplica')+'</small></div></section>'+
  '<footer class="bill-foot">DOCUMENTO DE PRUEBA SIN VALIDEZ FISCAL · NO ACREDITA TRANSFERENCIA BANCARIA REAL.<br>Formato media carta horizontal · requisitos fiscales definitivos pendientes de validación.</footer></article>';
 }
+function printBillOnly(){
+ const article=document.getElementById('billPaper');
+ if(!article){toast('Primero abre un comprobante para imprimir.');return;}
+ document.getElementById('billPrintFrame')?.remove();
+ const frame=document.createElement('iframe');
+ frame.id='billPrintFrame';
+ frame.title='Impresión exclusiva del comprobante SITMAUD';
+ frame.setAttribute('aria-hidden','true');
+ frame.style.cssText='position:fixed;left:-10000px;top:0;width:816px;height:528px;border:0;opacity:0;pointer-events:none;';
+ document.body.appendChild(frame);
+ const safeHTML=article.outerHTML;
+ const documentHTML='<!doctype html><html lang="es"><head><meta charset="utf-8">'+
+ '<meta name="viewport" content="width=device-width, initial-scale=1">'+
+ '<base href="'+location.origin+location.pathname.replace(/[^/]*$/,'')+'">'+
+ '<link rel="stylesheet" href="billing.css?v=20261113-print-isolated1">'+
+ '<style>@page{size:8.5in 5.5in;margin:0}html,body{margin:0!important;padding:0!important;width:8.5in!important;height:5.5in!important;overflow:hidden!important;background:white!important}#billModal{margin:0!important;padding:0!important;position:static!important;display:block!important;width:8.5in!important;height:5.5in!important;overflow:hidden!important;background:white!important}.bill-dialog{padding:0!important;margin:0!important;width:8.5in!important;height:5.5in!important;overflow:hidden!important;background:white!important;box-shadow:none!important}.bill-paper{margin:0!important;width:8.5in!important;min-height:5.5in!important;height:5.5in!important;overflow:hidden!important;box-shadow:none!important;page-break-after:avoid!important;break-inside:avoid!important}body{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}</style>'+
+ '</head><body><div id="billModal" class="bill-backdrop"><div class="bill-dialog"><div id="billContent">'+safeHTML+'</div></div></div></body></html>';
+ frame.onload=async()=>{
+  try{
+   const doc=frame.contentDocument;
+   await (doc.fonts?.ready||Promise.resolve());
+   await Promise.all([...doc.images].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve})));
+   frame.contentWindow.focus();
+   frame.contentWindow.print();
+  }catch(err){console.error('Impresión aislada de factura:',err);toast('No se pudo preparar la impresión. Intenta nuevamente.');}
+ };
+ frame.srcdoc=documentHTML;
+}
 async function openBill(id,print){
  document.getElementById('billModal')?.remove();
  const backdrop=document.createElement('div');backdrop.id='billModal';backdrop.className='bill-backdrop';
@@ -78,7 +106,7 @@ async function openBill(id,print){
    const qr=document.getElementById('billQr');qr.textContent='';
    new window.QRCode(qr,{text:'SITMAUD COMPROBANTE DEMO | '+record.payment.receipt_number+' | '+cash(record.payment.amount)+' | NO FISCAL',width:72,height:72,colorDark:'#062e62',colorLight:'#ffffff',correctLevel:window.QRCode.CorrectLevel.M});
   }
-  if(print)window.print();
+  if(print)printBillOnly();
  }catch(e){console.error(e);const target=document.getElementById('billContent');if(target)target.innerHTML='<div class="payment-debt-empty"><b>No se pudo preparar el comprobante.</b><span>'+E(e.message)+'</span></div>';}
 }
 function closeBill(){document.getElementById('billModal')?.remove();document.body.classList.remove('modal-open');}
@@ -91,7 +119,7 @@ document.addEventListener('click',event=>{
  if(view){openBill(view.dataset.billView,false);return;}
  if(print){openBill(print.dataset.billPrint,true);return;}
  if(event.target.closest('[data-bill-close]')){closeBill();return;}
- if(event.target.closest('[data-bill-go-print]')){window.print();}
+ if(event.target.closest('[data-bill-go-print]')){printBillOnly();}
 });
 document.addEventListener('input',event=>{if(event.target.id==='billSearch')paintHistory();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.getElementById('billModal'))closeBill();});

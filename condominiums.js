@@ -11,6 +11,8 @@ const fhtml=(mode)=>{
  '<div class="field"><label>Sector *</label><select required name="sector_id" id="'+id+'Sector" disabled><option value="">Seleccione primero parroquia</option></select></div>'+
  '<div class="field"><label>Cantidad de viviendas *</label><input required name="unit_count" type="number" min="1" max="100000" step="1" placeholder="Ej. 45"></div>'+
  '<div class="field"><label>Tipología del sector</label><input id="'+id+'Typology" disabled value="Automática según sector"></div>'+
+ '<div class="field"><label>Tipología de cobro del condominio *</label><select name="billing_typology" id="'+id+'BillingTypology" required><option value="">Selecciona sector primero</option><option value="TIPO I">Tipo I · 3,00 UCD / vivienda</option><option value="TIPO II">Tipo II · 1,50 UCD / vivienda</option><option value="TIPO III">Tipo III · 0,50 UCD / vivienda</option></select><small>Tipología específica, independiente del sector. Excepciones sujetas a autorización.</small></div>'+
+ '<div class="field full" id="'+id+'BillingReasonField" hidden><label>Justificación de clasificación particular *</label><textarea name="typology_reason" id="'+id+'BillingReason" rows="2" minlength="15" placeholder="Motivo documentado y referencia normativa o técnica"></textarea></div>'+
  '<div class="field"><label>Representante / Administrador</label><input name="representative_name" placeholder="Nombre y apellido"></div>'+
  '<div class="field"><label>Identificación del representante</label><input name="representative_id" placeholder="Cédula / RIF"></div></div>'+
  '<div class="condo-matrix-estimate" id="'+id+'Estimate">Selecciona sector y cantidad de viviendas para ver la estimación DEMO.</div>'+
@@ -71,8 +73,10 @@ function updateCondoSectors(mode){
  const prev=sectors.value;
  sectors.innerHTML='<option value="">Seleccione sector</option>'+choices.map(s=>'<option value="'+escapeHTML(s.id)+'">'+escapeHTML(s.name)+'</option>').join('');
  sectors.value=choices.some(x=>x.id===prev)?prev:'';
+ const typeSelect=document.getElementById(id+'BillingTypology');if(typeSelect){const sector=choices.find(x=>x.id===sectors.value);typeSelect.value=sector?.default_typology||'';}
  updateCondoEstimate(mode);
 }
+function setDefaultCondoTypology(mode){const id=mode==='inline'?'condoInline':'condoStandalone';const sector=state.sectors?.find(x=>x.id===document.getElementById(id+'Sector')?.value);const select=document.getElementById(id+'BillingTypology');if(select)select.value=sector?.default_typology||'';}
 let estimateRate=null;
 async function lookupUcd(){
  if(estimateRate)return estimateRate;
@@ -88,14 +92,20 @@ async function updateCondoEstimate(mode){
  const count=Number(document.querySelector('#'+id+'Form [name="unit_count"]')?.value||0);
  const sector=state.sectors?.find(x=>x.id===sectorId);
  const typology=sector?.default_typology;
- const coeff={'TIPO I':3,'TIPO II':1.5,'TIPO III':0.5}[typology];
+ const selected=document.getElementById(id+'BillingTypology');
+ const billingTypology=selected?.value||typology;
+ const reasonField=document.getElementById(id+'BillingReasonField'),reason=document.getElementById(id+'BillingReason');
+ const isOverride=!!(sector&&billingTypology&&billingTypology!==typology);
+ if(reasonField)reasonField.hidden=!isOverride;
+ if(reason)reason.required=isOverride;
+ const coeff={'TIPO I':3,'TIPO II':1.5,'TIPO III':0.5}[billingTypology];
  const type=document.getElementById(id+'Typology');if(type)type.value=typology||'Selecciona un sector';
  if(!sector||!coeff||!Number.isInteger(count)||count<1){
   container.textContent='Selecciona un sector y especifica la cantidad total de viviendas para calcular la tarifa consolidada.';return;
  }
  const ucds=coeff*count;
  const fmt=v=>new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v);
- container.innerHTML='<strong>'+count+' viviendas × '+fmt(coeff)+' UCD = '+fmt(ucds)+' UCD mensuales</strong><span>Calculado automáticamente según el sector ('+escapeHTML(typology)+'). Consultando la tasa para el monto DEMO en bolívares…</span>';
+ container.innerHTML='<strong>'+count+' viviendas × '+fmt(coeff)+' UCD = '+fmt(ucds)+' UCD mensuales</strong><span>Tipología del condominio: '+escapeHTML(billingTypology)+' · Tipología del sector: '+escapeHTML(typology)+'. Consultando la tasa para el monto DEMO en bolívares…</span>';
  const rate=await lookupUcd();if(!document.getElementById(id+'Estimate'))return;
  container.innerHTML='<strong>'+count+' viviendas × '+fmt(coeff)+' UCD = '+fmt(ucds)+' UCD mensuales</strong>'+
  (rate?'<span>Estimación: <b>Bs. '+fmt(Math.round(ucds*Number(rate.udc_value)*100)/100)+'</b> · Tasa de referencia '+escapeHTML(rate.effective_date)+'. El cálculo definitivo lo confirma el servidor al guardar.</span>':'<span>La tasa UCD no está disponible para la vista previa. El servidor validará la información al registrar.</span>');
@@ -107,13 +117,15 @@ async function saveCondo(form){
  const values=new FormData(form),units=Number(values.get('unit_count'));
  if(!Number.isInteger(units)||units<1){toast('Indica un número válido de viviendas.');return;}
  const submit=form.querySelector('[type="submit"]');submit.disabled=true;submit.textContent='Registrando cuenta matriz…';
- const {data,error}=await imaudClient.rpc('register_demo_condominium',{
+ const {data,error}=await imaudClient.rpc('register_demo_condominium_with_typology',{
   p_contributor_id:person.id,
   p_display_name:String(values.get('display_name')||'').trim(),
   p_address:String(values.get('address')||'').trim(),
   p_parish_id:values.get('parish_id'),
   p_sector_id:values.get('sector_id'),
   p_unit_count:units,
+  p_billing_typology:String(values.get('billing_typology')||''),
+  p_typology_reason:String(values.get('typology_reason')||'').trim()||null,
   p_representative_name:String(values.get('representative_name')||'').trim()||null,
   p_representative_id:String(values.get('representative_id')||'').trim()||null
  });
@@ -152,8 +164,10 @@ document.addEventListener('submit',event=>{
 document.addEventListener('change',event=>{
  if(event.target.id==='condoInlineParish')updateCondoSectors('inline');
  if(event.target.id==='condoStandaloneParish')updateCondoSectors('standalone');
- if(event.target.id==='condoInlineSector')updateCondoEstimate('inline');
- if(event.target.id==='condoStandaloneSector')updateCondoEstimate('standalone');
+ if(event.target.id==='condoInlineSector'){setDefaultCondoTypology('inline');updateCondoEstimate('inline');}
+ if(event.target.id==='condoStandaloneSector'){setDefaultCondoTypology('standalone');updateCondoEstimate('standalone');}
+ if(event.target.id==='condoInlineBillingTypology')updateCondoEstimate('inline');
+ if(event.target.id==='condoStandaloneBillingTypology')updateCondoEstimate('standalone');
 });
 document.addEventListener('input',event=>{
  if(event.target.closest('#condoInlineForm')&&event.target.name==='unit_count')updateCondoEstimate('inline');

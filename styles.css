@@ -741,3 +741,54 @@ body.modal-open{overflow:hidden}
 .condo-fixed-field select{background:#edf5f8;pointer-events:none;color:#24556b}
 @media(max-width:900px){.condo-intro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:570px){.condo-intro-grid{grid-template-columns:1fr}.condo-intro-stat{min-height:95px}.condo-directory-panel .table-toolbar{flex-direction:column;align-items:flex-start}}
+
+
+/* SITMAUD | Pantalla de alta de condominios aprobada */
+.condo-reg-layout{overflow:hidden;padding:0;margin-top:4px}
+.condo-reg-title{display:flex;align-items:center;gap:12px;padding:22px 25px 10px}
+.condo-reg-title-icon{width:45px;height:45px;display:grid;place-items:center;flex:none;background:#e1f1f2;border-radius:10px;color:#087f85;font-size:24px}
+.condo-reg-title h2{font:800 18px Manrope,sans-serif;color:#102e4c;margin:0 0 4px}
+.condo-reg-title p{margin:0;color:#718598;font-size:11px;line-height:1.5}
+.condo-reg-progress{display:flex;align-items:center;justify-content:center;padding:12px 30px 20px;gap:12px}
+.condo-reg-progress>div{display:flex;align-items:center;gap:8px;white-space:nowrap;color:#375269;font-size:11px;font-weight:800}
+.condo-reg-progress b{width:27px;height:27px;border:1.5px solid #c1d2da;border-radius:50%;display:grid;place-items:center;font-size:12px;background:#fff;color:#4e7588}
+.condo-reg-progress>div:first-child b{background:#007f7a;color:#fff;border-color:#007f7a}
+.condo-reg-progress i{display:block;height:2px;background:#d3dfe5;flex:1;max-width:110px}
+.condo-reg-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:0 18px}
+.condo-reg-column{border:1px solid #e1eaf0;border-radius:12px;min-width:0;overflow:hidden;background:#fff}
+.condo-reg-column-head{background:linear-gradient(135deg,#f0faf9,#f5fbfc);min-height:68px;padding:13px 14px;display:flex;align-items:flex-start;gap:11px}
+.condo-reg-column-head>span{height:29px;width:29px;flex:none;border-radius:50%;display:grid;place-items:center;background:#008b80;color:#fff;font:800 13px Manrope,sans-serif}
+.condo-reg-column-head h3{font:800 12px Manrope,sans-serif;color:#133752;margin:0 0 4px}
+.condo-reg-column-head p{font-size:10px;line-height:1.5;color:#637d8e;margin:0}
+.condo-reg-fields{padding:15px;display:grid;gap:12px}
+.condo-reg-field{display:flex;flex-direction:column;min-width:0;gap:6px}
+.condo-reg-field>span{font-size:10px;font-weight:800;color:#173e59}
+.condo-reg-field input,.condo-reg-field select,.condo-reg-field textarea{box-sizing:border-box;min-width:0;width:100%;border:1px solid #d6e1e7;border-radius:7px;background:#fff;color:#23435b;outline:0;font:11px "DM Sans",sans-serif;padding:10px 11px;min-height:38px;box-shadow:none}
+.condo-reg-field textarea{resize:vertical;line-height:1.5}
+.condo-reg-field input:focus,.condo-reg-field select:focus,.condo-reg-field textarea:focus{border-color:#27949e;box-shadow:0 0 0 2px rgba(27,143,157,.12)}
+.condo-reg-field select:disabled{background:#eef3f6;color:#8097a5}
+.condo-reg-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.condo-reg-readonly{min-height:38px;box-sizing:border-box;background:#eff4f6;border:1px solid #dce6eb;border-radius:7px;padding:10px 11px;font-size:11px;color:#436074;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.condo-reg-readonly b{color:#2a5b6a;font-weight:800}
+.condo-reg-readonly small{font-size:9px;color:#7d93a1}
+.condo-reg-status-dot{height:8px;width:8px;border-radius:50%;background:#24b367}
+#condoRegReasonWrap[hidden]{display:none!important}
+.condo-reg-field small{color:#7890a0;font-size:9px;line-height:1.6}
+.condo-reg-summary{padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #e8f0f3}
+.condo-reg-summary span{font-size:10px;color:#648092}
+.condo-reg-summary strong{font-size:12px;color:#134260}
+.condo-reg-total{border-radius:10px;background:linear-gradient(140deg,#e4f4f5,#f0f9fa);border:1px solid #c5e3e7;padding:14px;display:grid;gap:7px}
+.condo-reg-total>span{font-size:10px;font-weight:800;color:#336878}
+.condo-reg-total strong{font:800 24px Manrope,sans-serif;color:#0b5363}
+.condo-reg-total small{font-size:10px;color:#5f7e8d;line-height:1.5}
+.condo-reg-help{border-radius:9px;background:#f1f7f9;color:#54798b;font-size:10px;line-height:1.6;padding:12px}
+.condo-reg-footer{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:17px 18px 20px;background:#eff8f9;border-radius:11px;padding:16px}
+.condo-reg-contract{flex:1;min-width:0}
+.condo-reg-contract>b{font-size:12px;color:#174764}
+.condo-reg-contract p{font-size:10px;color:#4f6a7b;line-height:1.6;margin:6px 0 5px}
+.condo-reg-contract p strong{color:#08797c}
+.condo-reg-contract small{font-size:10px;color:#7691a0}
+.condo-reg-buttons{display:flex;align-items:center;gap:10px;flex:none}
+.condo-reg-buttons .btn{min-height:40px;white-space:nowrap}
+@media(max-width:1300px){.condo-reg-columns{grid-template-columns:repeat(2,minmax(0,1fr))}.condo-reg-column:last-child{grid-column:1/-1}.condo-reg-footer{align-items:flex-start}}
+@media(max-width:760px){.condo-reg-title{padding:17px 14px 8px}.condo-reg-progress{gap:5px;padding:10px 14px 17px;justify-content:space-between}.condo-reg-progress>div{font-size:9px;white-space:normal}.condo-reg-progress i{min-width:12px}.condo-reg-columns{grid-template-columns:1fr;padding:0 12px}.condo-reg-column:last-child{grid-column:auto}.condo-reg-footer{margin:14px 12px;flex-direction:column}.condo-reg-buttons{width:100%}.condo-reg-buttons .btn{flex:1}}

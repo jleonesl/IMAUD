@@ -134,7 +134,10 @@ const oldFindPropertyContributor=findPropertyContributor;
 findPropertyContributor=async function(){
  await oldFindPropertyContributor();
  const person=state.propertySelectedContributor;
+ if(!document.getElementById('propertyNewPanel')?.hidden&&person?.service_account_type!=='condominio')toggleCondo('standalone',false);
  if(!document.getElementById('propertyNewPanel')?.hidden&&person?.service_account_type==='condominio'){
+  const form=document.getElementById('condoStandaloneForm');
+  if(form){form.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=false);form.hidden=false;const success=document.getElementById('condoStandaloneSuccess');if(success){success.hidden=true;success.textContent='';}}
   toggleCondo('standalone',true);
   const {data}=await imaudClient.from('residential_organizations').select('id,unit_count').eq('contributor_id',person.id).limit(1);
   if(data?.length){const form=document.getElementById('condoStandaloneForm');if(form){form.hidden=true;const area=document.getElementById('standalonePropertySuccess');if(area){area.hidden=false;area.innerHTML='<b>Este condominio ya tiene una cuenta matriz registrada.</b><span>'+Number(data[0].unit_count||0)+' viviendas asociadas. No se puede generar otra ficha duplicada.</span>';}}}

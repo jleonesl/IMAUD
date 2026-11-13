@@ -67,15 +67,13 @@
 .bill-paid small{grid-column:1/-1;font-size:7px;color:#53708a;text-align:right;padding:4px 7px 3px}
 .bill-foot{border-top:1px solid #94aec7;text-align:center;font-size:7.5px;line-height:1.35;color:#355b7d;margin-top:.14in;padding-top:6px;font-weight:700}
 @media screen and (max-width:920px){.bill-dialog{overflow-x:auto}.bill-paper{margin-left:0}.bill-toolbar{min-width:620px}.bill-history .panel-head{flex-wrap:wrap}}
-@media print{
- @page{size:8.5in 5.5in;margin:0}
- html,body{width:8.5in!important;min-height:5.5in!important;margin:0!important;padding:0!important;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+@media print {
+ @page { size: letter portrait; margin: 0; }
+ html, body {width:8.5in!important;height:11in!important;min-height:11in!important;max-height:11in!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
  body>*:not(#billModal){display:none!important}
- #billModal{position:static!important;inset:auto!important;display:block!important;width:8.5in!important;height:auto!important;margin:0!important;padding:0!important;background:#fff!important;overflow:visible!important}
- #billModal .bill-dialog{width:8.5in!important;max-width:none!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:white!important}
+ #billModal,#billModal .bill-dialog,#billModal #billContent {box-sizing:border-box!important;display:flex!important;justify-content:center!important;align-items:flex-start!important;position:static!important;inset:auto!important;width:8.5in!important;max-width:8.5in!important;height:11in!important;min-height:0!important;max-height:11in!important;margin:0!important;padding:0!important;border:0!important;background:white!important;overflow:hidden!important;box-shadow:none!important}
  #billModal .bill-toolbar{display:none!important}
- #billModal #billContent{padding:0!important}
- #billModal .bill-paper{width:8.5in!important;min-height:5.5in!important;height:auto!important;max-width:none!important;margin:0!important;box-shadow:none!important;break-inside:auto}
+ #billModal .bill-paper{box-sizing:border-box!important;display:block!important;flex:none!important;width:8.5in!important;min-width:8.5in!important;max-width:8.5in!important;height:5.5in!important;min-height:5.5in!important;max-height:5.5in!important;margin:0 auto!important;padding:.17in .17in .12in!important;overflow:hidden!important;box-shadow:none!important;break-inside:avoid!important;page-break-after:avoid!important}
  .bill-items thead{display:table-header-group}
  .bill-items tr{break-inside:avoid}
 }

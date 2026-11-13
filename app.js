@@ -285,7 +285,7 @@ function renderPropertiesTable(){
  const rows=filteredProperties(),pages=Math.max(1,Math.ceil(rows.length/PROPERTY_PAGE_SIZE));
  state.propertyPage=Math.min(state.propertyPage,pages);
  const from=(state.propertyPage-1)*PROPERTY_PAGE_SIZE,visible=rows.slice(from,from+PROPERTY_PAGE_SIZE);
- const labels={active:'Activo',pending:'Pendiente',inactive:'Inactivo'},target=document.getElementById('propertiesTable');
+ const labels={active:'Al día',pending:'Con deuda',inactive:'Inactivo'},target=document.getElementById('propertiesTable');
  if(!rows.length)target.innerHTML='<div class="contributors-empty"><b>No hay inmuebles que mostrar</b><span>Registra un inmueble o ajusta los filtros de búsqueda.</span></div>';
  else target.innerHTML='<table><thead><tr><th>Contrato del contribuyente</th><th>Contribuyente</th><th>Cédula / RIF</th><th>Dirección</th><th>Parroquia</th><th>Sector</th><th>Estado</th><th>Último pago</th><th>Acciones</th></tr></thead><tbody>'+visible.map(p=>{
   const c=p.contributor||{},status=propertyStatus(p);

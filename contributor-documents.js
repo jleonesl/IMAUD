@@ -19,6 +19,8 @@ function profileSections(person){
  const condo=person.service_account_type==='condominio';
  const id=esc(person.id);
  return '<section class="contributor-doc-section" id="contributorDocumentSection" data-doc-person="'+id+'">'+
+ '<div class="contributor-extra-head"><div><h3>Acceso al Portal del Contribuyente</h3><p>Activa el acceso únicamente si la cuenta Supabase del titular tiene el correo verificado y coincide con el correo registrado en este expediente. Nunca vincules una cuenta sin comprobar la identidad del titular o del representante.</p></div></div>'+
+ '<div class="contributor-responsible-form"><label class="field">Correo verificado del acceso ciudadano (debe coincidir con el expediente)</label><input id="citizenActivationEmail" type="email" placeholder="correo registrado del contribuyente" value="'+esc(person.email||'')+'"><div class="form-actions"><button class="btn btn-primary" type="button" data-activate-citizen="'+id+'">Activar acceso ciudadano</button></div><p class="panel-hint" id="citizenActivationFeedback">El contribuyente puede entrar seleccionando V, E, J o Condominio y validar su identidad con correo y contraseña. La activación no altera las obligaciones ni los pagos.</p></div>'+
  (condo?'<div class="contributor-extra-head"><div><h3>Responsable / Administrador del condominio</h3><p>Contacto administrativo que representa al conjunto residencial ante SITMAUD. No modifica la razón social ni el RIF del contribuyente.</p></div></div>'+
  '<form id="condoResponsibleForm" data-person-id="'+id+'" class="contributor-responsible-form"><div class="form-grid">'+
  '<div class="field"><label>Nombre del administrador / Responsable</label><input name="responsible_name" autocomplete="name" placeholder="Nombre y apellido"></div>'+
@@ -117,6 +119,19 @@ document.addEventListener('submit',async event=>{
  }
 });
 document.addEventListener('click',async event=>{
+ const activate=event.target.closest('[data-activate-citizen]');
+ if(activate){
+  const id=activate.dataset.activateCitizen,email=document.getElementById('citizenActivationEmail')?.value.trim();
+  if(!email){toast('Indica el correo verificado registrado en el expediente.');return;}
+  activate.disabled=true;
+  const feedback=document.getElementById('citizenActivationFeedback');
+  const {data,error}=await imaudClient.rpc('activate_citizen_portal_account',{p_contributor_id:id,p_user_email:email});
+  activate.disabled=false;
+  if(error){if(feedback)feedback.textContent='No se pudo activar: '+error.message;toast('La activación fue rechazada. Verifica el correo y los permisos.');return;}
+  if(feedback)feedback.textContent='Acceso activado correctamente para el contrato '+data.contract_number+'.';
+  toast('Portal del Contribuyente activado.');
+  return;
+ }
  const btn=event.target.closest('[data-open-contributor-doc]');
  if(!btn)return;
  const d=(window.imaudProfileDocs||[]).find(x=>x.id===btn.dataset.openContributorDoc);

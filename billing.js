@@ -13,7 +13,7 @@ function listScreen(){
 }
 async function loadHistory(){
  const host=document.getElementById('billResults');if(!host)return;
- const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,contributor:contributors!demo_payments_contributor_id_fkey(kind,first_name,last_name,legal_name,contract_number)').order('paid_at',{ascending:false}).limit(200);
+ const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,proof_storage_path,contributor:contributors!demo_payments_contributor_id_fkey(kind,first_name,last_name,legal_name,contract_number)').order('paid_at',{ascending:false}).limit(200);
  if(!document.getElementById('billResults'))return;
  if(error){host.innerHTML='<div class="payment-debt-empty"><b>No se pudieron cargar los comprobantes.</b><span>'+E(error.message)+'</span></div>';return;}
  latest=data||[];paintHistory();
@@ -24,11 +24,11 @@ function paintHistory(){
  const rows=latest.filter(p=>[p.receipt_number,p.external_reference,p.contributor?.contract_number,contributorName(p.contributor||{})].join(' ').toLocaleLowerCase('es-VE').includes(q));
  if(!rows.length){host.innerHTML='<div class="payment-debt-empty"><b>'+(latest.length?'No hay coincidencias.':'Aún no se han registrado pagos de prueba.')+'</b><span>Los comprobantes aparecerán aquí después del pago.</span></div>';return;}
  host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Comprobante</th><th>Contribuyente</th><th>Contrato</th><th>Fecha</th><th>Monto pagado</th><th>Acciones</th></tr></thead><tbody>'+rows.map(p=>
-  '<tr><td><b>'+E(p.receipt_number)+'</b></td><td>'+E(contributorName(p.contributor||{}))+'</td><td>'+E(p.contributor?.contract_number||'—')+'</td><td>'+date(p.paid_at)+'</td><td><b>'+cash(p.amount)+'</b></td><td><div class="bill-actions"><button type="button" class="btn btn-light btn-sm" data-bill-view="'+E(p.id)+'">Ver</button><button type="button" class="btn btn-primary btn-sm" data-bill-print="'+E(p.id)+'">Imprimir</button></div></td></tr>'
+  '<tr><td><b>'+E(p.receipt_number)+'</b></td><td>'+E(contributorName(p.contributor||{}))+'</td><td>'+E(p.contributor?.contract_number||'—')+'</td><td>'+date(p.paid_at)+'</td><td><b>'+cash(p.amount)+'</b></td><td><div class="bill-actions"><button type="button" class="btn btn-light btn-sm" data-bill-view="'+E(p.id)+'">Ver</button><button type="button" class="btn btn-primary btn-sm" data-bill-print="'+E(p.id)+'">Imprimir</button>'+(p.proof_storage_path?'<button type="button" class="btn btn-light btn-sm" data-proof-payment-id="'+E(p.id)+'">Soporte</button>':'')+'</div></td></tr>'
  ).join('')+'</tbody></table></div>';
 }
 async function getRecord(id){
- const {data:payment,error:paymentError}=await imaudClient.from('demo_payments').select('id,receipt_number,contributor_id,amount,paid_at,payment_method,external_reference,bank_code').eq('id',id).single();
+ const {data:payment,error:paymentError}=await imaudClient.from('demo_payments').select('id,receipt_number,contributor_id,amount,paid_at,payment_method,external_reference,bank_code,proof_storage_path').eq('id',id).single();
  if(paymentError||!payment)throw Error(paymentError?.message||'Comprobante no encontrado');
  const [cp,alloc]=await Promise.all([
   imaudClient.from('contributors').select('id,kind,first_name,last_name,legal_name,identification_type,identification_number,contract_number,phone,email').eq('id',payment.contributor_id).single(),

@@ -8,10 +8,10 @@ function dashboard(){
   const metrics=[
     {key:'contributors_total',label:'Total de contribuyentes',icon:'♙',note:'Personas y organizaciones registradas'},
     {key:'properties_total',label:'Total de inmuebles',icon:'⌂',note:'Inmuebles activos registrados'},
-    {key:'payments_total',label:'Pagos registrados',icon:'▧',note:'Total histórico de operaciones'},
-    {key:'payments_today',label:'Pagos registrados hoy',icon:'◷',note:'Operaciones creadas durante el día'},
-    {key:'revenue_today',label:'Recaudación del día',icon:'↗',note:'Pagos confirmados hoy · hora local de Coro'},
-    {key:'revenue_total',label:'Recaudación total',icon:'▤',note:'Acumulado de pagos confirmados'},
+    {key:'payments_total',label:'Pagos DEMO registrados',icon:'▧',note:'Total histórico de pagos simulados guardados'},
+    {key:'payments_today',label:'Pagos DEMO de hoy',icon:'◷',note:'Fecha local de Coro'},
+    {key:'revenue_today',label:'Monto DEMO de hoy',icon:'↗',note:'Simulaciones, no ingresos reales'},
+    {key:'revenue_total',label:'Monto DEMO acumulado',icon:'▤',note:'Total histórico de simulaciones'},
     {key:'debts_pending',label:'Deudas pendientes',icon:'!',note:'Obligaciones pendientes o parcialmente pagadas'},
     {key:'certificates_total',label:'Certificados de solvencia emitidos',icon:'▣',note:'Indicador pendiente de habilitar el módulo'}
   ];
@@ -21,7 +21,8 @@ function dashboard(){
         <div class="kpi-top"><span>${m.label}</span><span class="kpi-icon">${m.icon}</span></div>
         <div class="kpi-value" data-metric-value="${m.key}">—</div>
         <div class="kpi-note" data-metric-note="${m.key}">${m.note}</div>
-      </article>`).join('')+'</div>';
+      </article>`).join('')+'</div>'+
+ '<section class="card dashboard-demo-history"><div class="dashboard-demo-title"><div><h3>Pagos recientes de prueba</h3><p>Movimientos registrados en SITMAUD · Los montos DEMO no representan dinero recaudado realmente.</p></div><button type="button" class="btn btn-light" data-go="facturacion">Ver comprobantes</button></div><div id="dashboardRecentPayments" class="dashboard-demo-table"><div class="contributors-loading">Consultando pagos de prueba…</div></div></section>';
 }
 function formatDashboardCount(value){
   return new Intl.NumberFormat('es-VE',{maximumFractionDigits:0}).format(Number(value||0));
@@ -39,30 +40,45 @@ function formatDashboardCurrencyMap(map){
   }).join(' · ');
 }
 async function loadDashboardMetrics(){
-  if(state.view!=='inicio'||!document.body.classList.contains('sitmaud-authenticated')) return;
-  const values=document.querySelectorAll('[data-metric-value]');
-  values.forEach(el=>{el.textContent='…';});
-  const {data,error}=await imaudClient.rpc('get_dashboard_metrics');
-  if(state.view!=='inicio') return;
-  if(error||!data){
-    values.forEach(el=>{el.textContent='No disponible';});
-    document.querySelectorAll('[data-metric-note]').forEach(el=>{el.textContent='No se pudo consultar la base de datos. Verifica los permisos del Dashboard.';});
-    console.error('SITMAUD dashboard metrics:',error);
-    return;
+ if(state.view!=='inicio'||!document.body.classList.contains('sitmaud-authenticated'))return;
+ document.querySelectorAll('[data-metric-value]').forEach(el=>el.textContent='…');
+ const [base,demo]=await Promise.all([imaudClient.rpc('get_dashboard_metrics'),imaudClient.rpc('get_demo_dashboard_metrics')]);
+ if(state.view!=='inicio')return;
+ for(const key of ['contributors_total','properties_total','debts_pending']){
+  const el=document.querySelector('[data-metric-value="'+key+'"]');
+  if(el)el.textContent=base.error||!base.data?'No disponible':formatDashboardCount(base.data[key]);
+ }
+ if(base.error)console.error('Indicadores generales SITMAUD:',base.error);
+ const cert=document.querySelector('[data-metric-value="certificates_total"]');
+ const certNote=document.querySelector('[data-metric-note="certificates_total"]');
+ if(cert)cert.textContent=base.data?.certificates_configured?formatDashboardCount(base.data.certificates_total):'Pendiente';
+ if(certNote)certNote.textContent=base.data?.certificates_configured?'Certificados emitidos':'El módulo de certificados aún no está habilitado';
+ const recent=document.getElementById('dashboardRecentPayments');
+ if(demo.error||!demo.data){
+  for(const key of ['payments_total','payments_today','revenue_today','revenue_total']){
+   const el=document.querySelector('[data-metric-value="'+key+'"]');if(el)el.textContent='No disponible';
   }
-  const countKeys=['contributors_total','properties_total','payments_total','payments_today','debts_pending'];
-  countKeys.forEach(key=>{
-    const el=document.querySelector('[data-metric-value="'+key+'"]');
-    if(el) el.textContent=formatDashboardCount(data[key]);
-  });
-  ['revenue_today','revenue_total'].forEach(key=>{
-    const el=document.querySelector('[data-metric-value="'+key+'"]');
-    if(el) el.textContent=formatDashboardCurrencyMap(data[key]);
-  });
-  const certificateValue=document.querySelector('[data-metric-value="certificates_total"]');
-  const certificateNote=document.querySelector('[data-metric-note="certificates_total"]');
-  if(certificateValue) certificateValue.textContent=data.certificates_configured?formatDashboardCount(data.certificates_total):'Pendiente';
-  if(certificateNote) certificateNote.textContent=data.certificates_configured?'Total histórico de certificados emitidos':'El módulo de certificados aún no está creado';
+  if(recent)recent.innerHTML='<div class="payment-debt-empty">No se pudieron consultar pagos DEMO. Verifica los permisos de pagos del usuario.</div>';
+  console.error('Indicadores DEMO SITMAUD:',demo.error);return;
+ }
+ const values=demo.data;
+ for(const key of ['payments_total','payments_today']){
+  const el=document.querySelector('[data-metric-value="'+key+'"]');if(el)el.textContent=formatDashboardCount(values[key]);
+ }
+ for(const key of ['revenue_total','revenue_today']){
+  const el=document.querySelector('[data-metric-value="'+key+'"]');if(el)el.textContent='Bs. '+formatDashboardMoney(values[key]);
+ }
+ const todayNote=document.querySelector('[data-metric-note="payments_today"]');
+ if(todayNote)todayNote.textContent='Hoy '+values.day_local+' · Coro';
+ if(!recent)return;
+ const rows=Array.isArray(values.recent)?values.recent:[];
+ if(!rows.length){recent.innerHTML='<div class="payment-debt-empty"><b>Aún no hay pagos DEMO.</b><span>Al registrar una simulación aparecerá aquí.</span></div>';return;}
+ const methods={tarjeta:'Punto de venta',efectivo:'Efectivo',pago_movil:'Pago móvil',transferencia:'Transferencia'};
+ recent.innerHTML='<div class="dashboard-demo-scroll"><table><thead><tr><th>Fecha</th><th>Comprobante</th><th>Contribuyente</th><th>Contrato</th><th>Medio</th><th>Monto DEMO</th><th>Acción</th></tr></thead><tbody>'+
+ rows.map(p=>{
+  const date=new Date(p.paid_at).toLocaleString('es-VE',{timeZone:'America/Caracas',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  return '<tr><td>'+escapeHTML(date)+'</td><td><strong>'+escapeHTML(p.receipt_number)+'</strong></td><td>'+escapeHTML(p.contributor_name||'—')+'</td><td>'+escapeHTML(p.contract_number||'—')+'</td><td>'+escapeHTML(methods[p.payment_method]||p.payment_method||'—')+'</td><td><strong>Bs. '+formatDashboardMoney(p.amount)+'</strong></td><td><button class="btn btn-light btn-sm" type="button" data-bill-view="'+escapeHTML(p.id)+'">Ver comprobante</button></td></tr>'
+ }).join('')+'</tbody></table></div>';
 }
 
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}

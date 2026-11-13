@@ -21,8 +21,7 @@ function dashboard(){
         <div class="kpi-top"><span>${m.label}</span><span class="kpi-icon">${m.icon}</span></div>
         <div class="kpi-value" data-metric-value="${m.key}">—</div>
         <div class="kpi-note" data-metric-note="${m.key}">${m.note}</div>
-      </article>`).join('')+'</div>'+
- '<section class="card dashboard-demo-history"><div class="dashboard-demo-title"><div><h3>Pagos recientes de prueba</h3><p>Movimientos registrados en SITMAUD · Los montos DEMO no representan dinero recaudado realmente.</p></div><button type="button" class="btn btn-light" data-go="facturacion">Ver comprobantes</button></div><div id="dashboardRecentPayments" class="dashboard-demo-table"><div class="contributors-loading">Consultando pagos de prueba…</div></div></section>';
+      </article>`).join('')+'</div>';
 }
 function formatDashboardCount(value){
   return new Intl.NumberFormat('es-VE',{maximumFractionDigits:0}).format(Number(value||0));
@@ -53,12 +52,10 @@ async function loadDashboardMetrics(){
  const certNote=document.querySelector('[data-metric-note="certificates_total"]');
  if(cert)cert.textContent=base.data?.certificates_configured?formatDashboardCount(base.data.certificates_total):'Pendiente';
  if(certNote)certNote.textContent=base.data?.certificates_configured?'Certificados emitidos':'El módulo de certificados aún no está habilitado';
- const recent=document.getElementById('dashboardRecentPayments');
  if(demo.error||!demo.data){
   for(const key of ['payments_total','payments_today','revenue_today','revenue_total']){
    const el=document.querySelector('[data-metric-value="'+key+'"]');if(el)el.textContent='No disponible';
   }
-  if(recent)recent.innerHTML='<div class="payment-debt-empty">No se pudieron consultar pagos DEMO. Verifica los permisos de pagos del usuario.</div>';
   console.error('Indicadores DEMO SITMAUD:',demo.error);return;
  }
  const values=demo.data;
@@ -70,15 +67,7 @@ async function loadDashboardMetrics(){
  }
  const todayNote=document.querySelector('[data-metric-note="payments_today"]');
  if(todayNote)todayNote.textContent='Hoy '+values.day_local+' · Coro';
- if(!recent)return;
- const rows=Array.isArray(values.recent)?values.recent:[];
- if(!rows.length){recent.innerHTML='<div class="payment-debt-empty"><b>Aún no hay pagos DEMO.</b><span>Al registrar una simulación aparecerá aquí.</span></div>';return;}
- const methods={tarjeta:'Punto de venta',efectivo:'Efectivo',pago_movil:'Pago móvil',transferencia:'Transferencia'};
- recent.innerHTML='<div class="dashboard-demo-scroll"><table><thead><tr><th>Fecha</th><th>Comprobante</th><th>Contribuyente</th><th>Contrato</th><th>Medio</th><th>Monto DEMO</th><th>Acción</th></tr></thead><tbody>'+
- rows.map(p=>{
-  const date=new Date(p.paid_at).toLocaleString('es-VE',{timeZone:'America/Caracas',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-  return '<tr><td>'+escapeHTML(date)+'</td><td><strong>'+escapeHTML(p.receipt_number)+'</strong></td><td>'+escapeHTML(p.contributor_name||'—')+'</td><td>'+escapeHTML(p.contract_number||'—')+'</td><td>'+escapeHTML(methods[p.payment_method]||p.payment_method||'—')+'</td><td><strong>Bs. '+formatDashboardMoney(p.amount)+'</strong></td><td><button class="btn btn-light btn-sm" type="button" data-bill-view="'+escapeHTML(p.id)+'">Ver comprobante</button></td></tr>'
- }).join('')+'</tbody></table></div>';
+
 }
 
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}

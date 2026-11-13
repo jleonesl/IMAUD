@@ -77,18 +77,57 @@ function contributorPaymentSummary(p){
  const confirmed=(p.payments||[]).filter(x=>x.status==='confirmed'&&x.paid_at).sort((a,b)=>new Date(b.paid_at)-new Date(a.paid_at));
  const last=confirmed[0]?.paid_at||null;
  const assessments=(p.properties||[]).flatMap(x=>x.assessments||[]);
- const hasDebt=assessments.some(x=>['pending','partially_paid'].includes(x.status));
- const status=hasDebt?'pending':last?'active':'inactive';
- return {status,lastPayment:last?new Intl.DateTimeFormat('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Caracas'}).format(new Date(last)):'—'};
+ const debt=assessments.some(x=>['pending','partially_paid'].includes(x.status));
+ return {administrative:p.status==='inactive'?'inactive':'active',debtStatus:debt?'pending':assessments.length?'paid':'none',lastPayment:last?new Intl.DateTimeFormat('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Caracas'}).format(new Date(last)):'—'};
 }
 function peopleTable(rows=state.people){
  if(!rows.length)return '<div class="contributors-empty"><b>No hay contribuyentes registrados</b><span>Utiliza «Nuevo contribuyente» para crear el primer expediente.</span></div>';
- return '<table><thead><tr><th>Contribuyente</th><th>Cédula / RIF</th><th>N.º de contrato</th><th>Tipo</th><th>Inmuebles</th><th>Correo</th><th>Estado</th><th>Último pago</th></tr></thead><tbody>'+rows.map(p=>{const count=(p.properties||[]).length;const summary=contributorPaymentSummary(p);const labels={active:'Activo',pending:'Pendiente',inactive:'Inactivo'};return '<tr><td><strong>'+escapeHTML(contributorName(p))+'</strong></td><td>'+escapeHTML((p.identification_type||'')+'-'+(p.identification_number||''))+'</td><td><strong>'+escapeHTML(p.contract_number||'—')+'</strong></td><td><span class="type-pill">'+escapeHTML(contributorType(p.kind))+'</span></td><td>'+count+'</td><td>'+escapeHTML(p.email||'—')+'</td><td><span class="status '+summary.status+'">'+labels[summary.status]+'</span></td><td>'+escapeHTML(summary.lastPayment)+'</td></tr>'}).join('')+'</tbody></table>';
+ return '<table><thead><tr><th>Contribuyente</th><th>Cédula / RIF</th><th>N.º de contrato</th><th>Tipo</th><th>Inmuebles</th><th>Correo</th><th>Estado</th><th>Cuenta</th><th>Último pago</th><th>Acciones</th></tr></thead><tbody>'+rows.map(p=>{
+  const summary=contributorPaymentSummary(p);
+  const debtLabel=summary.debtStatus==='pending'?'Con deuda':summary.debtStatus==='paid'?'Al día':'Sin liquidaciones';
+  return '<tr><td><strong>'+escapeHTML(contributorName(p))+'</strong></td><td>'+escapeHTML(p.identification_number||'—')+'</td><td><strong>'+escapeHTML(p.contract_number||'—')+'</strong></td><td><span class="type-pill">'+escapeHTML(contributorType(p.kind))+'</span></td><td>'+(p.properties||[]).length+'</td><td>'+escapeHTML(p.email||'—')+'</td><td><span class="status '+summary.administrative+'">'+(summary.administrative==='inactive'?'Inactivo':'Activo')+'</span></td><td><span class="status '+(summary.debtStatus==='pending'?'pending':'active')+'">'+debtLabel+'</span></td><td>'+escapeHTML(summary.lastPayment)+'</td><td><div class="property-row-actions"><button type="button" title="Ver contribuyente" data-contributor-action="view" data-contributor-id="'+p.id+'">◉</button><button type="button" title="Editar contribuyente" data-contributor-action="edit" data-contributor-id="'+p.id+'">✎</button><button type="button" title="Más opciones" data-contributor-action="more" data-contributor-id="'+p.id+'">⋮</button></div></td></tr>';
+ }).join('')+'</tbody></table>';
+}
+function contributorActionModal(person,mode='view'){
+ const view=mode==='view',name=contributorName(person),summary=contributorPaymentSummary(person);
+ const disabled=view?'disabled':'';
+ const field=(label,key,value,type='text')=>'<div class="field"><label>'+label+'</label><input type="'+type+'" name="'+key+'" value="'+escapeHTML(value||'')+'" '+disabled+'></div>';
+ return '<div id="contributorActionModal" class="contributor-modal-backdrop open"><section class="contributor-action-dialog" role="dialog" aria-modal="true"><header class="contributor-modal-head"><div><h2>'+(view?'Expediente del contribuyente':'Editar contribuyente')+'</h2><p>Contrato '+escapeHTML(person.contract_number||'—')+' · '+(summary.debtStatus==='pending'?'Con obligaciones pendientes':'Consulta administrativa')+'</p></div><button type="button" class="modal-close" data-contributor-action="close">×</button></header><form id="contributorActionForm"><div class="form-grid">'+
+ field('Nombre(s)','first_name',person.first_name)+field('Apellido(s)','last_name',person.last_name)+field('Razón social','legal_name',person.legal_name)+field('Tipo de identificación','identification_type',person.identification_type)+field('Cédula / RIF','identification_number',person.identification_number)+field('Correo','email',person.email,'email')+field('Teléfono','phone',person.phone)+field('Dirección de contacto','contact_address',person.contact_address)+
+ '</div><div class="contributor-action-summary"><span>Estado administrativo: <b>'+(person.status==='inactive'?'Inactivo':'Activo')+'</b></span><span>Cuenta: <b>'+(summary.debtStatus==='pending'?'Con deuda':summary.debtStatus==='paid'?'Al día':'Sin liquidaciones')+'</b></span></div><div class="form-actions"><button type="button" class="btn btn-light" data-contributor-action="close">Cerrar</button>'+(view?'<button type="button" class="btn btn-primary" data-contributor-action="edit" data-contributor-id="'+person.id+'">Editar</button>':'<button type="submit" class="btn btn-primary">Guardar cambios</button>')+'</div></form></section></div>';
+}
+function openContributorAction(id,mode){
+ const person=state.people.find(p=>p.id===id);if(!person)return;
+ document.getElementById('contributorActionModal')?.remove();
+ if(mode==='more'){
+  const action=window.prompt('Opciones del contribuyente:\n1 = Ver expediente\n2 = Editar\n3 = Desactivar / reactivar (sin borrar historial)','1');
+  if(action==='3'){toggleContributorActive(person);return}
+  if(action==='2')mode='edit';else if(action==='1')mode='view';else return;
+ }
+ document.body.insertAdjacentHTML('beforeend',contributorActionModal(person,mode));
+ document.getElementById('contributorActionForm').dataset.personId=id;
+ document.body.classList.add('modal-open');
+}
+function closeContributorAction(){document.getElementById('contributorActionModal')?.remove();document.body.classList.remove('modal-open')}
+async function saveContributorAction(form){
+ const id=form.dataset.personId,person=state.people.find(x=>x.id===id);if(!person)return;
+ const f=new FormData(form);const payload={first_name:String(f.get('first_name')||'').trim()||null,last_name:String(f.get('last_name')||'').trim()||null,legal_name:String(f.get('legal_name')||'').trim()||null,identification_type:String(f.get('identification_type')||'').trim(),identification_number:String(f.get('identification_number')||'').trim(),email:String(f.get('email')||'').trim()||null,phone:String(f.get('phone')||'').trim()||null,contact_address:String(f.get('contact_address')||'').trim()||null};
+ if(!payload.identification_number||!(person.kind==='juridico'?payload.legal_name:payload.first_name)){toast('Completa la identificación y el nombre del contribuyente.');return;}
+ const {data,error}=await imaudClient.from('contributors').update(payload).eq('id',id).select('id').single();
+ if(error){console.error(error);toast('No se pudo actualizar: '+error.message);return}
+ closeContributorAction();await loadContributors();toast('Contribuyente actualizado correctamente.');
+}
+async function toggleContributorActive(person){
+ const inactive=person.status!=='inactive';
+ if(!window.confirm((inactive?'¿Desactivar':'¿Reactivar')+' este contribuyente? No se eliminarán contratos, inmuebles, pagos ni deudas.'))return;
+ const {error}=await imaudClient.from('contributors').update({status:inactive?'inactive':'active'}).eq('id',person.id);
+ if(error){console.error(error);toast('No se pudo cambiar el estado: '+error.message);return;}
+ closeContributorAction();await loadContributors();toast('Estado administrativo actualizado sin borrar el historial.');
 }
 async function loadContributors(){
  const target=document.getElementById('peopleTable'); if(!target)return;
  target.innerHTML='<div class="contributors-loading">Consultando contribuyentes…</div>';
- const {data,error}=await imaudClient.from('contributors').select('id,contract_number,kind,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,created_at,properties(id,is_active,parish_name,sector_name,assessments(id,status)),payments(id,status,paid_at)').order('created_at',{ascending:false});
+ const {data,error}=await imaudClient.from('contributors').select('id,contract_number,kind,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,status,created_at,properties(id,is_active,parish_name,sector_name,assessments(id,status)),payments(id,status,paid_at)').order('created_at',{ascending:false});
  if(state.view!=='contribuyentes')return;
  if(error){console.error('SITMAUD contributors:',error);target.innerHTML='<div class="contributors-empty"><b>No se pudieron cargar los contribuyentes</b><span>Verifica que tu usuario tenga permiso de consulta y vuelve a intentarlo.</span></div>';return;}
  state.people=data||[];
@@ -108,7 +147,7 @@ function filterContributors(){
  const rows=state.people.filter(p=>{
   const text=[contributorName(p),p.identification_type,p.identification_number,p.rif,p.email].join(' ').toLowerCase();
   const summary=contributorPaymentSummary(p);
-  return (!q||text.includes(q))&&(!type||p.kind===type)&&(!status||summary.status===status)&&(!parish||p.contact_parish_name===parish);
+  return (!q||text.includes(q))&&(!type||p.kind===type)&&(!status|| (status==='pending'?summary.debtStatus==='pending':summary.administrative===status))&&(!parish||p.contact_parish_name===parish);
  });
  const target=document.getElementById('peopleTable');if(target)target.innerHTML=peopleTable(rows);
  const count=document.getElementById('contributorsCount');if(count)count.textContent='Mostrando '+rows.length+' de '+state.people.length;
@@ -513,6 +552,8 @@ function go(v){state.view=v;render();window.scrollTo(0,0)}
 document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-payment')openPaymentModal();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-org'||act==='new-staff')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
 document.addEventListener('click',e=>{const person=e.target.closest('[data-payment-person]');if(person){const found=state.paymentDebtors.find(p=>p.id===person.dataset.paymentPerson);if(found)openPaymentModal(found);return}const page=e.target.closest('[data-payment-page]');if(page){state.paymentPage=Number(page.dataset.paymentPage);const host=document.getElementById('paymentDebtorsTable');if(host)host.innerHTML=paymentDebtorTable();return}if(e.target.closest('#menuToggle'))$('#sidebar').classList.toggle('open')});
 function exportCSV(){const rows=[['Referencia','Contribuyente','Periodo','Importe demo','Fecha'],...state.payments.map(p=>[p.ref,p.person,p.period,p.amount,p.date])];const csv=rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='imaud-reporte-demostracion.csv';a.click();URL.revokeObjectURL(a.href);toast('CSV demostrativo descargado')}
+document.addEventListener('click',e=>{const action=e.target.closest('[data-contributor-action]');if(!action)return;if(action.dataset.contributorAction==='close')closeContributorAction();else openContributorAction(action.dataset.contributorId,action.dataset.contributorAction)});
+document.addEventListener('submit',e=>{if(e.target.id==='contributorActionForm'){e.preventDefault();saveContributorAction(e.target)}});
 document.addEventListener('click',e=>{const rowAction=e.target.closest('[data-property-action]');if(rowAction){const id=rowAction.dataset.propertyId;if(rowAction.dataset.propertyAction==='view')showPropertyDetails(id);else if(rowAction.dataset.propertyAction==='edit')openPropertyEdit(id);else showPropertyDetails(id);return}const page=e.target.closest('[data-property-page]');if(page){state.propertyPage=Number(page.dataset.propertyPage);renderPropertiesTable()}});
 document.addEventListener('submit',e=>{if(e.target.id==='editPropertyForm'){e.preventDefault();savePropertyEdit(e.target)}});
 document.addEventListener('submit',e=>{if(e.target.id==='standalonePropertyForm'){e.preventDefault();saveStandaloneProperty(e.target)}});

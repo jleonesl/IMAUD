@@ -444,7 +444,7 @@ async function loadOrganizations(){
 function payments(){
  return head('Recaudación y pagos','Listado de contribuyentes con obligaciones pendientes del servicio de aseo urbano y domiciliario.','<button class="btn btn-primary" data-action="new-payment">＋ Registrar pago</button>')+
  '<section class="card payment-debt-card"><div class="payment-list-head"><div><h3>Contribuyentes con deudas</h3><p>Personas y organizaciones con obligaciones pendientes o parcialmente pagadas.</p></div><span class="table-count" id="paymentDebtorCount">Consultando…</span></div><div class="payment-debt-toolbar"><input id="paymentDebtorSearch" class="search" placeholder="Buscar por cédula, contrato o contribuyente…"><select id="paymentDebtStatus" class="filter-select"><option value="all">Todas las deudas</option><option value="pending">Pendientes</option><option value="partial">Parcialmente pagadas</option></select></div><div id="paymentDebtorsTable" class="payment-debt-table"><div class="contributors-loading">Consultando obligaciones pendientes…</div></div></section>'+
- '<section class="card demo-payment-history"><div class="payment-list-head"><div><h3>Pagos registrados de prueba</h3><p>Comprobantes DEMO guardados. No constituyen pagos bancarios ni recibos fiscales.</p></div><span class="table-count" id="demoPaymentsCount">Consultando…</span></div><div id="demoPaymentsHistory" class="payment-debt-table"><div class="contributors-loading">Consultando historial de pruebas…</div></div></section>';
+ '<section class="card demo-payment-history"><div class="payment-list-head"><div><h3>Pagos registrados de prueba</h3><p>Comprobantes DEMO emitidos al registrar cada pago. Tesorería verifica la acreditación bancaria por separado.</p></div><span class="table-count" id="demoPaymentsCount">Consultando…</span></div><div id="demoPaymentsHistory" class="payment-debt-table"><div class="contributors-loading">Consultando historial de pruebas…</div></div></section>';
 }
 function assessmentBalance(assessment){
  const applied=(assessment.payment_allocations||[]).reduce((sum,allocation)=>{
@@ -496,19 +496,21 @@ async function loadPaymentDebtors(){
 }
 async function loadDemoPayments(){
  const host=document.getElementById('demoPaymentsHistory');if(!host)return;
- const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,bank_code,proof_storage_path,contributor:contributors!demo_payments_contributor_id_fkey(kind,first_name,last_name,legal_name,contract_number)').order('paid_at',{ascending:false}).limit(50);
+ const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,bank_code,proof_storage_path,treasury_status,treasury_checked_at,contributor:contributors!demo_payments_contributor_id_fkey(kind,first_name,last_name,legal_name,contract_number)').order('paid_at',{ascending:false}).limit(100);
  if(!document.getElementById('demoPaymentsHistory'))return;
  const count=document.getElementById('demoPaymentsCount');
  if(error){console.error('Demo payments history:',error);host.innerHTML='<div class="payment-debt-empty">No se pudo cargar el historial. Comprueba los permisos del usuario.</div>';if(count)count.textContent='No disponible';return;}
  const rows=data||[];
  if(count)count.textContent=rows.length+' registro(s) de prueba';
  if(!rows.length){host.innerHTML='<div class="payment-debt-empty"><b>Aún no hay pagos de prueba registrados.</b><span>Una vez guardes una simulación aparecerá aquí su comprobante.</span></div>';return;}
- host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Comprobante DEMO</th><th>Contribuyente</th><th>Contrato</th><th>Fecha</th><th>Medio</th><th>Referencia</th><th>Monto</th><th>Soporte</th></tr></thead><tbody>'+rows.map(p=>{
+ host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Comprobante DEMO</th><th>Contribuyente</th><th>Contrato</th><th>Fecha</th><th>Medio</th><th>Referencia</th><th>Monto</th><th>Soporte</th><th>Tesorería</th></tr></thead><tbody>'+rows.map(p=>{
   const c=p.contributor||{};
   const method=({tarjeta:'Punto de venta',efectivo:'Efectivo',transferencia:'Transferencia',pago_movil:'Pago móvil'})[p.payment_method]||p.payment_method;
   const date=new Date(p.paid_at).toLocaleDateString('es-VE',{timeZone:'America/Caracas'});
   const bank=p.bank_code?' · '+p.bank_code:'';
-  return '<tr><td><strong>'+escapeHTML(p.receipt_number)+'</strong></td><td>'+escapeHTML(contributorName(c))+'</td><td>'+escapeHTML(c.contract_number||'—')+'</td><td>'+escapeHTML(date)+'</td><td>'+escapeHTML(method+bank)+'</td><td>'+escapeHTML(p.external_reference||'—')+'</td><td><b>Bs. '+money(Number(p.amount))+'</b></td><td>'+(p.proof_storage_path?'<button type="button" class="btn btn-light btn-sm" data-proof-payment-id="'+escapeHTML(p.id)+'">Ver adjunto</button>':'<span class="payment-proof-empty">—</span>')+'</td></tr>';
+  const status=p.treasury_status||'pending';
+  const statusText={pending:'Por validar',validated:'Validado',incident:'En incidencia',reversed:'Revertido'}[status]||'Por validar';
+  return '<tr><td><strong>'+escapeHTML(p.receipt_number)+'</strong></td><td>'+escapeHTML(contributorName(c))+'</td><td>'+escapeHTML(c.contract_number||'—')+'</td><td>'+escapeHTML(date)+'</td><td>'+escapeHTML(method+bank)+'</td><td>'+escapeHTML(p.external_reference||'—')+'</td><td><b>Bs. '+money(Number(p.amount))+'</b></td><td>'+(p.proof_storage_path?'<button type="button" class="btn btn-light btn-sm" data-proof-payment-id="'+escapeHTML(p.id)+'">Ver adjunto</button>':'<span class="payment-proof-empty">—</span>')+'</td><td><div class="treasury-cell"><span class="treasury-badge treasury-'+escapeHTML(status)+'">'+statusText+'</span><button type="button" class="btn btn-light btn-sm" data-treasury-review="'+escapeHTML(p.id)+'">Ver / Validar</button></div></td></tr>';
  }).join('')+'</tbody></table></div>';
 }
 function paymentModal(){

@@ -498,6 +498,7 @@ function ordinance(){
  '<section class="card udc-panel"><div class="udc-panel-head"><div><div class="eyebrow">UNIDAD DE CAMBIO DINÁMICO · UDC</div><h2 id="udcCurrencyName">Consultando tasa BCV…</h2><p>Moneda de mayor valor entre las tasas oficiales publicadas por el Banco Central de Venezuela.</p></div><button class="btn btn-primary" data-action="sync-udc" id="syncUdcButton">↻ Actualizar tasa</button></div><div id="udcRateContent" class="udc-rate-content"><div class="udc-rate-loading">Consultando el valor vigente…</div></div><div class="udc-source-note">Fuente de datos: BCV · Sincronización automática diaria a las 6:30 p. m. (hora de Venezuela). La consulta conserva la última tasa oficial cuando el BCV no publica una nueva.</div></section>'+
  '<section class="card udc-tariffs"><div class="panel-head"><h3>Coeficientes de la ordenanza</h3><span class="status">Cálculo en UDC</span></div><p class="udc-formula">Monto mensual = coeficiente × valor vigente de la UDC</p><div class="udc-tariff-grid"><article><span>Tipo I</span><strong>3 UDC</strong><small id="udcType1">—</small></article><article><span>Tipo II</span><strong>1,5 UDC</strong><small id="udcType2">—</small></article><article><span>Tipo III</span><strong>0,5 UDC</strong><small id="udcType3">—</small></article></div><p class="udc-source-note">Cada liquidación debe guardar la tasa, moneda, fecha de vigencia y coeficiente utilizados. Los cambios diarios de la UDC no modificarán liquidaciones ya emitidas.</p></section>'+
  '<section class="card udc-sector-card"><div class="panel-head"><h3>Consultar tarifa residencial por sector</h3><span class="status pending">Vista previa · sin generar deuda</span></div><p class="udc-sector-intro">Selecciona una parroquia y un sector para consultar su categoría residencial y el valor calculado con la UDC registrada.</p><div class="udc-sector-selectors"><div class="field"><label for="udcParishSelect">Parroquia</label><select id="udcParishSelect"><option value="">Cargando parroquias…</option></select></div><div class="field"><label for="udcSectorSelect">Sector</label><select id="udcSectorSelect" disabled><option value="">Seleccione primero la parroquia</option></select></div></div></section>'+
+  '<section class="card udc-sector-correction"><div class="panel-head"><h3>Corrección excepcional de la categoría de un sector</h3><span class="status pending">Solo intendente</span></div><p>Cuando todo un sector esté mal clasificado, el intendente podrá cambiar su categoría para las próximas obligaciones. No modifica deudas anteriores ni excepciones particulares de inmuebles.</p><form id="sectorCorrectionForm"><div class="udc-correction-grid"><div class="field"><label>Parroquia</label><select id="correctionParish" required><option value="">Seleccione parroquia</option></select></div><div class="field"><label>Sector</label><select id="correctionSector" required disabled><option value="">Seleccione parroquia primero</option></select></div><div class="field"><label>Clasificación nueva</label><select id="correctionTypology" required><option value="">Seleccione clasificación</option><option value="TIPO I">Tipo I</option><option value="TIPO II">Tipo II</option><option value="TIPO III">Tipo III</option></select></div><div class="field"><label>Motivo y respaldo de la corrección</label><input id="correctionReason" minlength="10" placeholder="Explique la clasificación correcta" required></div></div><div id="correctionCurrent" class="udc-correction-note">Elige el sector para ver su clasificación actual.</div><div class="form-actions"><button class="btn btn-primary" type="submit" id="correctionSubmit">Guardar corrección del sector</button></div></form></section>'+
   '<div class="grid two-col"><div class="card panel"><div class="panel-head"><h3>Normativa municipal</h3><span class="status pending">Por documentar</span></div><p style="font-size:11px;color:#748695;line-height:1.7">Vincular el texto oficial de la ordenanza y sus reformas para validar el alcance jurídico de los coeficientes.</p></div><div class="card panel"><div class="panel-head"><h3>Historial de UDC</h3><span class="status">Registro diario</span></div><div id="udcHistory">Cargando histórico…</div></div></div>';
 }
 async function loadUdcCatalog(){
@@ -510,6 +511,7 @@ async function loadUdcCatalog(){
  state.parishes=parishes.data||[];
  state.sectors=sectors.data||[];
  parishSelect.innerHTML='<option value="">Seleccione parroquia</option>'+state.parishes.map(p=>'<option value="'+escapeHTML(p.id)+'">'+escapeHTML(p.name)+'</option>').join('');
+ const correctionParish=document.getElementById('correctionParish');if(correctionParish)correctionParish.innerHTML=parishSelect.innerHTML;
 }
 function updateUdcSectorOptions(){
  const parish=document.getElementById('udcParishSelect'),sector=document.getElementById('udcSectorSelect');if(!parish||!sector)return;
@@ -531,6 +533,37 @@ async function showUdcSectorPreview(selectId){
  const item=data[0];const value=new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(item.amount_bs));
  const coef=new Intl.NumberFormat('es-VE',{maximumFractionDigits:2}).format(Number(item.coefficient));
  preview.innerHTML='<strong>'+escapeHTML(item.typology_code)+' · '+coef+' UDC</strong><span>Tarifa mensual referencial: <b>Bs. '+value+'</b></span><small>UDC '+escapeHTML(item.udc_currency_code)+' · vigencia '+escapeHTML(item.udc_effective_date)+' · '+(item.tariff_approved?'Tarifa aprobada':'Pendiente de validar la ordenanza')+'</small>';
+}
+function updateCorrectionSectors(){
+ const p=document.getElementById('correctionParish'),se=document.getElementById('correctionSector');
+ if(!p||!se)return;
+ const rows=state.sectors.filter(s=>s.parish_id===p.value);
+ se.disabled=!rows.length;
+ se.innerHTML='<option value="">Seleccione sector</option>'+rows.map(x=>'<option value="'+escapeHTML(x.id)+'">'+escapeHTML(x.name)+'</option>').join('');
+ document.getElementById('correctionCurrent').textContent='Elige el sector para ver su clasificación actual.';
+}
+function showCorrectionCurrent(){
+ const id=document.getElementById('correctionSector')?.value,sector=state.sectors.find(s=>s.id===id);
+ const current=document.getElementById('correctionCurrent');
+ if(current)current.textContent=sector?'Clasificación vigente del sector: '+(sector.default_typology||'No asignada'):'Elige el sector para ver su clasificación actual.';
+ if(sector)document.getElementById('correctionTypology').value=sector.default_typology||'';
+}
+async function saveSectorCorrection(form){
+ const sectorId=document.getElementById('correctionSector')?.value,
+ typology=document.getElementById('correctionTypology')?.value,
+ reason=document.getElementById('correctionReason')?.value.trim();
+ if(!sectorId||!typology||!reason||reason.length<10){toast('Selecciona sector, categoría y justificación.');return;}
+ const sector=state.sectors.find(s=>s.id===sectorId);
+ if(!window.confirm('¿Cambiar la clasificación de '+(sector?.name||'este sector')+' de '+(sector?.default_typology||'—')+' a '+typology+'? Solo afectará las futuras liquidaciones.'))return;
+ const btn=document.getElementById('correctionSubmit');btn.disabled=true;btn.textContent='Guardando…';
+ const {data,error}=await imaudClient.rpc('correct_sector_typology',{p_sector_id:sectorId,p_new_typology:typology,p_reason:reason});
+ btn.disabled=false;btn.textContent='Guardar corrección del sector';
+ if(error){console.error('Sector correction:',error);toast('No se pudo corregir: '+error.message);return;}
+ if(sector)sector.default_typology=typology;
+ document.getElementById('correctionReason').value='';
+ showCorrectionCurrent();
+ await showUdcSectorPreview('udcSectorSelect');
+ toast('Sector corregido y cambio registrado en auditoría.');
 }
 async function loadUdcRate(){
  const host=document.getElementById('udcRateContent');if(!host)return;
@@ -564,6 +597,7 @@ function exportCSV(){const rows=[['Referencia','Contribuyente','Periodo','Import
 document.addEventListener('click',e=>{const action=e.target.closest('[data-contributor-action]');if(!action)return;if(action.dataset.contributorAction==='close')closeContributorAction();else openContributorAction(action.dataset.contributorId,action.dataset.contributorAction)});
 document.addEventListener('submit',e=>{if(e.target.id==='contributorActionForm'){e.preventDefault();saveContributorAction(e.target)}});
 document.addEventListener('click',e=>{const rowAction=e.target.closest('[data-property-action]');if(rowAction){const id=rowAction.dataset.propertyId;if(rowAction.dataset.propertyAction==='view')showPropertyDetails(id);else if(rowAction.dataset.propertyAction==='edit')openPropertyEdit(id);else showPropertyDetails(id);return}const page=e.target.closest('[data-property-page]');if(page){state.propertyPage=Number(page.dataset.propertyPage);renderPropertiesTable()}});
+document.addEventListener('submit',e=>{if(e.target.id==='sectorCorrectionForm'){e.preventDefault();saveSectorCorrection(e.target)}});
 document.addEventListener('submit',e=>{if(e.target.id==='editPropertyForm'){e.preventDefault();savePropertyEdit(e.target)}});
 document.addEventListener('submit',e=>{if(e.target.id==='standalonePropertyForm'){e.preventDefault();saveStandaloneProperty(e.target)}});
 document.addEventListener('submit',e=>{if(e.target.id==='personForm'){e.preventDefault();saveContributor(e.target)}if(e.target.id==='propertyForm'){e.preventDefault();saveProperty(e.target)}if(e.target.id==='paymentLookupForm'){e.preventDefault();findPaymentContributor(e.target)}if(e.target.id==='paymentRegisterForm'){e.preventDefault();const selected=[...document.querySelectorAll('.payment-assessment-check:checked')];if(!selected.length){toast('Selecciona al menos una obligación.');return;}toast('Simulación completada. No se guardó ningún pago real.');closePaymentModal()}});
@@ -574,7 +608,7 @@ document.addEventListener('change',e=>{
  if(e.target.id==='propertyParishSelect')updateSectorOptions('propertyParishSelect','propertySectorSelect',false);
  if(e.target.id==='standaloneParish')updateSectorOptions('standaloneParish','standaloneSector',false);
  if(e.target.id==='editPropertyParish')updateSectorOptions('editPropertyParish','editPropertySector',false); if(e.target.id==='editPropertySector'){const sect=state.sectors.find(x=>x.id===e.target.value);const field=document.getElementById('propertySectorTypology');if(field)field.value=sect?.default_typology||'Sin clasificación';}
- if(e.target.id==='udcParishSelect')updateUdcSectorOptions();
+ if(e.target.id==='udcParishSelect')updateUdcSectorOptions();if(e.target.id==='correctionParish')updateCorrectionSectors();if(e.target.id==='correctionSector')showCorrectionCurrent();
  if(['udcSectorSelect','propertySectorSelect','standaloneSector','editPropertySector'].includes(e.target.id))showUdcSectorPreview(e.target.id);
  if(['propertyParishFilter','propertySectorFilter','propertyStatusFilter'].includes(e.target.id)){state.propertyPage=1;renderPropertiesTable()}
 });

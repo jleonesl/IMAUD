@@ -520,7 +520,7 @@ function renderPaymentContributor(person){
  const properties=[...new Map((person.properties||[]).map(p=>[p.id,p])).values()];
  const propertyInfo=properties.map(p=>'<div class="payment-property-item"><b>'+escapeHTML(p.is_consolidated_master?'Cuenta matriz de condominio · '+(p.consolidated_units||0)+' viviendas':p.address||'Dirección no registrada')+'</b><small>'+escapeHTML(p.is_consolidated_master?'Cobranza consolidada por cuenta jurídica':(p.property_type||'Inmueble')+' · '+(p.property_use||'Uso no especificado'))+'</small></div>').join('');
  result.hidden=false;
- result.innerHTML='<section class="payment-person-card"><div class="payment-person-avatar">♙</div><div class="payment-person-main"><h3>'+escapeHTML(contributorName(person))+'</h3><p>Cédula / RIF: <b>'+escapeHTML(identification)+'</b> <span>·</span> Contrato: <b>'+escapeHTML(person.contract_number||'—')+'</b></p></div><span class="status">Contribuyente localizado</span></section><section class="payment-property-section"><h3>'+(person.service_account_type==='condominio'?'Cuenta matriz y viviendas cubiertas':'Inmueble(s) asociado(s)')+'</h3>'+propertyInfo+'</section><section class="payment-obligations"><div class="payment-obligations-heading"><h3>Obligaciones pendientes / períodos a pagar</h3><span>'+debts.length+' período(s)</span></div>'+(debts.length?'<div class="payment-assessment-scroll"><table><thead><tr><th></th><th>Cuenta / Inmueble</th><th>Período</th><th>Concepto</th><th>Saldo pendiente</th></tr></thead><tbody>'+debts.map((debt,index)=>'<tr><td><input type="checkbox" class="payment-assessment-check" data-assessment-index="'+index+'" checked></td><td>'+escapeHTML(debt.propertyAddress||'—')+'</td><td>'+escapeHTML(debt.periodStart||'—')+' – '+escapeHTML(debt.periodEnd||'—')+'</td><td>Servicio de aseo urbano y domiciliario</td><td><b>Bs. '+money(debt.balance)+'</b></td></tr>').join('')+'</tbody></table></div>':'<div class="payment-debt-empty"><b>Este contribuyente no tiene obligaciones pendientes.</b></div>')+'</section><section class="payment-total-row"><div><span>Obligaciones seleccionadas</span><b id="paymentSelectedCount">'+debts.length+'</b></div><div><span>Total a cancelar</span><strong id="paymentSelectedTotal">Bs. '+money(debts.reduce((sum,d)=>sum+d.balance,0))+'</strong></div></section>'+(debts.length?'<form id="paymentRegisterForm" class="payment-register-form"><div class="payment-register-fields"><div class="field"><label for="paymentMethod">Método de pago *</label><select id="paymentMethod" name="method" required><option value="">Seleccionar método</option><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="pago_movil">Pago móvil</option><option value="tarjeta">Tarjeta / Punto de venta</option></select></div><div class="field"><label for="paymentReference">Referencia / N.º de operación *</label><input id="paymentReference" name="reference" placeholder="Número que aparece en el comprobante" required autocomplete="off"></div><div id="paymentBankField" class="field full payment-bank-field" hidden><label for="paymentBankSearch">Banco emisor de la tarjeta *</label><div class="payment-bank-combobox"><div class="payment-bank-input-row"><input type="search" id="paymentBankSearch" placeholder="Escribe o despliega la lista de bancos" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="paymentBankResults"><button type="button" class="payment-bank-toggle" id="paymentBankToggle" title="Mostrar todos los bancos" aria-label="Mostrar todos los bancos" aria-controls="paymentBankResults" aria-expanded="false">⌄</button></div><input type="hidden" id="paymentBankCode" name="bank_code"><div id="paymentBankResults" class="payment-bank-results" role="listbox" hidden></div></div><small>Selecciona un resultado de la lista. Catálogo importado del Excel de prueba.</small></div></div><div class="payment-modal-actions"><button type="button" class="btn btn-light" data-action="close-payment-modal">Cancelar</button><button type="submit" class="btn btn-primary" id="paymentRegisterButton">Registrar pago de prueba</button></div><p class="payment-demo-note">Entorno de pruebas: guarda el pago simulado, actualiza el estado de cuenta y emite comprobante DEMO; no mueve dinero real.</p></form>':'');
+ result.innerHTML='<section class="payment-person-card"><div class="payment-person-avatar">♙</div><div class="payment-person-main"><h3>'+escapeHTML(contributorName(person))+'</h3><p>Cédula / RIF: <b>'+escapeHTML(identification)+'</b> <span>·</span> Contrato: <b>'+escapeHTML(person.contract_number||'—')+'</b></p></div><span class="status">Contribuyente localizado</span></section><section class="payment-property-section"><h3>'+(person.service_account_type==='condominio'?'Cuenta matriz y viviendas cubiertas':'Inmueble(s) asociado(s)')+'</h3>'+propertyInfo+'</section><section class="payment-obligations"><div class="payment-obligations-heading"><h3>Obligaciones pendientes / períodos a pagar</h3><span>'+debts.length+' período(s)</span></div>'+(debts.length?'<div class="payment-assessment-scroll"><table><thead><tr><th></th><th>Cuenta / Inmueble</th><th>Período</th><th>Concepto</th><th>Saldo pendiente</th></tr></thead><tbody>'+debts.map((debt,index)=>'<tr><td><input type="checkbox" class="payment-assessment-check" data-assessment-index="'+index+'" checked></td><td>'+escapeHTML(debt.propertyAddress||'—')+'</td><td>'+escapeHTML(debt.periodStart||'—')+' – '+escapeHTML(debt.periodEnd||'—')+'</td><td>Servicio de aseo urbano y domiciliario</td><td><b>Bs. '+money(debt.balance)+'</b></td></tr>').join('')+'</tbody></table></div>':'<div class="payment-debt-empty"><b>Este contribuyente no tiene obligaciones pendientes.</b></div>')+'</section><section class="payment-total-row"><div><span>Obligaciones seleccionadas</span><b id="paymentSelectedCount">'+debts.length+'</b></div><div><span>Total a cancelar</span><strong id="paymentSelectedTotal">Bs. '+money(debts.reduce((sum,d)=>sum+d.balance,0))+'</strong></div></section>'+(debts.length?'<form id="paymentRegisterForm" class="payment-register-form"><div class="payment-register-fields"><div class="field"><label for="paymentMethod">Método de pago *</label><select id="paymentMethod" name="method" required><option value="">Seleccionar método</option><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia</option><option value="pago_movil">Pago móvil</option><option value="tarjeta">Tarjeta / Punto de venta</option></select></div><div class="field"><label for="paymentReference">Referencia / N.º de operación *</label><input id="paymentReference" name="reference" placeholder="Número que aparece en el comprobante" required autocomplete="off"></div><div id="paymentBankField" class="field full payment-bank-field" hidden><label for="paymentBankSearch">Banco emisor de la tarjeta *</label><div class="payment-bank-combobox"><div class="payment-bank-input-row"><input type="search" id="paymentBankSearch" placeholder="Escribe o despliega la lista de bancos" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="paymentBankResults"><button type="button" class="payment-bank-toggle" id="paymentBankToggle" title="Mostrar todos los bancos" aria-label="Mostrar todos los bancos" aria-controls="paymentBankResults" aria-expanded="false">⌄</button></div><input type="hidden" id="paymentBankCode" name="bank_code"><div id="paymentBankResults" class="payment-bank-results" role="listbox" hidden></div></div><small>Selecciona un resultado de la lista. Catálogo importado del Excel de prueba.</small></div><div class="field full payment-proof-field" id="paymentProofField" hidden><label for="paymentProofFile">Comprobante bancario *</label><input id="paymentProofFile" name="payment_proof" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"><small>Obligatorio para transferencia o pago móvil. Imagen o PDF, máximo 10 MB. Se almacenará de forma privada junto al pago.</small><div id="paymentProofSelected" class="payment-proof-selected"></div></div></div><div class="payment-modal-actions"><button type="button" class="btn btn-light" data-action="close-payment-modal">Cancelar</button><button type="submit" class="btn btn-primary" id="paymentRegisterButton">Registrar pago de prueba</button></div><p class="payment-demo-note">Entorno de pruebas: guarda el pago simulado, actualiza el estado de cuenta y emite comprobante DEMO; no mueve dinero real.</p></form>':'');
  loadPaymentBankCatalog();
 }
 async function loadPaymentBankCatalog(){
@@ -557,7 +557,7 @@ function updatePaymentMethodFields(){
  const needsBank=method==='tarjeta';
  field.hidden=!needsBank;bank.required=needsBank;
  if(!needsBank){bank.value='';code.value='';const list=document.getElementById('paymentBankResults');if(list)list.hidden=true;bank.setAttribute('aria-expanded','false')}
- reference.required=method!=='efectivo';reference.placeholder=needsBank?'Referencia que imprime el punto de venta':'Referencia / N.º de operación';
+ reference.required=method!=='efectivo';reference.placeholder=needsBank?'Referencia que imprime el punto de venta':'Referencia / N.º de operación';const proofField=document.getElementById('paymentProofField'),proof=document.getElementById('paymentProofFile');const needsProof=method==='transferencia'||method==='pago_movil';if(proofField)proofField.hidden=!needsProof;if(proof)proof.required=needsProof;
 }
 async function findPaymentContributor(form){
  const button=document.getElementById('paymentLookupButton'),message=document.getElementById('paymentLookupMessage'),result=document.getElementById('paymentContributorResult');
@@ -593,21 +593,46 @@ async function saveDemoPayment(form){
  if(!method){toast('Selecciona un método de pago.');return;}
  if(method!=='efectivo'&&!reference){toast('Debes introducir la referencia del comprobante.');return;}
  if(method==='tarjeta'&&!bankCode){toast('Selecciona el banco de la tarjeta.');return;}
+ const attachment=document.getElementById('paymentProofFile')?.files?.[0]||null;
+ const needsProof=method==='transferencia'||method==='pago_movil';
+ if(needsProof&&!attachment){toast('Para transferencia o pago móvil debes cargar el comprobante bancario.');document.getElementById('paymentProofFile')?.focus();return;}
+ const mimeToExt={'application/pdf':'pdf','image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+ if(attachment&&(!mimeToExt[attachment.type]||attachment.size<1||attachment.size>10485760)){toast('Comprobante inválido: PDF, JPG, PNG o WEBP, hasta 10 MB.');return;}
  const assessmentIds=selected.map(c=>state.currentPaymentAssessments[Number(c.dataset.assessmentIndex)]?.id).filter(Boolean);
  const button=document.getElementById('paymentRegisterButton');
  if(!button)return;
- button.disabled=true;button.textContent='Guardando pago de prueba…';
- const {data,error}=await imaudClient.rpc('register_demo_payment',{
-  p_contributor_id:person.id,p_assessment_ids:assessmentIds,p_method:method,
-  p_reference:reference,p_bank_code:bankCode
- });
- button.disabled=false;button.textContent='Registrar pago de prueba';
- if(error){console.error('Payment simulation save:',error);toast('No se pudo registrar el pago: '+error.message);return;}
- const saved=data?.[0];
- if(!saved?.receipt_number){toast('No se recibió la confirmación del pago. Consulta el historial.');return;}
- closePaymentModal();
- await Promise.all([loadPaymentDebtors(),loadDemoPayments()]);
- showDemoReceipt(saved,person,method,reference,bankCode);
+ button.disabled=true;button.textContent='Registrando pago de prueba…';
+ let uploadedPath=null;
+ try{
+  if(attachment){
+   button.textContent='Cargando comprobante bancario…';
+   uploadedPath=person.id+'/'+crypto.randomUUID()+'.'+mimeToExt[attachment.type];
+   const {error:upError}=await imaudClient.storage.from('imaud-payment-proofs').upload(uploadedPath,attachment,{upsert:false,contentType:attachment.type,cacheControl:'3600'});
+   if(upError)throw upError;
+  }
+  button.textContent='Guardando pago de prueba…';
+  const {data,error}=await imaudClient.rpc('register_demo_payment_with_proof',{
+   p_contributor_id:person.id,p_assessment_ids:assessmentIds,p_method:method,
+   p_reference:reference,p_bank_code:bankCode,p_proof_storage_path:uploadedPath,
+   p_proof_original_name:attachment?attachment.name.slice(0,255):null
+  });
+  if(error)throw error;
+  const saved=data?.[0];
+  if(!saved?.receipt_number)throw Error('No se recibió la confirmación del pago. Consulta el historial antes de repetir.');
+  closePaymentModal();
+  await Promise.all([loadPaymentDebtors(),loadDemoPayments()]);
+  showDemoReceipt(saved,person,method,reference,bankCode);
+ }catch(error){
+  console.error('SITMAUD DEMO payment:',error);
+  toast('No se pudo registrar el pago: '+(error.message||'Error de operación'));
+  // El archivo subido que no quedó asociado al pago se puede borrar.
+  // Nunca borrar archivos ya vinculados a comprobantes registrados.
+  if(uploadedPath){
+   try{await imaudClient.storage.from('imaud-payment-proofs').remove([uploadedPath]);}catch(e){console.warn('Limpieza de comprobante:',e);}
+  }
+ }finally{
+  if(button.isConnected){button.disabled=false;button.textContent='Registrar pago de prueba';}
+ }
 }
 function showDemoReceipt(payment,person,method,reference,bankCode){
  const bank=(state.paymentBankCatalog||[]).find(x=>x.code===bankCode);

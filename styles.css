@@ -696,3 +696,25 @@ body.modal-open{overflow:hidden}
 .condo-directory-scroll td b{color:#174668}
 .condo-directory-scroll td small{display:block;color:#8197a5;margin-top:4px;font-size:9px}
 .condo-directory-scroll tbody tr:last-child td{border-bottom:0}
+
+/* Expediente documental privado y contacto responsable de condominio */
+.contributor-action-dialog{max-height:calc(100vh - 55px);overflow-y:auto}
+.contributor-doc-section{padding:18px 20px 23px;border-top:1px solid #e0e9ef;display:grid;gap:15px}
+.contributor-extra-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.contributor-extra-head h3{font:800 15px Manrope,sans-serif;color:#123f61;margin:0 0 5px}
+.contributor-extra-head p{font-size:11px;color:#6d8496;margin:0;line-height:1.55}
+.contributor-doc-count{font-size:10px;color:#3e7389;background:#e7f2f5;border-radius:30px;padding:7px 12px;white-space:nowrap}
+.contributor-responsible-form{padding:14px;border:1px solid #e0eaf0;border-radius:10px;background:#f8fbfd}
+.contributor-responsible-form .form-actions{margin-top:12px}
+.contributor-doc-upload{border:1px dashed #bacfdd;padding:15px;border-radius:10px;background:#f9fbfd}
+.contributor-doc-upload input[type=file]{height:auto;padding:9px;line-height:1.45;max-width:100%}
+.contributor-doc-bottom{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:13px}
+.contributor-doc-bottom small{font-size:10px;color:#788e9e;line-height:1.55}
+.contributor-doc-list{display:grid;gap:8px}
+.contributor-doc-empty{background:#f7fafc;color:#7990a0;border:1px solid #e0e9ee;border-radius:8px;padding:14px;font-size:11px}
+.contributor-doc-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid #e3ebf0;border-radius:9px;background:#fff}
+.contributor-doc-icon{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;background:#e5f2f5;border-radius:8px;color:#22788c;font-size:17px}
+.contributor-doc-meta{min-width:0;flex:1;display:grid;gap:3px}
+.contributor-doc-meta b{font-size:11px;color:#174464}
+.contributor-doc-meta span,.contributor-doc-meta small{font-size:10px;color:#7a92a3;overflow-wrap:anywhere}
+@media(max-width:650px){.contributor-extra-head,.contributor-doc-bottom{flex-direction:column;align-items:flex-start}.contributor-doc-item{flex-wrap:wrap}.contributor-doc-item .btn{width:100%}}

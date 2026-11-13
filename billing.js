@@ -9,7 +9,7 @@ let latest=[];
 function listScreen(){
  return head('Facturación','Historial de comprobantes generados a partir de pagos de prueba.')+
  '<div class="notice">COMPROBANTE DEMO · NO FISCAL. Los documentos no sustituyen facturas fiscales autorizadas.</div>'+
- '<section class="card bill-history"><div class="panel-head"><div><h3>Comprobantes de pago</h3><p>Selecciona un comprobante para imprimirlo en media carta horizontal (21,59 × 13,97 cm).</p></div><span class="status">Media carta</span></div><input id="billSearch" class="search" placeholder="Buscar por contribuyente, contrato, referencia o comprobante" aria-label="Buscar comprobantes"><div id="billResults"><div class="contributors-loading">Consultando historial…</div></div></section>';
+ '<section class="card bill-history"><div class="panel-head"><div><h3>Comprobantes de pago</h3><p>Imprime cada comprobante en hoja carta vertical; la factura ocupa solamente la mitad superior.</p></div><span class="status">Media carta</span></div><input id="billSearch" class="search" placeholder="Buscar por contribuyente, contrato, referencia o comprobante" aria-label="Buscar comprobantes"><div id="billResults"><div class="contributors-loading">Consultando historial…</div></div></section>';
 }
 async function loadHistory(){
  const host=document.getElementById('billResults');if(!host)return;
@@ -64,7 +64,7 @@ function paper(rec){
  '<section class="bill-parties"><div><h3>Datos del Contribuyente</h3>'+field('Nombre / Razón social',name)+field('Cédula / RIF',ident)+field('Teléfono',c.phone)+field('Correo',c.email)+'</div><div><h3>Datos del Inmueble</h3>'+field('Dirección',one?first.address:'Varios inmuebles; ver detalle')+field('Sector',one?(first.sector?.name||first.sector_name):'Ver desglose')+field('Parroquia',one?(first.parish?.name||first.parish_name):'Ver desglose')+field('Tipología',one?({'3':'TIPO I','1.5':'TIPO II','0.5':'TIPO III'}[String(Number(lines[0]?.assessment?.coefficient_snapshot))]||first.typology_override||first.sector?.default_typology):'Según cada inmueble')+'</div></section>'+
  '<div class="bill-items"><table><thead><tr><th>Concepto</th><th>Período</th><th>Tarifa (Bs.)</th><th>Monto pagado (Bs.)</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
  '<section class="bill-bottom"><div class="bill-qrwrap"><div id="billQr" class="bill-qr">DEMO<br>QR</div><div><b>Consulta del comprobante</b><p>QR informativo de prueba, no verifica autenticidad fiscal.</p></div></div><div class="bill-paid"><span>MONTO PAGADO</span><strong>'+cash(p.amount)+'</strong><small>'+E(textMethod)+' · Ref. '+E(p.external_reference||'No aplica')+'</small></div></section>'+
- '<footer class="bill-foot">DOCUMENTO DE PRUEBA SIN VALIDEZ FISCAL · NO ACREDITA TRANSFERENCIA BANCARIA REAL.<br>Formato media carta horizontal · requisitos fiscales definitivos pendientes de validación.</footer></article>';
+ '<footer class="bill-foot">DOCUMENTO DE PRUEBA SIN VALIDEZ FISCAL · NO ACREDITA TRANSFERENCIA BANCARIA REAL.<br>Impresión en la mitad superior de hoja carta vertical · requisitos fiscales pendientes de validación.</footer></article>';
 }
 function printBillOnly(){
  const article=document.getElementById('billPaper');
@@ -74,13 +74,13 @@ function printBillOnly(){
  frame.id='billPrintFrame';
  frame.title='Impresión exclusiva del comprobante SITMAUD';
  frame.setAttribute('aria-hidden','true');
- frame.style.cssText='position:fixed;left:-10000px;top:0;width:816px;height:528px;border:0;opacity:0;pointer-events:none;';
+ frame.style.cssText='position:fixed;left:-10000px;top:0;width:816px;height:1056px;border:0;opacity:0;pointer-events:none;';
  document.body.appendChild(frame);
  const safeHTML=article.outerHTML;
  const documentHTML='<!doctype html><html lang="es"><head><meta charset="utf-8">'+
  '<meta name="viewport" content="width=device-width, initial-scale=1">'+
  '<base href="'+location.origin+location.pathname.replace(/[^/]*$/,'')+'">'+
- '<link rel="stylesheet" href="billing.css?v=20261113-print-isolated1">'+
+ '<link rel="stylesheet" href="billing.css?v=20261113-letter-portrait-top-half1">'+
  '<style>@page{size:letter portrait;margin:0} @media print{ html,body{box-sizing:border-box!important;width:8.5in!important;height:11in!important;min-height:11in!important;max-height:11in!important;margin:0!important;padding:0!important;overflow:hidden!important;background:white!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important} #billModal,#billModal .bill-dialog,#billModal #billContent{box-sizing:border-box!important;position:static!important;inset:auto!important;display:flex!important;justify-content:center!important;align-items:flex-start!important;width:8.5in!important;max-width:8.5in!important;min-height:0!important;height:11in!important;max-height:11in!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;overflow:hidden!important;background:white!important} #billModal .bill-toolbar{display:none!important} #billModal .bill-paper{box-sizing:border-box!important;display:block!important;flex:none!important;width:8.5in!important;max-width:8.5in!important;min-width:0!important;height:5.5in!important;min-height:5.5in!important;max-height:5.5in!important;margin:0 auto!important;padding:.17in .17in .12in!important;overflow:hidden!important;box-shadow:none!important;break-inside:avoid!important;page-break-inside:avoid!important;page-break-after:avoid!important} #billModal .bill-header{grid-template-columns:1.05fr 2fr 1.12fr!important;gap:9px!important;min-height:82px!important} #billModal .bill-ref{grid-template-columns:1.35fr 1fr .8fr .8fr!important} #billModal .bill-parties{grid-template-columns:1fr 1fr!important;gap:12px!important} #billModal .bill-parties .bill-field{display:grid!important;grid-template-columns:39% minmax(0,1fr)!important;gap:6px!important;align-items:baseline!important} #billModal .bill-parties .bill-field span{display:inline!important} #billModal .bill-parties .bill-field b{display:inline!important} #billModal .bill-bottom{grid-template-columns:1fr 1.35fr!important;gap:10px!important} }'+
  '</style>'+
  '</head><body><div id="billModal" class="bill-backdrop"><div class="bill-dialog"><div id="billContent">'+safeHTML+'</div></div></div></body></html>';
@@ -98,7 +98,7 @@ function printBillOnly(){
 async function openBill(id,print){
  document.getElementById('billModal')?.remove();
  const backdrop=document.createElement('div');backdrop.id='billModal';backdrop.className='bill-backdrop';
- backdrop.innerHTML='<div class="bill-dialog"><div class="bill-toolbar"><div><b>SITMAUD · Comprobante de pago</b><small>Media carta horizontal · Vista previa para impresión</small></div><div><button type="button" class="btn btn-light" data-bill-close="1">Cerrar</button><button type="button" class="btn btn-primary" data-bill-go-print="1" disabled>Imprimir / Guardar PDF</button></div></div><div id="billContent" class="bill-loading">Cargando datos del comprobante…</div></div>';
+ backdrop.innerHTML='<div class="bill-dialog"><div class="bill-toolbar"><div><b>SITMAUD · Comprobante de pago</b><small>Carta vertical · Factura en la mitad superior</small></div><div><button type="button" class="btn btn-light" data-bill-close="1">Cerrar</button><button type="button" class="btn btn-primary" data-bill-go-print="1" disabled>Imprimir / Guardar PDF</button></div></div><div id="billContent" class="bill-loading">Cargando datos del comprobante…</div></div>';
  document.body.appendChild(backdrop);document.body.classList.add('modal-open');
  try{
   const record=await getRecord(id);const target=document.getElementById('billContent');if(!target)return;

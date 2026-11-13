@@ -562,3 +562,16 @@ body.modal-open{overflow:hidden}
 /* Eight-column property overview without redundant address */
 .property-table-wrap table{min-width:930px}
 @media(max-width:1050px){.property-table-wrap table{min-width:880px}}
+
+/* UDC corrections: exceptional sector-wide administrative changes */
+.udc-sector-correction{padding:20px;margin-bottom:16px}
+.udc-sector-correction .panel-head{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.udc-sector-correction .panel-head h3{font:800 14px Manrope,sans-serif;color:#24465e;margin:0}
+.udc-sector-correction>p{font-size:11px;line-height:1.6;color:#718795;margin:10px 0 14px}
+.udc-correction-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.udc-correction-grid .field{display:flex;flex-direction:column;gap:6px}
+.udc-correction-grid label{font-size:10px;font-weight:700;color:#35546a}
+.udc-correction-grid input,.udc-correction-grid select{height:40px;border:1px solid #dce5ea;border-radius:8px;padding:0 11px;color:#24465e;background:#fff;font-size:11px;width:100%;min-width:0}
+.udc-correction-note{margin-top:10px;border-radius:7px;background:#f1f7f9;padding:10px 12px;color:#446779;font-size:11px}
+.udc-sector-correction .form-actions{display:flex;justify-content:flex-end;margin-top:12px}
+@media(max-width:760px){.udc-sector-correction{padding:15px}.udc-correction-grid{grid-template-columns:1fr}.udc-sector-correction .panel-head{align-items:flex-start;flex-direction:column}}

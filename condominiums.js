@@ -38,6 +38,7 @@ function toggleCondo(mode,enabled){
  normal.hidden=enabled;special.hidden=!enabled;
  if(enabled){
   if(inline){
+   const step=document.getElementById('stepProperty');const stepTitle=step?.querySelector('strong'),stepHint=step?.querySelector('small');if(stepTitle)stepTitle.textContent='Registrar ficha matriz';if(stepHint)stepHint.textContent='Cantidad de viviendas y clasificación del sector';
    const wrap=document.getElementById('propertyFormWrap');
    const h=wrap?.querySelector(':scope > h3'),p=wrap?.querySelector(':scope > p.panel-hint');
    if(h)h.textContent='▦ Registrar condominio';

@@ -30,7 +30,7 @@ function profileSections(person){
  '<div id="contributorDocList" class="contributor-doc-list"><div class="contributors-loading">Consultando los documentos guardados…</div></div>'+
  '<form class="contributor-doc-upload" id="contributorDocumentUpload" data-person-id="'+id+'"><div class="form-grid">'+
  '<div class="field"><label>Tipo de documento</label><select name="document_type" required>'+
- Object.keys(documentTypes).map(k=>'<option value="'+k+'">'+esc(documentTypes[k])+'</option>').join('')+'</select></div>'+
+ Object.keys(documentTypes).filter(k=>condo||!['constitutiva','acta_asamblea','designacion_administrador','registro_condominio'].includes(k)).map(k=>'<option value="'+k+'">'+esc(documentTypes[k])+'</option>').join('')+'</select></div>'+
  '<div class="field"><label>Archivo (PDF, JPG, PNG o WEBP)</label><input name="document_file" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" required></div>'+
  '<div class="field full"><label>Descripción (opcional)</label><input name="description" maxlength="300" placeholder="Ej. RIF actualizado, acta de junta directiva 2026…"></div></div>'+
  '<div class="contributor-doc-bottom"><small>Máximo 10 MB por archivo · Acceso privado según permisos de funcionarios · La carga no es obligatoria.</small><button class="btn btn-primary" type="submit">Adjuntar documento</button></div></form></section>';
@@ -121,10 +121,12 @@ document.addEventListener('click',async event=>{
  if(!btn)return;
  const d=(window.imaudProfileDocs||[]).find(x=>x.id===btn.dataset.openContributorDoc);
  if(!d)return;
+ const tab=window.open('about:blank','_blank');
  btn.disabled=true;
  const {data,error}=await imaudClient.storage.from(bucket).createSignedUrl(d.storage_path,60);
  btn.disabled=false;
- if(error||!data?.signedUrl){toast('No se pudo abrir el documento. Verifica tus permisos.');return;}
- window.open(data.signedUrl,'_blank','noopener,noreferrer');
+ if(error||!data?.signedUrl){if(tab)tab.close();toast('No se pudo abrir el documento. Verifica tus permisos.');return;}
+ if(tab){tab.opener=null;tab.location.replace(data.signedUrl);}
+ else{const a=document.createElement('a');a.href=data.signedUrl;a.target='_blank';a.rel='noopener noreferrer';a.click();}
 });
 })();

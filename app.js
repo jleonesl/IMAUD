@@ -488,19 +488,19 @@ async function loadPaymentDebtors(){
 }
 async function loadDemoPayments(){
  const host=document.getElementById('demoPaymentsHistory');if(!host)return;
- const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,bank_code,contributor:contributors!demo_payments_contributor_id_fkey(kind,first_name,last_name,legal_name,contract_number)').order('paid_at',{ascending:false}).limit(50);
+ const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,bank_code,proof_storage_path,contributor:contributors!demo_payments_contributor_id_fkey(kind,first_name,last_name,legal_name,contract_number)').order('paid_at',{ascending:false}).limit(50);
  if(!document.getElementById('demoPaymentsHistory'))return;
  const count=document.getElementById('demoPaymentsCount');
  if(error){console.error('Demo payments history:',error);host.innerHTML='<div class="payment-debt-empty">No se pudo cargar el historial. Comprueba los permisos del usuario.</div>';if(count)count.textContent='No disponible';return;}
  const rows=data||[];
  if(count)count.textContent=rows.length+' registro(s) de prueba';
  if(!rows.length){host.innerHTML='<div class="payment-debt-empty"><b>Aún no hay pagos de prueba registrados.</b><span>Una vez guardes una simulación aparecerá aquí su comprobante.</span></div>';return;}
- host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Comprobante DEMO</th><th>Contribuyente</th><th>Contrato</th><th>Fecha</th><th>Medio</th><th>Referencia</th><th>Monto</th></tr></thead><tbody>'+rows.map(p=>{
+ host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Comprobante DEMO</th><th>Contribuyente</th><th>Contrato</th><th>Fecha</th><th>Medio</th><th>Referencia</th><th>Monto</th><th>Soporte</th></tr></thead><tbody>'+rows.map(p=>{
   const c=p.contributor||{};
   const method=({tarjeta:'Punto de venta',efectivo:'Efectivo',transferencia:'Transferencia',pago_movil:'Pago móvil'})[p.payment_method]||p.payment_method;
   const date=new Date(p.paid_at).toLocaleDateString('es-VE',{timeZone:'America/Caracas'});
   const bank=p.bank_code?' · '+p.bank_code:'';
-  return '<tr><td><strong>'+escapeHTML(p.receipt_number)+'</strong></td><td>'+escapeHTML(contributorName(c))+'</td><td>'+escapeHTML(c.contract_number||'—')+'</td><td>'+escapeHTML(date)+'</td><td>'+escapeHTML(method+bank)+'</td><td>'+escapeHTML(p.external_reference||'—')+'</td><td><b>Bs. '+money(Number(p.amount))+'</b></td></tr>';
+  return '<tr><td><strong>'+escapeHTML(p.receipt_number)+'</strong></td><td>'+escapeHTML(contributorName(c))+'</td><td>'+escapeHTML(c.contract_number||'—')+'</td><td>'+escapeHTML(date)+'</td><td>'+escapeHTML(method+bank)+'</td><td>'+escapeHTML(p.external_reference||'—')+'</td><td><b>Bs. '+money(Number(p.amount))+'</b></td><td>'+(p.proof_storage_path?'<button type="button" class="btn btn-light btn-sm" data-proof-payment-id="'+escapeHTML(p.id)+'">Ver adjunto</button>':'<span class="payment-proof-empty">—</span>')+'</td></tr>';
  }).join('')+'</tbody></table></div>';
 }
 function paymentModal(){

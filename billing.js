@@ -13,7 +13,7 @@ function listScreen(){
 }
 async function loadHistory(){
  const host=document.getElementById('billResults');if(!host)return;
- const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,proof_storage_path,contributor:contributors!demo_payments_contributor_id_fkey(kind,first_name,last_name,legal_name,contract_number)').order('paid_at',{ascending:false}).limit(200);
+ const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,proof_storage_path,treasury_status,contributor:contributors!demo_payments_contributor_id_fkey(kind,first_name,last_name,legal_name,contract_number)').order('paid_at',{ascending:false}).limit(200);
  if(!document.getElementById('billResults'))return;
  if(error){host.innerHTML='<div class="payment-debt-empty"><b>No se pudieron cargar los comprobantes.</b><span>'+E(error.message)+'</span></div>';return;}
  latest=data||[];paintHistory();
@@ -28,7 +28,7 @@ function paintHistory(){
  ).join('')+'</tbody></table></div>';
 }
 async function getRecord(id){
- const {data:payment,error:paymentError}=await imaudClient.from('demo_payments').select('id,receipt_number,contributor_id,amount,paid_at,payment_method,external_reference,bank_code,proof_storage_path').eq('id',id).single();
+ const {data:payment,error:paymentError}=await imaudClient.from('demo_payments').select('id,receipt_number,contributor_id,amount,paid_at,payment_method,external_reference,bank_code,proof_storage_path,treasury_status').eq('id',id).single();
  if(paymentError||!payment)throw Error(paymentError?.message||'Comprobante no encontrado');
  const [cp,alloc]=await Promise.all([
   imaudClient.from('contributors').select('id,kind,first_name,last_name,legal_name,identification_type,identification_number,contract_number,phone,email').eq('id',payment.contributor_id).single(),
@@ -64,7 +64,7 @@ function paper(rec){
  '<section class="bill-parties"><div><h3>Datos del Contribuyente</h3>'+field('Nombre / Razón social',name)+field('Cédula / RIF',ident)+field('Teléfono',c.phone)+field('Correo',c.email)+'</div><div><h3>'+(consolidated?'Datos del Condominio':'Datos del Inmueble')+'</h3>'+field(consolidated?'Dirección del conjunto':'Dirección',one?first.address:'Varios inmuebles; ver detalle')+field('Sector',one?(first.sector?.name||first.sector_name):'Ver desglose')+field('Parroquia',one?(first.parish?.name||first.parish_name):'Ver desglose')+field('Tipología',one?({'3':'TIPO I','1.5':'TIPO II','0.5':'TIPO III'}[String(Number(lines[0]?.assessment?.coefficient_snapshot))]||first.typology_override||first.sector?.default_typology):'Según cada inmueble')+(consolidated?field('Viviendas cubiertas',unitCount+' viviendas'):'')+'</div></section>'+
  '<div class="bill-items"><table><thead><tr><th>Concepto</th><th>Período</th><th>Tarifa (Bs.)</th><th>Monto pagado (Bs.)</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
  '<section class="bill-bottom"><div class="bill-qrwrap"><div id="billQr" class="bill-qr">DEMO<br>QR</div><div><b>Consulta del comprobante</b><p>QR informativo de prueba, no verifica autenticidad fiscal.</p></div></div><div class="bill-paid"><span>MONTO PAGADO</span><strong>'+cash(p.amount)+'</strong><small>'+E(textMethod)+' · Ref. '+E(p.external_reference||'No aplica')+'</small></div></section>'+
- '<footer class="bill-foot">DOCUMENTO DE PRUEBA SIN VALIDEZ FISCAL · NO ACREDITA TRANSFERENCIA BANCARIA REAL.<br>Impresión en la mitad superior de hoja carta vertical · requisitos fiscales pendientes de validación.</footer></article>';
+ '<footer class="bill-foot">DOCUMENTO DE PRUEBA SIN VALIDEZ FISCAL · NO ACREDITA TRANSFERENCIA BANCARIA REAL.<br>TESORERÍA: '+E(({pending:'POR VALIDAR',validated:'ACREDITACIÓN VALIDADA',incident:'EN INVESTIGACIÓN',reversed:'PAGO REVERTIDO · DEUDA RESTITUIDA'}[p.treasury_status]||'POR VALIDAR'))+'.<br>Impresión en la mitad superior de hoja carta vertical · requisitos fiscales pendientes de validación.</footer></article>';
 }
 function printBillOnly(){
  const article=document.getElementById('billPaper');

@@ -592,3 +592,11 @@ body.modal-open{overflow:hidden}
 .payment-bank-no-results{font-size:11px;padding:14px;color:#718795}
 .payment-bank-field small{font-size:10px;color:#82939e;line-height:1.4}
 @media(max-width:760px){.payment-bank-results{max-height:180px}}
+
+
+/* Bank lookup: type to filter or click chevron to browse every bank */
+.payment-bank-input-row{display:flex;align-items:stretch;width:100%;border:1px solid #dce5ea;border-radius:8px;background:#fff}
+.payment-bank-input-row:focus-within{border-color:#249aa8;box-shadow:0 0 0 3px rgba(34,160,166,.12)}
+.payment-bank-combobox .payment-bank-input-row input[type=search]{border:0;box-shadow:none!important;outline:none;flex:1;min-width:0}
+.payment-bank-toggle{border:0;border-left:1px solid #e0e9ed;border-radius:0 8px 8px 0;background:#f5f8fa;color:#24465e;min-width:42px;font-size:22px;cursor:pointer}
+.payment-bank-toggle:hover,.payment-bank-toggle[aria-expanded=true]{background:#e8f4f4;color:#118b88}

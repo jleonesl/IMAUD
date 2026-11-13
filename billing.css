@@ -79,3 +79,9 @@
  .bill-items thead{display:table-header-group}
  .bill-items tr{break-inside:avoid}
 }
+
+/* Exact institutional logo artwork cropped from the supplied receipt reference. */
+.bill-logo-window{width:120px;height:66px;overflow:hidden;position:relative;flex:0 0 66px}
+.bill-logo-window img{position:absolute;top:0;left:0;width:240px;height:66px;max-width:none;display:block}
+.bill-logo-window.bill-logo-right img{left:-120px}
+.bill-brand.bill-miranda,.bill-brand.bill-imaud{background:none}

@@ -860,3 +860,35 @@ body.modal-open{overflow:hidden}
  #publicHome > .public-visual > .visual-caption{left:18px!important;bottom:20px!important;padding:13px 16px!important;max-width:calc(100% - 36px)!important}
  #publicHome > .public-visual > .visual-caption b{font-size:clamp(22px,5.7vw,28px)!important}
 }
+
+/* Tesorería · Conciliación interna de pagos DEMO */
+.treasury-cell{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:150px}
+.treasury-badge{font-size:10px;font-weight:800;padding:5px 8px;border-radius:100px;display:inline-flex;align-items:center;white-space:nowrap}
+.treasury-pending{color:#946317;background:#fff2dd}
+.treasury-validated{color:#10744c;background:#e1f7ec}
+.treasury-incident{color:#ae581b;background:#fff0e4}
+.treasury-reversed{color:#8e3e4f;background:#fbe9ed}
+.treasury-backdrop{position:fixed;inset:0;z-index:10000;background:rgba(8,31,48,.62);display:flex;align-items:center;justify-content:center;padding:18px}
+.treasury-dialog{background:#fff;border-radius:15px;width:min(685px,100%);max-height:calc(100dvh - 36px);overflow-y:auto;box-shadow:0 22px 60px #102d4938}
+.treasury-dialog-head{display:flex;justify-content:space-between;gap:15px;align-items:start;padding:22px 24px;border-bottom:1px solid #e2ebef}
+.treasury-dialog-head span{font-size:10px;color:#1391a0;font-weight:800;letter-spacing:.12em}
+.treasury-dialog-head h2{font-size:19px;color:#123a55;margin:8px 0 6px}
+.treasury-dialog-head p{font-size:11px;color:#7b90a1;margin:0;line-height:1.6}
+.treasury-dialog-body{padding:20px 24px 24px;display:grid;gap:16px}
+.treasury-payment-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.treasury-payment-facts>div{background:#f5f9fa;border:1px solid #e4ecef;border-radius:8px;padding:10px 13px;min-width:0}
+.treasury-payment-facts small{display:block;font-size:10px;color:#7f95a5;margin-bottom:6px}
+.treasury-payment-facts b{font-size:12px;color:#254b63;overflow-wrap:anywhere}
+.treasury-help,.treasury-readonly{background:#eaf5f7;border:1px solid #cde3e8;padding:13px;border-radius:8px;font-size:11px;line-height:1.65;color:#3b6879}
+#treasuryReviewForm{display:grid;gap:12px;border-top:1px solid #e5ecef;padding-top:15px}
+#treasuryReviewForm .field{display:grid;gap:6px;font-size:11px;color:#305369;font-weight:750;margin:0}
+#treasuryReviewForm select,#treasuryReviewForm input,#treasuryReviewForm textarea{box-sizing:border-box;width:100%;border:1px solid #d5e2e8;border-radius:8px;background:white;color:#24465e;padding:11px;font:12px Inter,Arial,sans-serif}
+#treasuryReviewForm textarea{resize:vertical}
+.treasury-warning{color:#8b6c31;font-size:10px;line-height:1.6;margin:0}
+.treasury-action-buttons{display:flex;align-items:center;justify-content:flex-end;gap:9px}
+.treasury-history{border-top:1px solid #e3ebef;padding-top:14px}
+.treasury-history h3{font-size:13px;color:#224860;margin:0 0 10px}
+.treasury-history p{font-size:11px;color:#7f95a5}
+.treasury-event{display:grid;gap:4px;padding:11px;border:1px solid #e7eef1;border-radius:8px;margin-bottom:7px}
+.treasury-event b{font-size:11px;color:#285e77}.treasury-event span,.treasury-event small{font-size:10px;color:#8198a7;overflow-wrap:anywhere}
+@media(max-width:570px){.treasury-dialog-head{padding:16px}.treasury-dialog-body{padding:14px}.treasury-payment-facts{grid-template-columns:1fr}.treasury-action-buttons{flex-direction:column}.treasury-action-buttons .btn{width:100%}}

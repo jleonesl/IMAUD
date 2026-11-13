@@ -20,6 +20,46 @@ const fhtml=(mode)=>{
  '<div class="form-actions"><button type="submit" class="btn btn-primary" id="'+id+'Submit">Guardar ficha y generar deuda DEMO</button></div>'+
  '<div class="property-success" id="'+id+'Success" hidden></div></form>';
 };
+window.openCondoRegistration=function(){
+ openContributorModal();
+ const form=document.getElementById('personForm');if(!form)return;
+ const kind=form.querySelector('[name="kind"]');
+ if(kind){kind.value='juridico';kind.dispatchEvent(new Event('change',{bubbles:true}));kind.closest('.field')?.classList.add('condo-fixed-field');}
+ const type=form.querySelector('[name="service_account_type"]');
+ if(type){const option=type.querySelector('option[value="condominio"]');if(option)option.hidden=false;type.value='condominio';type.dispatchEvent(new Event('change',{bubbles:true}));type.closest('.field')?.classList.add('condo-fixed-field');}
+ const id=form.querySelector('[name="identification_type"]');if(id)id.value='J';
+ const ownership=form.querySelector('[name="is_property_owner"]');if(ownership){ownership.value='false';const row=ownership.closest('.field');if(row)row.hidden=true;}
+ const modal=document.getElementById('contributorModal');
+ if(modal){
+  const title=modal.querySelector('#contributorModalTitle'),sub=modal.querySelector('.contributor-modal-head p');
+  if(title)title.textContent='Registrar condominio';
+  if(sub)sub.textContent='Paso 1: persona jurídica y RIF. Paso 2: ficha matriz, administrador, viviendas y tipología.';
+  const step=modal.querySelector('#stepProperty strong');if(step)step.textContent='Ficha matriz del condominio';
+ }
+ // Mantener este flujo reservado a condominios: sin deshabilitar campos usados por FormData.
+ if(kind){kind.addEventListener('change',()=>{if(kind.value!=='juridico'){kind.value='juridico';kind.dispatchEvent(new Event('change',{bubbles:true}));}});}
+ if(type){type.addEventListener('change',()=>{if(type.value!=='condominio'){type.value='condominio';type.dispatchEvent(new Event('change',{bubbles:true}));}});}
+};
+document.addEventListener('click',async event=>{
+ const complete=event.target.closest('[data-condo-complete]');
+ if(complete){
+  await openPropertyRegistrationModal();
+  const input=document.getElementById('propertyContributorId');
+  if(input){input.value=complete.dataset.condoComplete;await findPropertyContributor();}
+  return;
+ }
+ const pay=event.target.closest('[data-condo-pay]');
+ if(pay){
+  const contract=pay.dataset.condoPay;
+  if(!contract){toast('Este condominio no tiene contrato asignado.');return;}
+  openPaymentModal();
+  const type=document.querySelector('#paymentLookupForm [name="lookupType"][value="contrato"]'),input=document.getElementById('paymentLookupValue');
+  if(type)type.checked=true;
+  if(input)input.value=contract;
+  const form=document.getElementById('paymentLookupForm');
+  if(form)await findPaymentContributor(form);
+ }
+});
 const oldContributorModal=contributorModal;
 contributorModal=function(){
  const html=oldContributorModal();

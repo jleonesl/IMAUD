@@ -371,7 +371,7 @@ body.modal-open{overflow:hidden}
   position:relative!important;
   isolation:isolate;
   overflow:hidden!important;
-  background:#07517d url("./assets/sitmaud-hero-render.webp?v=20261112n") center center / cover no-repeat!important;
+  background:#07517d url("https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/d2713296-f026-4b6c-bed7-44ada8b85ec0.png") center center / cover no-repeat!important;
 }
 #publicHome > .public-visual > .hero-render-image{
   display:block!important;
@@ -805,3 +805,6 @@ body.modal-open{overflow:hidden}
 .ordinance-official-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .ordinance-official-actions .btn{font-size:11px;white-space:normal;text-align:center}
 @media(max-width:630px){.ordinance-official-actions .btn{width:100%}}
+
+/* Original institutional landing illustration, restored 2026-11-13 */
+#publicHome > .public-visual > .hero-render-image{object-fit:cover!important;object-position:center center!important}

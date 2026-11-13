@@ -36,9 +36,9 @@ async function getRecord(id){
  ]);
  if(cp.error||alloc.error)throw Error(cp.error?.message||alloc.error?.message);
  const allocations=alloc.data||[];if(!allocations.length)throw Error('No se encontraron los períodos vinculados al pago');
- const {data:assessments,error:ae}=await imaudClient.from('assessments').select('id,property_id,period_start,period_end,total_amount,coefficient_snapshot').in('id',allocations.map(a=>a.assessment_id));
+ const {data:assessments,error:ae}=await imaudClient.from('assessments').select('id,property_id,period_start,period_end,total_amount,coefficient_snapshot,consolidated_unit_count_snapshot').in('id',allocations.map(a=>a.assessment_id));
  if(ae)throw Error(ae.message);
- const {data:properties,error:pe}=await imaudClient.from('properties').select('id,address,parish_name,sector_name,typology_override,parish:parishes!properties_parish_id_fkey(name),sector:sectors!properties_sector_id_fkey(name,default_typology)').in('id',[...new Set((assessments||[]).map(a=>a.property_id))]);
+ const {data:properties,error:pe}=await imaudClient.from('properties').select('id,address,parish_name,sector_name,typology_override,is_consolidated_master,consolidated_units,organization_name,parish:parishes!properties_parish_id_fkey(name),sector:sectors!properties_sector_id_fkey(name,default_typology)').in('id',[...new Set((assessments||[]).map(a=>a.property_id))]);
  if(pe)throw Error(pe.message);
  const props=new Map((properties||[]).map(x=>[x.id,x]));
  const amounts=new Map(allocations.map(x=>[x.assessment_id,Number(x.amount)]));
@@ -48,20 +48,20 @@ async function getRecord(id){
 function field(label,value){return '<div class="bill-field"><span>'+label+'</span><b>'+E(value||'—')+'</b></div>'}
 function paper(rec){
  const p=rec.payment,c=rec.person||{},lines=rec.lines,first=lines[0]?.property||{};
- const one=lines.every(line=>line.assessment.property_id===lines[0]?.assessment.property_id);
+ const one=lines.every(line=>line.assessment.property_id===lines[0]?.assessment.property_id); const consolidated=one&&first.is_consolidated_master; const unitCount=lines[0]?.assessment?.consolidated_unit_count_snapshot||first.consolidated_units||0;
  const name=contributorName(c);
  const textMethod={tarjeta:'Punto de venta / Tarjeta',efectivo:'Efectivo',transferencia:'Transferencia',pago_movil:'Pago móvil'}[p.payment_method]||p.payment_method;
  const rawIdent=String(c.identification_number||'');const prefix=String(c.identification_type||'');const ident=(prefix&&rawIdent.toUpperCase().startsWith(prefix.toUpperCase()+'-'))?rawIdent:[prefix,rawIdent].filter(Boolean).join('-');
  const rows=lines.map(l=>{
   const a=l.assessment,sector=l.property.sector?.name||l.property.sector_name||'Inmueble';
   const period=month(a.period_start)+(a.period_end&&a.period_end.slice(0,7)!==a.period_start.slice(0,7)?' – '+month(a.period_end):'');
-  return '<tr><td>Servicio de Aseo Urbano y Domiciliario'+(one?'':' · '+E(sector))+'</td><td>'+E(period)+'</td><td>'+cash(a.total_amount)+'</td><td><b>'+cash(l.amount)+'</b></td></tr>';
+  const units=a.consolidated_unit_count_snapshot||l.property.consolidated_units||0;const detail=l.property.is_consolidated_master&&units?' · '+units+' viviendas × '+Number(a.coefficient_snapshot).toLocaleString('es-VE')+' UCD':''; return '<tr><td>Servicio de Aseo Urbano y Domiciliario'+E(detail)+(one?'':' · '+E(sector))+'</td><td>'+E(period)+'</td><td>'+cash(a.total_amount)+'</td><td><b>'+cash(l.amount)+'</b></td></tr>';
  }).join('');
  return '<article id="billPaper" class="bill-paper">'+
  '<div class="bill-watermark">DEMO</div>'+
  '<header class="bill-header"><div class="bill-brand bill-miranda"><div class="bill-logo-window"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/2fb94317-165c-4058-ba6f-8d7b39165bc1.png" alt="Alcaldía Bolivariana del Municipio Miranda"></div></div><div class="bill-heading"><h1>COMPROBANTE DE PAGO</h1><h2>Sistema Integral Tributario Municipal<br>de Aseo Urbano y Domiciliario (SITMAUD)</h2><b>DOCUMENTO DEMO · NO FISCAL</b></div><div class="bill-brand bill-imaud"><div class="bill-logo-window bill-logo-right"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/c48697a7-2c1f-4f88-aa38-2f8bb991ada2.png" alt="Instituto Municipal de Aseo Urbano y Domiciliario"></div></div></header>'+
  '<section class="bill-ref">'+field('N.º de comprobante DEMO',p.receipt_number)+field('N.º de contrato',c.contract_number)+field('Fecha de emisión',date(p.paid_at))+field('Fecha de pago',date(p.paid_at))+'</section>'+
- '<section class="bill-parties"><div><h3>Datos del Contribuyente</h3>'+field('Nombre / Razón social',name)+field('Cédula / RIF',ident)+field('Teléfono',c.phone)+field('Correo',c.email)+'</div><div><h3>Datos del Inmueble</h3>'+field('Dirección',one?first.address:'Varios inmuebles; ver detalle')+field('Sector',one?(first.sector?.name||first.sector_name):'Ver desglose')+field('Parroquia',one?(first.parish?.name||first.parish_name):'Ver desglose')+field('Tipología',one?({'3':'TIPO I','1.5':'TIPO II','0.5':'TIPO III'}[String(Number(lines[0]?.assessment?.coefficient_snapshot))]||first.typology_override||first.sector?.default_typology):'Según cada inmueble')+'</div></section>'+
+ '<section class="bill-parties"><div><h3>Datos del Contribuyente</h3>'+field('Nombre / Razón social',name)+field('Cédula / RIF',ident)+field('Teléfono',c.phone)+field('Correo',c.email)+'</div><div><h3>'+(consolidated?'Datos del Condominio':'Datos del Inmueble')+'</h3>'+field(consolidated?'Dirección del conjunto':'Dirección',one?first.address:'Varios inmuebles; ver detalle')+field('Sector',one?(first.sector?.name||first.sector_name):'Ver desglose')+field('Parroquia',one?(first.parish?.name||first.parish_name):'Ver desglose')+field('Tipología',one?({'3':'TIPO I','1.5':'TIPO II','0.5':'TIPO III'}[String(Number(lines[0]?.assessment?.coefficient_snapshot))]||first.typology_override||first.sector?.default_typology):'Según cada inmueble')+(consolidated?field('Viviendas cubiertas',unitCount+' viviendas'):'')+'</div></section>'+
  '<div class="bill-items"><table><thead><tr><th>Concepto</th><th>Período</th><th>Tarifa (Bs.)</th><th>Monto pagado (Bs.)</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
  '<section class="bill-bottom"><div class="bill-qrwrap"><div id="billQr" class="bill-qr">DEMO<br>QR</div><div><b>Consulta del comprobante</b><p>QR informativo de prueba, no verifica autenticidad fiscal.</p></div></div><div class="bill-paid"><span>MONTO PAGADO</span><strong>'+cash(p.amount)+'</strong><small>'+E(textMethod)+' · Ref. '+E(p.external_reference||'No aplica')+'</small></div></section>'+
  '<footer class="bill-foot">DOCUMENTO DE PRUEBA SIN VALIDEZ FISCAL · NO ACREDITA TRANSFERENCIA BANCARIA REAL.<br>Impresión en la mitad superior de hoja carta vertical · requisitos fiscales pendientes de validación.</footer></article>';

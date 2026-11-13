@@ -167,7 +167,7 @@ function contributorModal(){
 }
 function openContributorModal(){
  if(!document.getElementById('contributorModal'))document.body.insertAdjacentHTML('beforeend',contributorModal());
- const modal=document.getElementById('contributorModal');modal.classList.add('open');document.body.classList.add('modal-open');loadGeographyCatalogs();
+ const modal=document.getElementById('contributorModal');modal.classList.add('open');document.body.classList.add('modal-open');const condoOption=modal.querySelector('#contributorServiceAccountType option[value="condominio"]');if(condoOption)condoOption.hidden=true;loadGeographyCatalogs();
 }
 function closeContributorModal(){
  document.getElementById('contributorModal')?.remove();document.body.classList.remove('modal-open');loadContributors();

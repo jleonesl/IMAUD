@@ -26,7 +26,7 @@ window.renderCondominiumRegistration=function(){
  '<div class="condo-reg-two"><label class="condo-reg-field"><span>Parroquia *</span><select id="condoRegParish" name="parish_id" required><option value="">Cargando parroquias…</option></select></label><label class="condo-reg-field"><span>Sector geográfico *</span><select id="condoRegSector" name="sector_id" required disabled><option value="">Selecciona parroquia</option></select></label></div>'+
  '<label class="condo-reg-field"><span>Dirección general *</span><textarea name="address" required minlength="5" maxlength="500" rows="2" placeholder="Dirección o referencia del conjunto residencial"></textarea></label>'+
  input('unit_count','Cantidad de viviendas *','Ej. 40','number','required min="1" max="100000" step="1"')+
- input('responsible_name','Administrador o responsable','Nombre y apellido','text','maxlength="160"')+
+ input('responsible_name','Administrador o responsable *','Nombre y apellido','text','required minlength="3" maxlength="160"')+
  '<div class="condo-reg-two">'+input('responsible_id','Cédula del responsable','V-12345678','text','maxlength="35"')+input('responsible_phone','Teléfono del responsable','04XX-XXXXXXX','tel','maxlength="30"')+'</div>'+
  input('responsible_email','Correo del responsable','administracion@condominio.com','email','maxlength="180"')+
  '</div></section>'+

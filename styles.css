@@ -682,3 +682,17 @@ body.modal-open{overflow:hidden}
 .condo-matrix-disclaimer{margin:12px 0;font-size:10px;line-height:1.65;color:#7b8c99}
 .condo-matrix-form .property-success{margin-top:12px;display:grid;gap:8px}
 .condo-matrix-form .property-success[hidden]{display:none!important}
+
+
+/* Directorio real de cuentas jurídicas consolidadas */
+.condo-directory-panel{padding:19px;margin-top:18px}
+.condo-directory-panel .table-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+.condo-directory-panel .table-toolbar h3{font:800 15px Manrope,sans-serif;margin:0 0 5px;color:#163e5c}
+.condo-directory-panel .table-toolbar p{font-size:11px;color:#7a90a0;margin:0}
+.condo-directory-scroll{width:100%;overflow-x:auto}
+.condo-directory-scroll table{width:100%;min-width:900px;border-collapse:collapse}
+.condo-directory-scroll th{padding:11px 10px;color:#355770;font-size:9px;letter-spacing:.03em;text-transform:uppercase;text-align:left;background:#edf3f6}
+.condo-directory-scroll td{padding:14px 10px;border-bottom:1px solid #e6edef;color:#2d5269;font-size:10px;vertical-align:middle}
+.condo-directory-scroll td b{color:#174668}
+.condo-directory-scroll td small{display:block;color:#8197a5;margin-top:4px;font-size:9px}
+.condo-directory-scroll tbody tr:last-child td{border-bottom:0}

@@ -558,3 +558,7 @@ body.modal-open{overflow:hidden}
 .property-detail-grid>div b{overflow-wrap:anywhere}
 #editPropertyForm .field small{display:block;color:#748b98;font-size:10px;line-height:1.5;margin-top:6px}
 #editPropertyForm #propertySectorTypology{background:#f3f7f9;color:#39647a}
+
+/* Eight-column property overview without redundant address */
+.property-table-wrap table{min-width:930px}
+@media(max-width:1050px){.property-table-wrap table{min-width:880px}}

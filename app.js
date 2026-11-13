@@ -1,13 +1,14 @@
 const state={view:'inicio',people:[],parishes:[],sectors:[],paymentDebtors:[],paymentBankCatalog:[],paymentPage:1,currentPaymentContributor:null,currentPaymentAssessments:[],udcRate:null,payments:[{ref:'DEMO-00031',person:'María Fernanda Rojas',period:'Noviembre 2026',amount:'3,00',date:'11/11/2026',status:'Registrado'},{ref:'DEMO-00030',person:'José Antonio Acosta',period:'Noviembre 2026',amount:'1,50',date:'10/11/2026',status:'Registrado'}],staff:[]};
 const $=s=>document.querySelector(s);const money=n=>new Intl.NumberFormat('es-VE',{minimumFractionDigits:2}).format(n);
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)}
-const titleMap={inicio:'Inicio',contribuyentes:'Contribuyentes',inmuebles:'Inmuebles',organizaciones:'Organizaciones residenciales',pagos:'Recaudación y pagos',facturacion:'Facturación',reportes:'Reportes',mapa:'Mapa territorial',ordenanza:'Ordenanza y tarifas',funcionarios:'Funcionarios y permisos',bitacora:'Bitácora'};
+const titleMap={inicio:'Inicio',contribuyentes:'Contribuyentes',inmuebles:'Inmuebles',organizaciones:'Condominios',pagos:'Recaudación y pagos',facturacion:'Facturación',reportes:'Reportes',mapa:'Mapa territorial',ordenanza:'Ordenanza y tarifas',funcionarios:'Funcionarios y permisos',bitacora:'Bitácora'};
 function head(title,sub,action=''){return `<div class="page-head"><div><div class="eyebrow">SITMAUD · GESTIÓN MUNICIPAL</div><h1>${title}</h1><p>${sub}</p></div>${action}</div>`}
 function table(headers,rows){return `<div class="card table-card"><table><thead><tr>${headers.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`}
 function dashboard(){
   const metrics=[
     {key:'contributors_total',label:'Total de contribuyentes',icon:'♙',note:'Personas y organizaciones registradas'},
     {key:'properties_total',label:'Total de inmuebles',icon:'⌂',note:'Inmuebles activos registrados'},
+    {key:'condominiums_total',label:'Condominios registrados',icon:'▥',note:'Cuentas jurídicas con ficha matriz'},
     {key:'payments_total',label:'Pagos DEMO registrados',icon:'▧',note:'Total histórico de pagos simulados guardados'},
     {key:'payments_today',label:'Pagos DEMO de hoy',icon:'◷',note:'Fecha local de Coro'},
     {key:'revenue_today',label:'Monto DEMO de hoy',icon:'↗',note:'Simulaciones, no ingresos reales'},
@@ -41,7 +42,9 @@ function formatDashboardCurrencyMap(map){
 async function loadDashboardMetrics(){
  if(state.view!=='inicio'||!document.body.classList.contains('sitmaud-authenticated'))return;
  document.querySelectorAll('[data-metric-value]').forEach(el=>el.textContent='…');
- const [base,demo]=await Promise.all([imaudClient.rpc('get_dashboard_metrics'),imaudClient.rpc('get_demo_dashboard_metrics')]);
+ const [base,demo,condos]=await Promise.all([imaudClient.rpc('get_dashboard_metrics'),imaudClient.rpc('get_demo_dashboard_metrics'),imaudClient.from('residential_organizations').select('id',{count:'exact',head:true}).eq('consolidated_billing',true)]);
+ const condoCard=document.querySelector('[data-metric-value="condominiums_total"]');
+ if(condoCard)condoCard.textContent=condos.error?'No disponible':formatDashboardCount(condos.count||0);
  if(state.view!=='inicio')return;
  for(const key of ['contributors_total','properties_total','debts_pending']){
   const el=document.querySelector('[data-metric-value="'+key+'"]');
@@ -399,38 +402,45 @@ function showPropertyDetails(id){
  document.body.insertAdjacentHTML('beforeend',markup);
 }
 function organizations(){
- return head('Organizaciones residenciales','Cuentas jurídicas de condominios y conjuntos residenciales vinculados a SITMAUD.','<button class="btn btn-primary" data-action="new-person">＋ Registrar condominio</button>')+
- '<div class="notice">Los condominios con cobranza consolidada mantienen una cuenta matriz jurídica, con RIF y número total de viviendas. Sus obligaciones DEMO se calculan por cantidad de unidades, sin crear un cobro individual por apartamento.</div>'+
- '<section class="card condo-directory-panel"><div class="table-toolbar"><div><h3>Directorio de organizaciones residenciales</h3><p>Registros reales de las cuentas matrices del sistema</p></div><span class="table-count" id="condoDirectoryCount">Consultando…</span></div><div id="condoDirectory" class="condo-directory"><div class="contributors-loading">Cargando condominios registrados…</div></div></section>';
+ return head('Condominios','Registro y administración de cuentas jurídicas con cobro consolidado.','<button class="btn btn-primary" data-action="new-condo">＋ Registrar condominio</button>')+
+ '<div class="condo-intro-grid"><article class="card condo-intro-stat"><span>Condominios con ficha registrada</span><strong id="condoDirectoryCount">—</strong><small>Una cuenta matriz por condominio</small></article><article class="card condo-intro-stat"><span>Viviendas bajo administración</span><strong id="condoHomesCount">—</strong><small>Unidades utilizadas en el cálculo consolidado</small></article><article class="card condo-intro-stat"><span>Modalidad de cobro</span><strong>Pago único</strong><small>Se contabiliza una sola vez en los pagos diarios y mensuales</small></article></div>'+
+ '<div class="notice">Registra aquí la razón social, el RIF, el administrador, la ubicación, las viviendas y la tipología particular. La clasificación geográfica del sector se conserva por separado. Los documentos del condominio son opcionales y se incorporan en su expediente.</div>'+
+ '<section class="card condo-directory-panel"><div class="table-toolbar"><div><h3>Directorio de condominios</h3><p>Ficha matriz, responsable, tipología y situación de cobranza DEMO</p></div><button class="btn btn-light" data-go="pagos">Ir a Recaudación y pagos</button></div><div id="condoDirectory" class="condo-directory"><div class="contributors-loading">Cargando condominios registrados…</div></div></section>';
 }
 async function loadOrganizations(){
  const target=document.getElementById('condoDirectory');if(!target)return;
- const {data:orgs,error}=await imaudClient.from('residential_organizations').select('id,contributor_id,display_name,organization_type,unit_count,consolidated_billing,representative_name').order('created_at',{ascending:false});
- if(!document.getElementById('condoDirectory'))return;
- if(error){target.innerHTML='<div class="contributors-empty"><b>No se pudieron consultar las organizaciones.</b><span>'+escapeHTML(error.message)+'</span></div>';return;}
- const count=document.getElementById('condoDirectoryCount');if(count)count.textContent=(orgs||[]).length+' organizaciones';
- if(!orgs?.length){target.innerHTML='<div class="contributors-empty"><b>Aún no hay condominios registrados.</b><span>Utiliza «Registrar condominio», selecciona Persona jurídica y después «Condominio · Pago único consolidado».</span></div>';return;}
- const ids=orgs.map(x=>x.contributor_id);
- const [contributorRes,propertyRes]=await Promise.all([
-  imaudClient.from('contributors').select('id,contract_number,identification_type,identification_number,legal_name,service_account_type').in('id',ids),
-  imaudClient.from('properties').select('id,organization_id,is_consolidated_master,consolidated_units,sector_name,parish_name').in('organization_id',orgs.map(x=>x.id))
+ const [orgRes,contribRes]=await Promise.all([
+  imaudClient.from('residential_organizations').select('id,contributor_id,display_name,unit_count,consolidated_billing,representative_name,billing_typology').eq('consolidated_billing',true).order('created_at',{ascending:false}),
+  imaudClient.from('contributors').select('id,contract_number,identification_type,identification_number,legal_name,service_account_type,responsible_name').eq('service_account_type','condominio').order('created_at',{ascending:false})
  ]);
- if(contributorRes.error||propertyRes.error){target.innerHTML='<div class="contributors-empty">No se pudieron completar los expedientes de las organizaciones.</div>';return;}
- const contributors=new Map((contributorRes.data||[]).map(x=>[x.id,x]));
- const props=new Map((propertyRes.data||[]).map(x=>[x.organization_id,x]));
- const propertyIds=(propertyRes.data||[]).map(x=>x.id);
- let assessments=[];
- if(propertyIds.length){const {data,error:assessmentErr}=await imaudClient.from('assessments').select('property_id,status,total_amount,period_start,is_demo').in('property_id',propertyIds);if(!assessmentErr)assessments=data||[];}
  if(!document.getElementById('condoDirectory'))return;
- target.innerHTML='<div class="condo-directory-scroll"><table><thead><tr><th>Condominio / Organización</th><th>RIF</th><th>Contrato</th><th>Viviendas</th><th>Parroquia / Sector</th><th>Cuenta DEMO</th><th>Estado</th></tr></thead><tbody>'+
- orgs.map(o=>{
-  const c=contributors.get(o.contributor_id)||{},p=props.get(o.id)||{};
-  const obligations=assessments.filter(a=>a.property_id===p.id&&!['void'].includes(a.status));
-  const unpaid=obligations.filter(a=>['pending','partially_paid'].includes(a.status));
-  const hasPayment=obligations.length>0&&!unpaid.length;
-  const amount=unpaid.reduce((sum,a)=>sum+Number(a.total_amount||0),0);
-  const fmt=new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(amount);
-  return '<tr><td><b>'+escapeHTML(o.display_name)+'</b><small>'+escapeHTML(c.legal_name||'Sin razón social')+'</small></td><td>'+escapeHTML([c.identification_type,c.identification_number].filter(Boolean).join('-'))+'</td><td>'+escapeHTML(c.contract_number||'—')+'</td><td><strong>'+Number(o.unit_count||0)+' viviendas</strong></td><td>'+escapeHTML([p.parish_name,p.sector_name].filter(Boolean).join(' · ')||'Por registrar')+'</td><td>'+escapeHTML(unpaid.length?'Bs. '+fmt:'Bs. 0,00')+'</td><td><span class="status '+(unpaid.length?'pending':hasPayment?'active':'inactive')+'">'+(unpaid.length?'Con deuda':hasPayment?'Al día':'Sin liquidaciones')+'</span></td></tr>';
+ if(orgRes.error||contribRes.error){target.innerHTML='<div class="contributors-empty"><b>No se pudo consultar el directorio de condominios.</b><span>'+escapeHTML(orgRes.error?.message||contribRes.error?.message)+'</span></div>';return;}
+ const orgs=orgRes.data||[],contributors=contribRes.data||[];
+ const count=document.getElementById('condoDirectoryCount');if(count)count.textContent=orgs.length.toLocaleString('es-VE');
+ const homes=document.getElementById('condoHomesCount');if(homes)homes.textContent=orgs.reduce((sum,x)=>sum+Number(x.unit_count||0),0).toLocaleString('es-VE');
+ const orgByContributor=new Map(orgs.map(o=>[o.contributor_id,o]));
+ if(!contributors.length){target.innerHTML='<div class="contributors-empty"><b>Aún no hay condominios registrados.</b><span>Selecciona «Registrar condominio» para crear una persona jurídica y su ficha matriz con viviendas y tipología.</span></div>';return;}
+ const orgIds=orgs.map(o=>o.id);
+ let properties=[],assessments=[];
+ if(orgIds.length){
+  const {data,error}=await imaudClient.from('properties').select('id,organization_id,parish_name,sector_name').in('organization_id',orgIds).eq('is_consolidated_master',true);
+  if(!error)properties=data||[];
+ }
+ const ids=properties.map(x=>x.id);
+ if(ids.length){
+  const {data,error}=await imaudClient.from('assessments').select('property_id,status,total_amount,is_demo').in('property_id',ids).eq('is_demo',true);
+  if(!error)assessments=data||[];
+ }
+ if(!document.getElementById('condoDirectory'))return;
+ const propertyMap=new Map(properties.map(x=>[x.organization_id,x]));
+ target.innerHTML='<div class="condo-directory-scroll"><table><thead><tr><th>Condominio / Razón social</th><th>RIF y contrato</th><th>Administrador responsable</th><th>Viviendas</th><th>Ubicación</th><th>Tipología</th><th>Deuda DEMO</th><th>Acciones</th></tr></thead><tbody>'+
+ contributors.map(c=>{
+  const o=orgByContributor.get(c.id),p=o?propertyMap.get(o.id):null;
+  const pending=assessments.filter(a=>a.property_id===p?.id&&['pending','partially_paid'].includes(a.status));
+  const debt=pending.reduce((n,a)=>n+Number(a.total_amount||0),0);
+  const fmt=new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(debt);
+  const rif=[c.identification_type,c.identification_number].filter(Boolean).join('-');
+  return '<tr><td><b>'+escapeHTML(o?.display_name||c.legal_name||'Condominio sin nombre')+'</b><small>'+escapeHTML(c.legal_name||'')+'</small></td><td>'+escapeHTML(rif)+'<small>'+escapeHTML(c.contract_number||'—')+'</small></td><td>'+escapeHTML(c.responsible_name||o?.representative_name||'Pendiente')+'</td><td><strong>'+(o?Number(o.unit_count||0).toLocaleString('es-VE'):'Pendiente')+'</strong></td><td>'+escapeHTML([p?.parish_name,p?.sector_name].filter(Boolean).join(' · ')||'Ficha pendiente')+'</td><td><strong>'+escapeHTML(o?.billing_typology||'Pendiente')+'</strong></td><td>'+escapeHTML(o?'Bs. '+fmt:'Sin liquidar')+'</td><td><div class="condo-row-actions">'+(!o?'<button class="btn btn-primary btn-sm" type="button" data-condo-complete="'+escapeHTML(rif)+'">Completar ficha</button>':'')+'<button class="btn btn-light btn-sm" type="button" data-condo-pay="'+escapeHTML(c.contract_number||'')+'">Cobrar</button></div></td></tr>';
  }).join('')+'</tbody></table></div>';
 }
 function payments(){
@@ -564,7 +574,7 @@ async function findPaymentContributor(form){
  const type=new FormData(form).get('lookupType');const raw=String(new FormData(form).get('lookupValue')||'').trim();
  if(!raw){message.textContent='Introduce un dato para realizar la búsqueda.';return;}
  button.disabled=true;button.textContent='Buscando…';message.textContent='Consultando el expediente del contribuyente…';result.hidden=true;
- const select='id,contract_number,kind,identification_type,identification_number,legal_name,first_name,last_name,properties(id,address,property_type,property_use,is_active,assessments(id,period_start,period_end,total_amount,status,payment_allocations(amount,payments(status))))';
+ const select='id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,properties(id,address,property_type,property_use,is_active,is_consolidated_master,consolidated_units,assessments(id,period_start,period_end,total_amount,status,payment_allocations(amount,payments(status))))';
  let query=imaudClient.from('contributors').select(select);
  if(type==='contrato') {
   query=query.ilike('contract_number',raw);
@@ -753,7 +763,7 @@ function staff(){return head('Funcionarios y permisos','Gestión exclusiva de cu
 function log(){return head('Bitácora de auditoría','Registro demostrativo de eventos y trazabilidad administrativa.')+`<div class="notice">En producción, la bitácora deberá ser de solo anexado, con fecha/hora del servidor, actor, IP, acción, entidad afectada y valores anteriores/nuevos cuando corresponda.</div>${table(['Fecha y hora','Usuario','Módulo','Acción','Resultado'],[['11/11/2026 09:42','Usuario intendente','Contribuyentes','Consulta de expediente','<span class="status">Correcto</span>'],['11/11/2026 09:18','Recaudador demo','Pagos','Registro de pago ficticio','<span class="status">Correcto</span>'],['10/11/2026 16:03','Administrador demo','Reportes','Exportación CSV de prueba','<span class="status">Correcto</span>']].map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''))}`}
 function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,pagos:payments,facturacion:invoices,reportes:reports,mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:log};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(v==='pagos'){loadPaymentDebtors();loadDemoPayments();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}}
 function go(v){state.view=v;render();window.scrollTo(0,0)}
-document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-payment')openPaymentModal();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-org'||act==='new-staff')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
+document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')openCondoRegistration();else if(act==='new-payment')openPaymentModal();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-org'||act==='new-staff')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
 document.addEventListener('click',e=>{const toggle=e.target.closest('#paymentBankToggle');if(toggle){const input=document.getElementById('paymentBankSearch'),list=document.getElementById('paymentBankResults');if(!input||!list)return;if(!list.hidden){list.hidden=true;input.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false')}else{input.value='';filterPaymentBanks();toggle.setAttribute('aria-expanded','true');input.focus()}return}const input=e.target.closest('#paymentBankSearch');if(input){filterPaymentBanks();return}const bank=e.target.closest('[data-bank-code]');if(bank){choosePaymentBank(bank.dataset.bankCode);return}const list=document.getElementById('paymentBankResults');if(list&&!e.target.closest('.payment-bank-combobox')){list.hidden=true;document.getElementById('paymentBankSearch')?.setAttribute('aria-expanded','false');document.getElementById('paymentBankToggle')?.setAttribute('aria-expanded','false')}});
 document.addEventListener('click',e=>{const person=e.target.closest('[data-payment-person]');if(person){const found=state.paymentDebtors.find(p=>p.id===person.dataset.paymentPerson);if(found)openPaymentModal(found);return}const page=e.target.closest('[data-payment-page]');if(page){state.paymentPage=Number(page.dataset.paymentPage);const host=document.getElementById('paymentDebtorsTable');if(host)host.innerHTML=paymentDebtorTable();return}if(e.target.closest('#menuToggle'))$('#sidebar').classList.toggle('open')});
 function exportCSV(){const rows=[['Referencia','Contribuyente','Periodo','Importe demo','Fecha'],...state.payments.map(p=>[p.ref,p.person,p.period,p.amount,p.date])];const csv=rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='imaud-reporte-demostracion.csv';a.click();URL.revokeObjectURL(a.href);toast('CSV demostrativo descargado')}

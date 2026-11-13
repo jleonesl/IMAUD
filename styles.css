@@ -666,3 +666,19 @@ body.modal-open{overflow:hidden}
 .report-table-scroll tbody tr:last-child td{border:0}
 @media(max-width:930px){.report-filter-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.report-results-title{align-items:flex-start;flex-direction:column}}
 @media(max-width:600px){.report-filter-panel,.report-results{padding:14px}.report-filter-controls{grid-template-columns:1fr}.report-card-actions{width:100%}.report-summary{grid-template-columns:1fr}.report-result-tools{width:100%}}
+
+/* Alta jurídica de condominio · ficha matriz con total de unidades */
+#contributorServiceKindField[hidden],.condo-matrix-form[hidden],
+#propertyForm[hidden],#standalonePropertyForm[hidden]{display:none!important}
+#contributorServiceKindField small{font-size:10px;color:#758b9c;line-height:1.45;margin-top:3px}
+.condo-matrix-form{margin-top:16px;padding:15px;border:1px solid #d5e7eb;border-radius:11px;background:linear-gradient(160deg,#f7fbfc 0%,#fff 55%)}
+.condo-matrix-heading{display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
+.condo-matrix-heading h3{margin:0 0 5px!important;color:#163c5c;font:800 15px Manrope,sans-serif}
+.condo-matrix-heading p{margin:0!important;color:#6c8696;font-size:11px;line-height:1.6}
+.condo-matrix-icon{background:#deeff1;color:#187f8e;font-size:20px;border-radius:9px;min-width:38px;height:38px;display:grid;place-items:center}
+.condo-matrix-form .field input[disabled]{background:#eef5f7;color:#2c5d77;font-weight:700}
+.condo-matrix-estimate{margin-top:15px;padding:13px 15px;background:#eaf5f7;border:1px solid #b8dce1;border-radius:9px;display:grid;gap:7px;color:#245f72;font-size:11px;line-height:1.6}
+.condo-matrix-estimate strong{font:800 13px Manrope,sans-serif;color:#10415a}
+.condo-matrix-disclaimer{margin:12px 0;font-size:10px;line-height:1.65;color:#7b8c99}
+.condo-matrix-form .property-success{margin-top:12px;display:grid;gap:8px}
+.condo-matrix-form .property-success[hidden]{display:none!important}

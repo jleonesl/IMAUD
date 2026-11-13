@@ -498,3 +498,20 @@ body.modal-open{overflow:hidden}
 .udc-history-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #edf1f3;color:#6f8492;font-size:10px}
 .udc-history-row b{color:#25465d}
 @media(max-width:760px){.udc-panel-head{flex-direction:column}.udc-panel-head .btn{width:100%}.udc-rate-content{grid-template-columns:1fr}.udc-rate-meta{grid-template-columns:1fr 1fr}.udc-tariff-grid{grid-template-columns:1fr}.udc-panel,.udc-tariffs{padding:15px}}
+
+
+/* Consulta UDC por sector — consulta sin liquidación */
+.udc-sector-card{padding:20px;margin-bottom:16px}
+.udc-sector-card .panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.udc-sector-card .panel-head h3{margin:0;font:800 14px Manrope,sans-serif;color:#24465e}
+.udc-sector-intro{color:#708594;font-size:11px;line-height:1.65;margin:10px 0 16px}
+.udc-sector-selectors{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.udc-sector-selectors .field{display:flex;flex-direction:column;gap:7px}
+.udc-sector-selectors .field label{font-size:10px;color:#38566b;font-weight:700}
+.udc-sector-selectors .field select{height:41px;border:1px solid #dce5ea;border-radius:8px;background:#fff;padding:0 12px;color:#24465e;font-size:11px;width:100%}
+.udc-sector-preview{margin-top:9px;padding:12px;background:#edf8f3;border:1px solid #d0e7da;border-radius:9px;display:grid;gap:5px;color:#355669;font-size:11px;line-height:1.5}
+.udc-sector-preview[hidden]{display:none}
+.udc-sector-preview strong{color:#137f67;font-size:12px}
+.udc-sector-preview b{color:#11593d;font-size:13px}
+.udc-sector-preview small{color:#678275;font-size:10px}
+@media(max-width:760px){.udc-sector-selectors{grid-template-columns:1fr}.udc-sector-card{padding:15px}.udc-sector-card .panel-head{align-items:flex-start;flex-direction:column}}

@@ -530,3 +530,24 @@ body.modal-open{overflow:hidden}
 .contributor-action-summary b{color:#24465e}
 .contributor-action-dialog .form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 @media(max-width:760px){.contributor-action-dialog{padding:15px}.contributor-action-dialog .form-grid{grid-template-columns:1fr}}
+
+
+/* Directorio de contribuyentes: filas compactas sin desplazamiento horizontal a tamaño escritorio */
+.contributors-table-wrap .contributors-compact-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse}
+.contributors-compact-table .contributor-col-name{width:19%}
+.contributors-compact-table .contributor-col-id{width:12%}
+.contributors-compact-table .contributor-col-contract{width:15%}
+.contributors-compact-table .contributor-col-properties{width:11%}
+.contributors-compact-table .contributor-col-admin{width:9%}
+.contributors-compact-table .contributor-col-debt{width:11%}
+.contributors-compact-table .contributor-col-payment{width:10%}
+.contributors-compact-table .contributor-col-actions{width:13%}
+.contributors-compact-table th{font-size:9px;padding:10px 5px;white-space:normal}
+.contributors-compact-table td{padding:10px 5px;font-size:9px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle}
+.contributors-compact-table td strong{font-size:9px}
+.contributors-compact-table .contributor-name-cell{line-height:1.45}
+.contributors-compact-table .contributor-properties-cell{white-space:normal;font-weight:600}
+.contributors-compact-table .status{font-size:9px;padding:5px 7px;white-space:nowrap}
+.contributors-compact-table .property-row-actions{gap:3px;flex-wrap:nowrap;justify-content:flex-start}
+.contributors-compact-table .property-row-actions button{width:26px;height:27px;flex:0 0 26px;font-size:13px}
+@media(max-width:1100px){.contributors-table-wrap .contributors-compact-table{min-width:730px}}

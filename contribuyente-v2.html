@@ -13,15 +13,30 @@
 .visual-copy{position:relative;z-index:1;color:#fff;max-width:570px}.visual-copy span{font-size:11px;letter-spacing:2px;font-weight:800;color:#bceee2}.visual-copy h2{font-size:clamp(34px,4vw,62px);line-height:1.04;margin:15px 0}.visual-copy p{font-size:15px;line-height:1.7;color:#e0f2f2;max-width:450px}
 .staff-panel{background:#fff;display:flex;align-items:center;justify-content:center;padding:clamp(22px,3vw,48px);min-width:0;box-shadow:-12px 0 36px #102d4608}.staff-card{width:100%;max-width:410px}.back{display:inline-block;color:#287d98;text-decoration:none;font-size:13px;font-weight:700;margin-bottom:34px}.brand{margin-bottom:38px}.brand-mark{font-size:31px;font-weight:900;letter-spacing:-1.5px;color:#123c5b}.brand-mark span{color:#159b70}.eyebrow{font-size:10px;letter-spacing:1.7px;color:#159b70;font-weight:800}.staff-card h1{font-size:30px;margin:10px 0 8px}.sub{font-size:13px;color:#718292;line-height:1.6;margin:0 0 28px}.field{display:block;font-size:12px;font-weight:700;margin:16px 0 7px}.staff-card input{width:100%;height:49px;border:1px solid #dce5eb;border-radius:10px;padding:0 14px;font:inherit}.staff-card input:focus{outline:2px solid #159b7030;border-color:#159b70}.submit{width:100%;height:49px;border:0;border-radius:10px;background:#103d5d;color:white;font-size:14px;font-weight:800;margin-top:24px;cursor:pointer}.submit:disabled{opacity:.6}.forgot{display:block;text-align:center;margin-top:18px;color:#287d98;text-decoration:none;font-size:12px}.message{min-height:22px;color:#ad4444;font-size:12px;line-height:1.5;margin-top:13px}.foot{border-top:1px solid #e8eef1;padding-top:18px;margin-top:24px;color:#8795a0;font-size:10px;line-height:1.7;text-align:center}
 @media(max-width:850px){.staff-page{grid-template-columns:1fr}.staff-visual{min-height:230px;height:30vh;padding:28px}.visual-copy h2{font-size:32px;margin:8px 0}.visual-copy p{font-size:12px;margin:0}.staff-panel{padding:30px 22px}.staff-card{max-width:480px}.back{margin-bottom:22px}.brand{margin-bottom:26px}}
-.citizen-demo-entry{margin-top:19px}.citizen-demo-divider{display:flex;align-items:center;gap:10px;color:#91a2af;font-size:10px;font-weight:800;letter-spacing:.075em;margin-bottom:14px}.citizen-demo-divider:before,.citizen-demo-divider:after{content:"";height:1px;flex:1;background:#e6ecef}.citizen-demo-button{background:#e7f5f5;color:#086e83;padding:14px 16px;border:1px solid #b7dce0;border-radius:10px;display:flex;justify-content:center;align-items:center;gap:8px;text-decoration:none;font-size:13px;font-weight:800}.citizen-demo-button:hover{background:#d7eff0}.citizen-demo-button b{margin-left:auto;font-size:18px}.citizen-demo-entry p{color:#8095a4;font-size:11px;text-align:center;line-height:1.55;margin:10px 0 0}</style></head>
+.citizen-demo-entry{margin-top:19px}.citizen-demo-divider{display:flex;align-items:center;gap:10px;color:#91a2af;font-size:10px;font-weight:800;letter-spacing:.075em;margin-bottom:14px}.citizen-demo-divider:before,.citizen-demo-divider:after{content:"";height:1px;flex:1;background:#e6ecef}.citizen-demo-button{background:#e7f5f5;color:#086e83;padding:14px 16px;border:1px solid #b7dce0;border-radius:10px;display:flex;justify-content:center;align-items:center;gap:8px;text-decoration:none;font-size:13px;font-weight:800}.citizen-demo-button:hover{background:#d7eff0}.citizen-demo-button b{margin-left:auto;font-size:18px}.citizen-demo-entry p{color:#8095a4;font-size:11px;text-align:center;line-height:1.55;margin:10px 0 0}.staff-card select{width:100%;height:49px;border:1px solid #dce5eb;border-radius:10px;padding:0 14px;background:#fff;color:#173e59;font:inherit}.staff-card select:focus{outline:2px solid #159b7030;border-color:#159b70}</style></head>
 <body>
 <main class="staff-page">
 <section class="staff-visual"><div class="visual-copy"><span>SISTEMA INTEGRAL TRIBUTARIO MUNICIPAL</span><h2>Portal del<br>Contribuyente</h2><p>Consulta tu estado de cuenta, realiza pagos y gestiona tus comprobantes y certificados de solvencia de forma sencilla y segura.</p></div></section>
 <section class="staff-panel"><div class="staff-card">
 <a class="back" href="./index.html">← Volver a la página principal</a>
 <div class="brand"><div class="brand-mark">SIT<span>MAUD</span></div><div class="eyebrow">ALCALDÍA DEL MUNICIPIO MIRANDA · CORO, FALCÓN</div></div>
-<div class="eyebrow">PORTAL DEL CONTRIBUYENTE</div><h1>Iniciar sesión</h1><p class="sub">Ingresa con tu número de cédula y contraseña para consultar tus contratos y obligaciones.</p>
-<form id="citizenLogin"><label class="field" for="citizenCedula">Usuario / Cédula de identidad</label><input id="citizenCedula" type="text" inputmode="numeric" autocomplete="username" placeholder="Ingresa tu número de cédula" required pattern="[0-9]{5,12}" title="Ingresa tu cédula solo con números"><label class="field" for="citizenPassword">Contraseña</label><input id="citizenPassword" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required><button class="submit" id="citizenSubmit" type="submit">Ingresar al sistema</button></form>
+<div class="eyebrow">PORTAL DEL CONTRIBUYENTE</div><h1>Acceso a mi cuenta</h1><p class="sub">Ingresa con la identidad registrada por IMAUD. Tu acceso debe estar vinculado a un expediente institucional autorizado.</p>
+<form id="citizenLogin">
+<label class="field" for="citizenType">Tipo de contribuyente</label>
+<select id="citizenType" required>
+<option value="V">V — Venezolano</option>
+<option value="E">E — Extranjero</option>
+<option value="J">J — Persona jurídica</option>
+<option value="C">Condominio / Junta administradora</option>
+</select>
+<label class="field" for="citizenCedula" id="citizenIdentityLabel">Número de cédula venezolana</label>
+<input id="citizenCedula" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej. 12345678" required maxlength="20">
+<label class="field" for="citizenEmail">Correo electrónico vinculado al expediente</label>
+<input id="citizenEmail" type="email" autocomplete="username" placeholder="tu.correo@ejemplo.com" required>
+<label class="field" for="citizenPassword">Contraseña</label>
+<input id="citizenPassword" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required>
+<button class="submit" id="citizenSubmit" type="submit">Ingresar al portal</button>
+</form>
 <div class="citizen-demo-entry"><div class="citizen-demo-divider"><span>O EXPLORA SIN INICIAR SESIÓN</span></div><a href="./contribuyente-demo.html" class="citizen-demo-button">◫ &nbsp; Entrar al portal DEMO <b>→</b></a><p>Acceso libre con datos ficticios para conocer el módulo. No requiere correo, cédula ni contraseña.</p></div>
 <a class="forgot" href="#" id="citizenForgot">¿Olvidaste tu contraseña?</a><div class="message" id="citizenMessage" role="status"></div>
 <div class="foot">Acceso personal para contribuyentes registrados.<br>Si aún no tienes cuenta, solicita orientación en la oficina de recaudación.</div>
@@ -29,26 +44,49 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase.co","sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm");
-const form=document.getElementById('citizenLogin');
-const button=document.getElementById('citizenSubmit');
-const message=document.getElementById('citizenMessage');
-const cedula=document.getElementById('citizenCedula');
-const password=document.getElementById('citizenPassword');
-// Convención de acceso: cédula normalizada como identificador de inicio de sesión en Supabase.
-// Las cuentas ciudadanas deberán provisionarse con este alias y una contraseña definida por el titular.
-const citizenLoginEmail=value=>value.replace(/[^0-9]/g,'')+'@contribuyentes.sitmaud.local';
+const form=document.getElementById('citizenLogin'),button=document.getElementById('citizenSubmit');
+const message=document.getElementById('citizenMessage'),identity=document.getElementById('citizenCedula');
+const type=document.getElementById('citizenType'),email=document.getElementById('citizenEmail'),password=document.getElementById('citizenPassword');
+function adaptType(){
+ const v=type.value,legal=v==='J'||v==='C';
+ document.getElementById('citizenIdentityLabel').textContent=legal?'RIF jurídico del '+(v==='C'?'condominio':'contribuyente'):v==='E'?'Número de cédula extranjera':'Número de cédula venezolana';
+ identity.placeholder=legal?'J-12345678-9':'Ej. 12345678';
+ identity.inputMode=legal?'text':'numeric';
+}
+type.addEventListener('change',adaptType);adaptType();
+function matches(record){
+ const normalized=identity.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+ const stored=String(record.identification||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+ if(type.value==='C'&&record.identity_type!=='C')return false;
+ if(type.value!=='C'&&record.identity_type!==type.value)return false;
+ if(!normalized||!stored)return false;
+ if(type.value==='J'||type.value==='C')return normalized===stored;
+ return normalized.replace(/^[VE]/,'')===stored.replace(/^[VE]/,'');
+}
 form.addEventListener('submit',async e=>{
  e.preventDefault();
- const id=cedula.value.replace(/[^0-9]/g,'');
- if(!/^[0-9]{5,12}$/.test(id)){message.textContent='Verifica el número de cédula ingresado.';return;}
- button.disabled=true;button.textContent='Verificando acceso…';message.textContent='';
- const {data,error}=await client.auth.signInWithPassword({email:citizenLoginEmail(id),password:password.value});
- if(error){message.textContent='No se pudo iniciar sesión. Verifica tu cédula y contraseña o acude a la oficina de recaudación para activar tu cuenta.';button.disabled=false;button.textContent='Ingresar al sistema';return;}
- message.textContent='Identidad autenticada. La habilitación del espacio personal y sus contratos se completará al activar el módulo ciudadano.';
- button.disabled=false;button.textContent='Acceso validado';
+ const raw=identity.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase(),legal=['J','C'].includes(type.value);
+ if(legal?!/^J[0-9]{9}$/.test(raw):!/^[0-9]{5,12}$/.test(raw)){message.textContent=legal?'Introduce un RIF jurídico válido, por ejemplo J-12345678-9.':'Introduce la cédula sin puntos ni guiones.';return;}
+ button.disabled=true;button.textContent='Validando acceso…';message.textContent='';
+ try{
+  const {data:session,error:authError}=await client.auth.signInWithPassword({email:email.value.trim(),password:password.value});
+  if(authError||!session?.user)throw new Error('No se pudo iniciar sesión. Verifica los datos de acceso.');
+  const {data,error}=await client.rpc('get_my_citizen_portal');
+  if(error)throw error;
+  if(!data?.activated)throw new Error('El expediente todavía no tiene acceso ciudadano activado. Solicita su vinculación al funcionario de IMAUD.');
+  if(!matches(data))throw new Error('La cédula o RIF no coincide con el expediente vinculado a esta cuenta.');
+  sessionStorage.setItem('sitmaud_citizen_view','authenticated');
+  location.assign('./contribuyente-cuenta.html');
+ }catch(err){
+  await client.auth.signOut();
+  message.textContent=err.message||'No fue posible verificar la cuenta.';
+  button.disabled=false;button.textContent='Ingresar al portal';
+ }
 });
-document.getElementById('citizenForgot').addEventListener('click',e=>{
- e.preventDefault();
- message.textContent='Para recuperar el acceso mediante cédula, solicita asistencia en la oficina de recaudación mientras se habilita la recuperación ciudadana.';
+document.getElementById('citizenForgot').addEventListener('click',async e=>{
+ e.preventDefault();const address=email.value.trim();
+ if(!address){message.textContent='Escribe primero el correo vinculado al expediente.';return;}
+ const {error}=await client.auth.resetPasswordForEmail(address,{redirectTo:location.origin+location.pathname});
+ message.textContent=error?'No fue posible iniciar la recuperación.':'Si la cuenta existe, recibirás instrucciones para recuperar tu contraseña.';
 });
 </script></body></html>

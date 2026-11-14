@@ -28,7 +28,6 @@ async function open(id){
  (status!=='incident'?'<option value="incident">Registrar incidencia bancaria</option>':'')+
  (canReverse&&status==='incident'?'<option value="reverse">Revertir pago y reabrir deuda DEMO</option>':'')+
  '</select></label>'+
- '
  '<label class="field"><span>Observaciones y evidencia de Tesorería</span><textarea name="notes" id="treasuryNotes" rows="3" maxlength="1200" placeholder="Motivo de la incidencia, devolución o conciliación"></textarea></label>'+
  '<p class="treasury-warning" id="treasuryActionWarning"></p>'+
  '<div class="treasury-action-buttons"><button type="button" class="btn btn-light" data-treasury-close>Cancelar</button><button class="btn btn-primary" id="treasurySave" type="submit">Guardar validación</button></div></form>':
@@ -38,6 +37,7 @@ async function open(id){
  '<header class="treasury-dialog-head"><div><span>CONCILIACIÓN BANCARIA · ENTORNO DEMO</span><h2 id="treasuryModalTitle">Verificación de pago</h2><p>La emisión del comprobante y la verificación del ingreso son procesos separados.</p></div><button class="modal-close" type="button" data-treasury-close aria-label="Cerrar">×</button></header>'+
  '<div class="treasury-dialog-body"><div class="treasury-payment-facts"><div><small>Comprobante</small><b>'+esc(p.receipt_number)+'</b></div><div><small>Contribuyente</small><b>'+esc(contributorName(p.contributor||{}))+'</b></div><div><small>Contrato</small><b>'+esc(p.contributor?.contract_number||'—')+'</b></div><div><small>Monto</small><b>'+moneyLocal(p.amount)+'</b></div><div><small>Fecha de registro</small><b>'+esc(new Date(p.paid_at).toLocaleString('es-VE',{timeZone:'America/Caracas'}))+'</b></div><div><small>Medio de pago</small><b>'+esc(method)+'</b></div><div><small>Referencia declarada</small><b>'+esc(p.external_reference||'—')+'</b></div><div><small>Estado en Tesorería</small><span class="treasury-badge treasury-'+esc(status)+'">'+esc(statuses[status]||status)+'</span></div></div>'+
  (p.proof_storage_path?'<div class="treasury-proof"><button type="button" class="btn btn-light btn-sm" data-proof-payment-id="'+esc(p.id)+'">Ver comprobante bancario adjunto</button></div>':'')+
+ '<div class="treasury-proof"><button type="button" class="btn btn-light btn-sm" data-treasury-bill="'+esc(p.id)+'">Ver factura del pago</button></div>'+
  '<div class="treasury-help">El contribuyente recibe su comprobante DEMO inmediatamente. Validar aquí solo confirma el ingreso bancario observado por Tesorería; no genera otro pago. Una incidencia no reabre por sí sola la deuda.</div>'+
  actions+
  '<section class="treasury-history"><h3>Historial de Tesorería</h3>'+(events?events:'<p>Sin verificaciones bancarias anteriores.</p>')+'</section></div></section></div>');
@@ -50,7 +50,7 @@ function updateWarning(){
  const button=document.getElementById('treasurySave');
  if(!message||!button)return;
  const messages={
-  validate:'Confirma únicamente si Tesorería encontró el ingreso en la cuenta municipal.',
+  validate:'Compara la referencia original del pago con el movimiento bancario y confirma solo si se acreditó. No se solicita una nueva referencia.',
   incident:'Registra la discrepancia para investigación, sin alterar todavía la deuda ni cancelar el comprobante entregado.',
   reverse:'Acción excepcional: se conserva el comprobante histórico y se reabre la deuda DEMO. Se requiere justificación y permiso de reversión.'
  };
@@ -58,6 +58,8 @@ function updateWarning(){
  button.textContent=action==='validate'?'Validar pago':action==='incident'?'Registrar incidencia':'Revertir y reabrir deuda';
 }
 document.addEventListener('click',e=>{
+ const invoice=e.target.closest('[data-treasury-bill]');
+ if(invoice){const id=invoice.dataset.treasuryBill;close();const trigger=document.createElement('button');trigger.type='button';trigger.dataset.billView=id;trigger.hidden=true;document.body.appendChild(trigger);trigger.click();trigger.remove();return;}
  const button=e.target.closest('[data-treasury-review]');
  if(button){open(button.dataset.treasuryReview);return;}
  if(e.target.closest('[data-treasury-close]')){close();return;}

@@ -763,9 +763,81 @@ async function syncUdcRate(){
  if(!data?.ok&&!data?.skipped){toast(data?.error||'No se pudo validar la tasa BCV.');return;}
  await loadUdcRate();toast(data?.skipped?'La tasa consultada es anterior. Se conserva la UCD vigente.':'UCD actualizada correctamente desde la fuente BCV.');
 }
-function staff(){return head('Funcionarios y permisos','Gestión exclusiva de cuentas y autorizaciones por usuarios intendentes.','<button class="btn btn-primary" data-action="new-staff">＋ Crear funcionario</button>')+`<div class="notice">Solo los usuarios intendentes pueden crear funcionarios y conceder o revocar permisos. La pantalla actual es un prototipo local; no crea cuentas autenticadas.</div><div class="grid module-grid"><div class="card panel"><h3 style="margin-top:0">Usuarios intendentes</h3><div class="kpi-value">Hasta 5</div><p style="font-size:10px;color:#82919c">Superusuarios con acceso integral y autenticación reforzada.</p></div><div class="card panel"><h3 style="margin-top:0">Administradores analistas</h3><div class="kpi-value">Permisos a medida</div><p style="font-size:10px;color:#82919c">Permisos por módulo y acción asignados por intendentes.</p></div><div class="card panel"><h3 style="margin-top:0">Recaudadores</h3><div class="kpi-value">Acceso operativo</div><p style="font-size:10px;color:#82919c">Consultar obligaciones, registrar cobros y comprobantes autorizados.</p></div></div><div class="card panel" style="margin-top:16px"><div class="panel-head"><h3>Matriz conceptual de permisos</h3><span>Solo demostración</span></div>${['Contribuyentes: consultar, registrar, editar','Inmuebles: consultar, registrar, editar','Pagos: consultar, registrar, reversar','Facturación: consultar, emitir muestra, reimprimir','Reportes: consultar, exportar','Ordenanza: consultar, administrar tarifas','Funcionarios: crear cuentas, asignar permisos'].map(x=>`<div class="permission-group"><h4>${x.split(':')[0]}</h4><div class="checks">${x.split(':')[1].split(',').map(v=>`<label><input type="checkbox" disabled> ${v.trim()}</label>`).join('')}</div></div>`).join('')}</div>`}
+const staffPermissionGroups=[
+ {name:'Contribuyentes',items:[['contributors.read','Consultar'],['contributors.create','Registrar'],['contributors.update','Editar']]},
+ {name:'Inmuebles',items:[['properties.read','Consultar'],['properties.create','Registrar'],['properties.update','Editar']]},
+ {name:'Condominios',items:[['condominiums.read','Consultar'],['condominiums.create','Registrar'],['condominiums.update','Editar']]},
+ {name:'Pagos y Tesorería',items:[['payments.read','Consultar'],['payments.register','Registrar pagos'],['payments.validate','Revisar y validar pagos'],['payments.reverse','Revertir pagos']]},
+ {name:'Facturación',items:[['invoices.read','Consultar comprobantes'],['invoices.issue','Emitir comprobantes']]},
+ {name:'Reportes',items:[['reports.read','Consultar'],['reports.export','Exportar']]},
+ {name:'Ordenanza y tarifas',items:[['tariffs.read','Consultar'],['tariffs.manage','Administrar tarifas']]},
+ {name:'Bitácora',items:[['audit.read','Consultar']]}
+];
+let staffPermissionRole=null,staffPermissionUsers=[],staffPermissionGrants=[],staffPermissionSelected='',staffPermissionBusy=false;
+function staff(){
+ return head('Funcionarios y permisos','Gestión de cuentas y autorizaciones exclusivamente por el intendente.')+
+ '<div class="notice">Solo el intendente puede asignar o revocar permisos. Registrar pagos, validar su acreditación en Tesorería y revertirlos son tres autorizaciones diferentes.</div>'+
+ '<div class="grid module-grid"><div class="card panel"><h3 style="margin-top:0">Usuarios intendentes</h3><div class="kpi-value">Acceso integral</div><p style="font-size:10px;color:#82919c">Superusuarios responsables de la creación de funcionarios y sus permisos.</p></div><div class="card panel"><h3 style="margin-top:0">Administradores analistas</h3><div class="kpi-value">Permisos a medida</div><p style="font-size:10px;color:#82919c">Acceso asignado por módulo y operación.</p></div><div class="card panel"><h3 style="margin-top:0">Recaudadores / Tesorería</h3><div class="kpi-value">Funciones separadas</div><p style="font-size:10px;color:#82919c">Registrar un pago no concede permiso para validarlo ni revertirlo.</p></div></div>'+
+ '<section class="card panel staff-permission-panel" style="margin-top:16px"><div class="panel-head"><div><h3>Permisos por funcionario</h3><p>Selecciona un funcionario existente para administrar las autorizaciones que realmente se guardan en SITMAUD.</p></div><span id="staffPermissionStatus">Verificando acceso…</span></div>'+
+ '<div class="staff-permission-selector"><label for="staffPermissionUser">Funcionario</label><select id="staffPermissionUser" disabled><option value="">Cargando funcionarios…</option></select></div>'+
+ '<div id="staffPermissionNotice" class="panel-hint" aria-live="polite">Preparando permisos…</div>'+
+ staffPermissionGroups.map(group=>'<div class="permission-group"><h4>'+group.name+'</h4><div class="checks">'+group.items.map(item=>'<label class="staff-permission-choice"><input type="checkbox" data-staff-permission="'+item[0]+'" disabled> '+item[1]+'</label>').join('')+'</div></div>').join('')+
+ '</section>';
+}
+async function loadStaffPermissionMatrix(){
+ const select=document.getElementById('staffPermissionUser'),note=document.getElementById('staffPermissionNotice'),status=document.getElementById('staffPermissionStatus');if(!select)return;
+ const {data:role,error:roleError}=await imaudClient.rpc('current_staff_role');
+ if(!document.getElementById('staffPermissionUser'))return;
+ if(roleError||role!=='intendente'){
+  staffPermissionRole=role||null;status.textContent='Acceso restringido';note.textContent='La asignación de permisos está disponible exclusivamente para el intendente.';
+  select.innerHTML='<option>Sin autorización</option>';return;
+ }
+ staffPermissionRole='intendente';
+ const [users,grants]=await Promise.all([
+  imaudClient.from('staff_profiles').select('user_id,display_name,role,is_active').eq('is_active',true).order('display_name'),
+  imaudClient.from('staff_permissions').select('user_id,permission_code')
+ ]);
+ if(!document.getElementById('staffPermissionUser'))return;
+ if(users.error||grants.error){status.textContent='No disponible';note.textContent='No se pudieron consultar los funcionarios o permisos. Comprueba la conexión y vuelve a entrar.';return;}
+ staffPermissionUsers=(users.data||[]).filter(u=>u.role!=='intendente');
+ staffPermissionGrants=grants.data||[];
+ status.textContent='Administración del intendente';
+ select.innerHTML='<option value="">Seleccionar funcionario…</option>'+staffPermissionUsers.map(u=>'<option value="'+escapeHTML(u.user_id)+'">'+escapeHTML(u.display_name||'Funcionario')+' · '+escapeHTML(String(u.role||'').replaceAll('_',' '))+'</option>').join('');
+ select.disabled=!staffPermissionUsers.length;
+ note.textContent=staffPermissionUsers.length?'Selecciona un funcionario para consultar y editar sus permisos. Los cambios se guardan individualmente y quedan registrados.':'Aún no hay funcionarios no intendentes activos. Primero debes habilitar sus cuentas.';
+ staffPermissionSelected='';document.querySelectorAll('[data-staff-permission]').forEach(c=>{c.checked=false;c.disabled=true});
+}
+function showStaffPermissionGrants(){
+ const select=document.getElementById('staffPermissionUser'),note=document.getElementById('staffPermissionNotice');
+ if(!select||staffPermissionRole!=='intendente')return;
+ staffPermissionSelected=select.value;
+ const granted=new Set(staffPermissionGrants.filter(x=>x.user_id===staffPermissionSelected).map(x=>x.permission_code));
+ document.querySelectorAll('[data-staff-permission]').forEach(c=>{c.checked=granted.has(c.dataset.staffPermission);c.disabled=!staffPermissionSelected||staffPermissionBusy;});
+ if(note)note.textContent=staffPermissionSelected?'Modifica únicamente los permisos necesarios. Los cambios se guardan al marcar o desmarcar cada casilla.':'Selecciona un funcionario para administrar sus permisos.';
+}
+async function saveStaffPermissionCheckbox(box){
+ if(staffPermissionRole!=='intendente'||!staffPermissionSelected||staffPermissionBusy)return;
+ const person=staffPermissionSelected,code=box.dataset.staffPermission,enabled=box.checked;
+ if(!staffPermissionGroups.some(g=>g.items.some(item=>item[0]===code)))return;
+ staffPermissionBusy=true;document.querySelectorAll('[data-staff-permission]').forEach(c=>c.disabled=true);
+ const note=document.getElementById('staffPermissionNotice');if(note)note.textContent='Guardando permiso…';
+ const {error}=await imaudClient.rpc('set_staff_permission',{p_user_id:person,p_code:code,p_enabled:enabled});
+ staffPermissionBusy=false;
+ if(error){box.checked=!enabled;if(note)note.textContent='No se pudo guardar: '+error.message;toast('El permiso no se guardó.');}
+ else{
+  staffPermissionGrants=staffPermissionGrants.filter(g=>!(g.user_id===person&&g.permission_code===code));
+  if(enabled)staffPermissionGrants.push({user_id:person,permission_code:code});
+  if(note)note.textContent='Permiso actualizado y auditado. Solo el intendente puede modificarlo.';
+  toast('Permiso '+(enabled?'concedido':'revocado')+' correctamente.');
+ }
+ showStaffPermissionGrants();
+}
+document.addEventListener('change',event=>{
+ if(event.target.id==='staffPermissionUser'){showStaffPermissionGrants();return;}
+ if(event.target.matches('[data-staff-permission]'))saveStaffPermissionCheckbox(event.target);
+});
 function log(){return head('Bitácora de auditoría','Registro demostrativo de eventos y trazabilidad administrativa.')+`<div class="notice">En producción, la bitácora deberá ser de solo anexado, con fecha/hora del servidor, actor, IP, acción, entidad afectada y valores anteriores/nuevos cuando corresponda.</div>${table(['Fecha y hora','Usuario','Módulo','Acción','Resultado'],[['11/11/2026 09:42','Usuario intendente','Contribuyentes','Consulta de expediente','<span class="status">Correcto</span>'],['11/11/2026 09:18','Recaudador demo','Pagos','Registro de pago ficticio','<span class="status">Correcto</span>'],['10/11/2026 16:03','Administrador demo','Reportes','Exportación CSV de prueba','<span class="status">Correcto</span>']].map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''))}`}
-function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:()=>window.renderCondominiumRegistration(),pagos:payments,facturacion:invoices,reportes:reports,mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:log};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='condominio_registro')window.initializeCondominiumRegistration();if(v==='inmuebles')loadProperties();if(v==='pagos'){loadPaymentDebtors();loadDemoPayments();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}}
+function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:()=>window.renderCondominiumRegistration(),pagos:payments,facturacion:invoices,reportes:reports,mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:log};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='condominio_registro')window.initializeCondominiumRegistration();if(v==='inmuebles')loadProperties();if(v==='pagos'){loadPaymentDebtors();loadDemoPayments();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}if(v==='funcionarios')loadStaffPermissionMatrix();}
 function go(v){state.view=v;render();window.scrollTo(0,0)}
 document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')openCondoRegistration();else if(act==='new-payment')openPaymentModal();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-org'||act==='new-staff')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
 document.addEventListener('click',e=>{const toggle=e.target.closest('#paymentBankToggle');if(toggle){const input=document.getElementById('paymentBankSearch'),list=document.getElementById('paymentBankResults');if(!input||!list)return;if(!list.hidden){list.hidden=true;input.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false')}else{input.value='';filterPaymentBanks();toggle.setAttribute('aria-expanded','true');input.focus()}return}const input=e.target.closest('#paymentBankSearch');if(input){filterPaymentBanks();return}const bank=e.target.closest('[data-bank-code]');if(bank){choosePaymentBank(bank.dataset.bankCode);return}const list=document.getElementById('paymentBankResults');if(list&&!e.target.closest('.payment-bank-combobox')){list.hidden=true;document.getElementById('paymentBankSearch')?.setAttribute('aria-expanded','false');document.getElementById('paymentBankToggle')?.setAttribute('aria-expanded','false')}});

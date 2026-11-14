@@ -128,3 +128,36 @@ No es seguro hacer una sustitución global de nombres: cada módulo debe migrars
 ## Compatibilidad Supabase CLI
 
 El changelog oficial informa que Supabase CLI v3 es local-first: comandos de base de datos operan en local por defecto y los cambios remotos requieren `--remote`; las acciones remotas en CI requieren confirmación explícita `--yes`. Los scripts de despliegue deben fijar versión y destino para evitar ejecutar accidentalmente comandos contra producción.
+
+
+## Directiva institucional del propietario del proyecto (2026-11-14)
+
+SITMAUD es un sistema tributario municipal de uso real. No se autoriza desarrollar ni presentar los módulos financieros, tributarios o documentales como simulaciones, ni usar registros ficticios como si fueran actividad del Instituto. El objetivo no es conservar una modalidad DEMO como producto alternativo: es reemplazar los flujos de prueba por implementaciones oficiales verificadas.
+
+### Criterios obligatorios
+
+1. No mostrar pagos, contribuyentes, deudas, facturas, recibos, reportes, condominios ni indicadores ficticios.
+2. No emitir comprobantes marcados como DEMO ni documentos presentados como fiscales antes de tener la autorización y validación institucional correspondientes.
+3. No generar obligaciones oficiales con tarifas no aprobadas ni sin validación normativa.
+4. No permitir registrar, validar, revertir o conciliar pagos mediante las funciones `register_demo_*` o `review_demo_*`.
+5. No convertir, copiar ni importar automáticamente registros DEMO a tablas oficiales.
+6. No eliminar físicamente las tablas o evidencias DEMO antes de evaluar dependencias, preservar auditoría y recibir autorización institucional para la retención/eliminación.
+7. Mientras un flujo oficial no exista y no supere pruebas, ese flujo debe permanecer bloqueado para operación institucional con un mensaje neutral de "módulo en preparación", sin ofrecer simulaciones como sustituto.
+8. La interfaz debe mostrar únicamente datos procedentes de las tablas oficiales y funciones autorizadas. Los valores inexistentes deben presentarse como no disponibles, nunca como datos inventados.
+9. Cada operación crítica debe tener validación en servidor, autorización por rol, transacción atómica, idempotencia, auditoría, manejo de errores y reconciliación.
+10. No afirmar que SITMAUD está listo para uso oficial hasta completar pruebas de extremo a extremo, restauración de respaldos, revisión legal/contable, aceptación de la Alcaldía y aprobación formal de los responsables.
+
+### Secuencia de sustitución, no de renombrado
+
+- Obligaciones: diseñar y probar el motor oficial de liquidación con tarifas aprobadas, vigencia, UCD/BCV, tipología, sector, excepciones, condominios consolidados, snapshots y prevención de duplicados.
+- Recaudación: crear el flujo definitivo sobre `payments` y `payment_allocations`, con métodos autorizados, referencias, evidencias, idempotencia y estados controlados.
+- Tesorería: implementar revisión y conciliación de pagos definitivos con separación de funciones, eventos inmutables y reversos justificados.
+- Facturación: emitir el documento institucional aprobado solo desde un pago confirmado, con numeración, integridad y consulta verificable.
+- Reportes: calcularlos desde tablas oficiales y permitir exportaciones auditables, con filtros y zona horaria institucional.
+- Condominios: registrar cuentas matrices y unidades con funciones oficiales, reglas de contrato y obligaciones consolidadas verificadas.
+- Dashboard: usar exclusivamente métricas oficiales; sin datos de ejemplo ni combinación de tablas temporales.
+- Portal contribuyente: exponer únicamente información propia y operaciones autorizadas con RLS y controles de identidad.
+
+### Estado de los módulos
+
+El código actual de varios módulos aún depende de funciones y tablas de prueba. Por lo tanto, esta directiva no se considera satisfecha por la auditoría ni por cambios de texto. Cada módulo requiere implementación, revisión, pruebas y aprobación antes de habilitarlo.

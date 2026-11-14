@@ -910,3 +910,20 @@ body.modal-open{overflow:hidden}
 .staff-permission-choice input{height:15px;width:15px;cursor:pointer}
 .staff-permission-choice input:disabled{cursor:not-allowed}
 @media(max-width:720px){.staff-permission-panel .panel-head{flex-direction:column}.staff-permission-choice{min-width:calc(50% - 12px)}}
+
+/* Vista preliminar de registro de funcionarios; no crea cuentas */
+.staff-reg-overlay{position:fixed;inset:0;z-index:11000;background:rgba(9,32,50,.60);display:flex;align-items:center;justify-content:center;padding:16px}
+.staff-reg-dialog{width:min(640px,100%);max-height:calc(100dvh - 32px);overflow-y:auto;background:#fff;border-radius:16px;box-shadow:0 22px 65px #0c2d493a;padding:24px}
+.staff-reg-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;border-bottom:1px solid #e4edf0;padding-bottom:16px}
+.staff-reg-header h2{font-size:23px;color:#123953;margin:6px 0}
+.staff-reg-header p{margin:0;font-size:11px;color:#758d9d;line-height:1.6}
+.staff-reg-close{border:0;border-radius:8px;background:#eff5f7;color:#42667b;font-size:22px;cursor:pointer;width:35px;height:35px;flex-shrink:0}
+.staff-reg-info{background:#f1f8f9;border:1px solid #dcecef;color:#457486;border-radius:8px;font-size:11px;line-height:1.55;padding:10px 13px;margin:17px 0}
+.staff-reg-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.staff-reg-fields .field{display:grid;gap:6px}
+.staff-reg-fields .field span{font-size:11px;font-weight:700;color:#35546a}
+.staff-reg-fields .field input,.staff-reg-fields .field select{width:100%;box-sizing:border-box;border:1px solid #dce6eb;border-radius:8px;background:white;padding:12px;color:#24445e;font:12px Arial,sans-serif}
+.staff-reg-footnote{color:#728d9b;font-size:11px;line-height:1.6;margin:18px 0 0}
+.staff-reg-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.staff-reg-actions .btn:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:600px){.staff-reg-dialog{padding:17px}.staff-reg-fields{grid-template-columns:1fr}.staff-reg-actions{flex-direction:column}.staff-reg-actions .btn{width:100%}}

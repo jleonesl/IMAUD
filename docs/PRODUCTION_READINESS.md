@@ -66,3 +66,25 @@ Preparar SITMAUD para operar con contribuyentes, inmuebles, obligaciones tributa
 ## Regla de seguridad
 
 No borrar tablas, filas, funciones ni comprobantes DEMO durante esta etapa. No convertir registros DEMO en oficiales. No habilitar cobros reales hasta que el flujo definitivo y las tarifas estén aprobados y probados.
+
+
+## Verificaciones adicionales
+
+- Proyecto Supabase: estado `ACTIVE_HEALTHY`, PostgreSQL 17.11, región `us-east-1`.
+- Catálogo tarifario: 1 calendario, 3 reglas y 0 calendarios aprobados.
+- UDC: 2 registros disponibles; la fecha efectiva más reciente consultada es `2026-11-13`.
+- La Edge Function `sync-udc-bcv` está activa y requiere JWT. Su código consulta el origen BCV y actualiza `udc_rates`; debe probarse su programación/ejecución y validar los datos de origen antes de depender de ella para liquidaciones oficiales.
+- La ordenanza 2024 establece para residencial `TAR = FAO × FAR`, con FAR = 1, y para comercial/industrial/institucional `TAC = FAO × FAC`, con FAC = 1 salvo modificación aprobada. Define la unidad de cuenta dinámica como la moneda de mayor valor publicada por BCV y exige que el pago se acredite en cuentas autorizadas. La implementación actual de UDC debe conciliarse con el texto y anexos completos de la ordenanza antes de aprobar el calendario tarifario.
+- Security Advisor: 12 funciones `SECURITY DEFINER` ejecutables por `authenticated`, `pg_net` en `public` y protección de contraseñas comprometidas desactivada.
+- Performance Advisor: 26 claves foráneas sin índice de cobertura, 2 políticas RLS con llamadas auth que pueden optimizarse y 2 casos de políticas permisivas duplicadas. No eliminar índices no usados durante la preparación sin medir carga real.
+- Health Advisor: sin hallazgos al momento de la consulta.
+- La interfaz actual de facturación y Tesorería está explícitamente conectada a `demo_payments`, `demo_payment_allocations` y funciones DEMO; el recibo actual se marca como no fiscal. El reemplazo debe cubrir también reportes, tablero, registro de condominios y generación automática de obligaciones.
+
+## Estado de avance de esta rama
+
+- [x] Crear rama aislada `stage-1/production-readiness`.
+- [x] Registrar auditoría inicial en este documento.
+- [x] Generar y guardar `supabase/database.types.ts` desde el esquema vivo.
+- [ ] Recuperar un respaldo verificable y comprobar restauración.
+- [ ] Reconstruir el baseline/migraciones de forma fiel y validada.
+- [ ] Implementar flujos oficiales de obligaciones, pagos, Tesorería, facturación y reportes.

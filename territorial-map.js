@@ -115,7 +115,7 @@
     if(!selected)return;
     const button=document.getElementById('territorialStartPlace');
     if(button){button.disabled=true;button.textContent='Guardando…';}
-    const {error}=await window.imaudClient.from('properties')
+    const {error}=await imaudClient.from('properties')
       .update({latitude:Number(lat),longitude:Number(lng)}).eq('id',selected.id);
     if(error){
       console.error('SITMAUD location update:',error);
@@ -147,10 +147,10 @@
   async function loadData() {
     const host=document.getElementById('territorialSearchResults');
     const [properties,payments]=await Promise.all([
-      window.imaudClient.from('properties')
+      imaudClient.from('properties')
         .select('id,contributor_id,address,latitude,longitude,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,organization_name,created_at,updated_at,contributor:contributors!properties_contributor_id_fkey(id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name),assessments(id,status,period_start)')
         .eq('is_active',true).order('created_at',{ascending:false}),
-      window.imaudClient.from('demo_payments').select('contributor_id,treasury_status')
+      imaudClient.from('demo_payments').select('contributor_id,treasury_status')
     ]);
     if(!document.getElementById('territorialMapCanvas'))return;
     if(properties.error){

@@ -97,3 +97,34 @@ No borrar tablas, filas, funciones ni comprobantes DEMO durante esta etapa. No c
 - El trigger `auto_current_month_demo_on_property` llama a `create_current_month_demo_obligation()`, que inserta obligaciones con `is_demo = true`. Por tanto, registrar un inmueble actualmente genera una obligación DEMO, no una obligación oficial.
 - La función de cálculo residencial `calculate_udc_tariff()` usa coeficientes 3.0 / 1.5 / 0.5 y la UDC más reciente a la fecha solicitada. La función de creación automática actual usa `tariff_rules.amount × udc_rates.udc_value`, pero marca la obligación como DEMO y no verifica `tariff_schedules.is_approved`. No debe reutilizarse tal cual para obligaciones oficiales.
 - El flujo oficial requiere una función transaccional que seleccione únicamente una tarifa aprobada y vigente, con snapshots de tarifa y UDC, control de duplicados por inmueble/período, soporte de condominios consolidados y registro de auditoría.
+
+
+## Inventario de dependencias DEMO en la interfaz
+
+La revisión estática de los archivos actuales confirma que el uso de DEMO no está aislado a una sola pantalla:
+
+- `billing.js`: lee `demo_payments` y `demo_payment_allocations`; imprime comprobantes con marca de agua DEMO / NO FISCAL y QR informativo de prueba.
+- `treasury-validation.js`: consulta `demo_payments`, registra eventos de tesorería DEMO y llama a `review_demo_payment_treasury`.
+- `reports.js`: usa `get_filtered_demo_report`, etiqueta recaudación y estado de cuenta como DEMO y exporta archivos con prefijo `SITMAUD_DEMO`.
+- `app.js`: usa `get_demo_dashboard_metrics`, incluye tarjetas e indicadores DEMO y consulta simultáneamente tablas definitivas y DEMO en algunos listados.
+- `condominium-registration.js`: llama a `register_demo_condominium_full` y muestra estimación de obligación DEMO.
+- `payment-proofs.js`: recupera comprobantes desde `demo_payments`.
+- `auth.js`: muestra el banner de entorno de pruebas al autenticar al funcionario.
+
+No es seguro hacer una sustitución global de nombres: cada módulo debe migrarse al contrato de datos definitivo y sus reglas de autorización, estados, recibos y conciliación.
+
+## Requisitos de portabilidad a hosting y dominio institucional
+
+- La aplicación debe seguir siendo estática/portable y poder alojarse en cualquier hosting HTTPS compatible, sin depender de rutas especiales de GitHub Pages.
+- El dominio final será propiedad de la Alcaldía/Instituto y no una URL personal o de GitHub. El nombre de dominio queda pendiente de aprobación institucional y disponibilidad; no se asume que `sitmaud.gob.ve` esté disponible.
+- Separar configuración pública del cliente (URL Supabase y publishable key) de secretos de servidor. La publishable key puede estar en el navegador si RLS está correctamente configurado; nunca incluir service-role/secret keys en archivos públicos.
+- Configurar en Supabase Auth las URL permitidas de sitio y redirección para el dominio definitivo, incluyendo recuperación de contraseña y enlaces de acceso.
+- Configurar CORS/orígenes, HTTPS, DNS, certificados, política de caché y cabeceras de seguridad del hosting.
+- No migrar datos ni cambiar la URL de Supabase solo por mover el hosting: el frontend puede seguir usando el backend actual si la Alcaldía lo autoriza y se cumplen disponibilidad, protección de datos y respaldo.
+- Mantener entornos de configuración separados (desarrollo/pruebas/producción); no poner datos reales en el hosting de pruebas.
+- Si la Alcaldía exige infraestructura propia, evaluar hosting estático institucional y, por separado, si necesita también autohospedar PostgreSQL/Supabase. No confundir dominio/hosting web con migración del backend.
+- La automatización actual `.github/workflows/pages.yml` despliega solo a GitHub Pages desde `main`; debe mantenerse como preview y no ser el despliegue institucional definitivo.
+
+## Compatibilidad Supabase CLI
+
+El changelog oficial informa que Supabase CLI v3 es local-first: comandos de base de datos operan en local por defecto y los cambios remotos requieren `--remote`; las acciones remotas en CI requieren confirmación explícita `--yes`. Los scripts de despliegue deben fijar versión y destino para evitar ejecutar accidentalmente comandos contra producción.

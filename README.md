@@ -16,7 +16,7 @@ Primera base de interfaz web estática, adaptable a escritorio y móvil. Incluye
 - Recaudación y pagos (simulación)
 - Facturación (muestra no fiscal)
 - Reportes CSV de demostración
-- Mapa territorial (marcador de integración pendiente)
+- Mapa territorial independiente con OpenStreetMap, búsqueda de inmuebles/cuentas matrices, asignación GPS o manual de coordenadas y marcadores por estado de cuenta (entorno DEMO)
 - Ordenanza y tarifas (sin tarifas legales cargadas)
 - Funcionarios y permisos (matriz conceptual)
 - Bitácora (datos de ejemplo)

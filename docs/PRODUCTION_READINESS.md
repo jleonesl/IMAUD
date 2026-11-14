@@ -88,3 +88,12 @@ No borrar tablas, filas, funciones ni comprobantes DEMO durante esta etapa. No c
 - [ ] Recuperar un respaldo verificable y comprobar restauración.
 - [ ] Reconstruir el baseline/migraciones de forma fiel y validada.
 - [ ] Implementar flujos oficiales de obligaciones, pagos, Tesorería, facturación y reportes.
+
+
+## Hallazgo funcional crítico: obligación y tablero
+
+- `get_dashboard_metrics()` ya consulta las tablas oficiales `payments` y `assessments`.
+- `get_demo_dashboard_metrics()` consulta `demo_payments`; no debe alimentar el tablero oficial.
+- El trigger `auto_current_month_demo_on_property` llama a `create_current_month_demo_obligation()`, que inserta obligaciones con `is_demo = true`. Por tanto, registrar un inmueble actualmente genera una obligación DEMO, no una obligación oficial.
+- La función de cálculo residencial `calculate_udc_tariff()` usa coeficientes 3.0 / 1.5 / 0.5 y la UDC más reciente a la fecha solicitada. La función de creación automática actual usa `tariff_rules.amount × udc_rates.udc_value`, pero marca la obligación como DEMO y no verifica `tariff_schedules.is_approved`. No debe reutilizarse tal cual para obligaciones oficiales.
+- El flujo oficial requiere una función transaccional que seleccione únicamente una tarifa aprobada y vigente, con snapshots de tarifa y UDC, control de duplicados por inmueble/período, soporte de condominios consolidados y registro de auditoría.

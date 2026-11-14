@@ -892,3 +892,21 @@ body.modal-open{overflow:hidden}
 .treasury-event{display:grid;gap:4px;padding:11px;border:1px solid #e7eef1;border-radius:8px;margin-bottom:7px}
 .treasury-event b{font-size:11px;color:#285e77}.treasury-event span,.treasury-event small{font-size:10px;color:#8198a7;overflow-wrap:anywhere}
 @media(max-width:570px){.treasury-dialog-head{padding:16px}.treasury-dialog-body{padding:14px}.treasury-payment-facts{grid-template-columns:1fr}.treasury-action-buttons{flex-direction:column}.treasury-action-buttons .btn{width:100%}}
+
+/* Funcionarios y permisos: matriz administrativa real */
+.staff-permission-panel .panel-head{align-items:flex-start;gap:16px}
+.staff-permission-panel .panel-head h3{margin:0 0 5px;font-size:16px}
+.staff-permission-panel .panel-head p{font-size:11px;line-height:1.6;color:#7890a2;margin:0}
+.staff-permission-panel .panel-head>span{flex-shrink:0;font-size:10px;color:#148a94;background:#eaf7f7;padding:7px 11px;border-radius:99px}
+.staff-permission-selector{display:flex;flex-direction:column;gap:7px;margin:19px 0 10px;max-width:560px}
+.staff-permission-selector label{color:#244761;font-size:11px;font-weight:800}
+.staff-permission-selector select{width:100%;background:#fff;color:#244761;border:1px solid #d7e5ec;border-radius:9px;padding:11px 12px;font-size:12px}
+.staff-permission-selector select:disabled{background:#f0f5f7;color:#9aaaaf}
+.staff-permission-panel #staffPermissionNotice{padding:10px 13px;background:#f0f8f8;border:1px solid #dbeaec;border-radius:8px;margin:10px 0;font-size:11px;line-height:1.6;color:#567383}
+.staff-permission-panel .permission-group{padding:17px 0}
+.staff-permission-panel .permission-group h4{font-size:12px;margin:0 0 11px}
+.staff-permission-panel .checks{gap:10px 18px}
+.staff-permission-choice{min-width:130px;color:#385b71!important;font-size:11px!important;cursor:pointer}
+.staff-permission-choice input{height:15px;width:15px;cursor:pointer}
+.staff-permission-choice input:disabled{cursor:not-allowed}
+@media(max-width:720px){.staff-permission-panel .panel-head{flex-direction:column}.staff-permission-choice{min-width:calc(50% - 12px)}}

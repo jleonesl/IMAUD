@@ -28,7 +28,7 @@ async function open(id){
  (status!=='incident'?'<option value="incident">Registrar incidencia bancaria</option>':'')+
  (canReverse&&status==='incident'?'<option value="reverse">Revertir pago y reabrir deuda DEMO</option>':'')+
  '</select></label>'+
- '<label class="field"><span>Referencia de acreditación / movimiento bancario</span><input name="reference" id="treasuryBankReference" placeholder="Referencia verificada en estado de cuenta" value="'+esc(p.treasury_bank_reference||'')+'"></label>'+
+ '
  '<label class="field"><span>Observaciones y evidencia de Tesorería</span><textarea name="notes" id="treasuryNotes" rows="3" maxlength="1200" placeholder="Motivo de la incidencia, devolución o conciliación"></textarea></label>'+
  '<p class="treasury-warning" id="treasuryActionWarning"></p>'+
  '<div class="treasury-action-buttons"><button type="button" class="btn btn-light" data-treasury-close>Cancelar</button><button class="btn btn-primary" id="treasurySave" type="submit">Guardar validación</button></div></form>':
@@ -50,7 +50,7 @@ function updateWarning(){
  const button=document.getElementById('treasurySave');
  if(!message||!button)return;
  const messages={
-  validate:'Confirma únicamente si Tesorería encontró el ingreso en la cuenta municipal. La referencia bancaria es obligatoria.',
+  validate:'Confirma únicamente si Tesorería encontró el ingreso en la cuenta municipal.',
   incident:'Registra la discrepancia para investigación, sin alterar todavía la deuda ni cancelar el comprobante entregado.',
   reverse:'Acción excepcional: se conserva el comprobante histórico y se reabre la deuda DEMO. Se requiere justificación y permiso de reversión.'
  };
@@ -69,12 +69,11 @@ document.addEventListener('submit',async e=>{
  if(e.target.id!=='treasuryReviewForm')return;
  e.preventDefault();
  if(waiting||!activePayment?.id)return;
- const form=e.target,fd=new FormData(form),action=String(fd.get('action')||''),reference=String(fd.get('reference')||'').trim(),notes=String(fd.get('notes')||'').trim();
- if(action==='validate'&&!reference){toast('Indica la referencia bancaría confirmada por Tesorería.');return;}
+ const form=e.target,fd=new FormData(form),action=String(fd.get('action')||''),notes=String(fd.get('notes')||'').trim();
  if(['incident','reverse'].includes(action)&&notes.length<20){toast('Describe la incidencia con al menos 20 caracteres.');return;}
  if(action==='reverse'&&!window.confirm('¿Confirmas que Tesorería documentó que el dinero no ingresó o fue devuelto y que debe reabrirse la deuda DEMO?'))return;
  const button=document.getElementById('treasurySave');waiting=true;button.disabled=true;button.textContent='Guardando…';
- const {data,error}=await imaudClient.rpc('review_demo_payment_treasury',{p_payment_id:activePayment.id,p_action:action,p_reference:reference||null,p_notes:notes||null});
+ const {data,error}=await imaudClient.rpc('review_demo_payment_treasury',{p_payment_id:activePayment.id,p_action:action,p_reference:null,p_notes:notes||null});
  waiting=false;
  if(error){button.disabled=false;updateWarning();toast('No se pudo aplicar la revisión: '+error.message);return;}
  close();

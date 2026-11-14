@@ -1,115 +1,132 @@
-/* SITMAUD · Módulo territorial independiente. No modifica formularios de contribuyentes, inmuebles ni condominios. */
+/* SITMAUD · Panel territorial. Geolocalización independiente de los formularios de registro. */
 (function(){
-  const escape = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const fmt = n => new Intl.NumberFormat('es-VE',{maximumFractionDigits:6}).format(Number(n));
-  let map = null, markers = [], records = [], selected = null, manualMode = false, initialized = false;
-  const toast = message => { if(typeof window.toast==='function') window.toast(message); else alert(message); };
-  function loadLeaflet(){
-    if(window.L) return Promise.resolve();
-    if(window.__sitmaudLeafletPromise) return window.__sitmaudLeafletPromise;
-    window.__sitmaudLeafletPromise = new Promise((resolve,reject)=>{
-      if(!document.querySelector('link[data-sitmaud-leaflet]')){
-        const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';css.dataset.sitmaudLeaflet='1';document.head.appendChild(css);
-      }
-      const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';script.onload=resolve;script.onerror=()=>reject(new Error('No se pudo cargar el visor cartográfico.'));document.head.appendChild(script);
-    });
-    return window.__sitmaudLeafletPromise;
-  }
-  function statusOf(p, demoPayments){
-    const assessments=p.assessments||[];
-    if(assessments.some(a=>['pending','partially_paid'].includes(a.status))) return {key:'debt',label:'Con deuda',color:'#d84b4b'};
-    const demo=(demoPayments||[]).filter(x=>x.contributor_id===p.contributor_id);
-    if(demo.some(x=>(x.treasury_status||'pending')==='pending')) return {key:'validation',label:'Pago por validar',color:'#e4ad32'};
-    if(assessments.length && assessments.every(a=>a.status==='paid')) return {key:'paid',label:'Al día',color:'#239b69'};
-    return {key:'validation',label:'Sin liquidación / por verificar',color:'#e4ad32'};
-  }
-  function iconFor(p){
-    const status=p.mapStatus||{color:'#e4ad32'};
-    return L.divIcon({className:'sitmaud-map-pin-wrap',html:'<span class="sitmaud-map-pin" style="--pin-color:'+status.color+'"></span>',iconSize:[22,22],iconAnchor:[11,11]});
-  }
-  function renderList(rows){
-    const host=document.getElementById('territorialResults');if(!host)return;
-    if(!rows.length){host.innerHTML='<div class="territorial-empty">No hay coincidencias. Prueba con cédula, RIF, contrato, nombre o dirección.</div>';return;}
-    host.innerHTML=rows.map(p=>'<button type="button" class="territorial-result '+(selected?.id===p.id?'selected':'')+'" data-territorial-select="'+escape(p.id)+'"><span class="territorial-result-dot '+p.mapStatus.key+'"></span><span class="territorial-result-copy"><b>'+escape(p.contributor?.legal_name||[p.contributor?.first_name,p.contributor?.last_name].filter(Boolean).join(' ')||p.organization_name||p.address||'Inmueble')+'</b><small>'+escape(p.address)+' · '+escape([p.parish_name,p.sector_name].filter(Boolean).join(' / '))+'</small><small>'+escape(p.contract_number||'Sin contrato')+' · '+escape(p.mapStatus.label)+'</small></span><span class="territorial-result-action">'+(p.latitude!=null&&p.longitude!=null?'Ver':'Ubicar')+' →</span></button>').join('');
-  }
-  function refreshMarkers(){
-    if(!map)return;
-    markers.forEach(m=>m.remove());markers=[];
-    records.filter(p=>p.latitude!=null&&p.longitude!=null).forEach(p=>{
-      const marker=L.marker([Number(p.latitude),Number(p.longitude)],{icon:iconFor(p)}).addTo(map);
-      marker.bindPopup('<b>'+escape(p.contributor?.legal_name||[p.contributor?.first_name,p.contributor?.last_name].filter(Boolean).join(' ')||p.address)+'</b><br>'+escape(p.address)+'<br>'+escape(p.mapStatus.label));
-      marker.on('click',()=>{selected=p;renderList(filteredRecords());showSelected();});
-      markers.push(marker);
-    });
-  }
-  function filteredRecords(){
-    const q=(document.getElementById('territorialSearch')?.value||'').trim().toLocaleLowerCase('es-VE');
-    const kind=document.getElementById('territorialKind')?.value||'all';
-    return records.filter(p=>{
-      const c=p.contributor||{};
-      const text=[c.legal_name,c.first_name,c.last_name,c.identification_type,c.identification_number,c.contract_number,p.contract_number,p.address,p.organization_name,p.parish_name,p.sector_name].join(' ').toLocaleLowerCase('es-VE');
-      const condo=Boolean(p.is_consolidated_master||p.organization_id||c.service_account_type==='condominio'||p.organization_name);
-      return (!q||text.includes(q))&&(kind==='all'||(kind==='condominio'?condo:kind==='inmueble'?!p.is_consolidated_master:true));
-    });
-  }
-  function showSelected(){
-    const host=document.getElementById('territorialSelected');if(!host)return;
-    if(!selected){host.innerHTML='<p>Selecciona un registro de la lista para cargar o consultar su ubicación.</p>';return;}
-    host.innerHTML='<div class="territorial-selected-head"><div><b>'+escape(selected.contributor?.legal_name||[selected.contributor?.first_name,selected.contributor?.last_name].filter(Boolean).join(' ')||selected.organization_name||'Registro seleccionado')+'</b><small>'+escape(selected.address)+'</small></div><span class="territorial-status '+selected.mapStatus.key+'">'+escape(selected.mapStatus.label)+'</span></div><div class="territorial-coordinates">'+(selected.latitude!=null&&selected.longitude!=null?'Lat. '+fmt(selected.latitude)+' · Long. '+fmt(selected.longitude):'Este registro todavía no tiene coordenadas guardadas.')+'</div><div class="territorial-actions"><button type="button" class="btn btn-primary" id="territorialGps">◎ Usar mi GPS</button><button type="button" class="btn btn-light" id="territorialManual">'+(manualMode?'Cancelar selección en mapa':'⌖ Marcar en el mapa')+'</button></div><small class="territorial-help">'+(manualMode?'Haz clic sobre el mapa para guardar la ubicación de este registro.':'Puedes usar el GPS del dispositivo o seleccionar un punto manualmente.')+'</small>';
-  }
-  async function saveCoordinates(lat,lng){
-    if(!selected)return;
-    const {error}=await window.imaudClient.from('properties').update({latitude:Number(lat),longitude:Number(lng)}).eq('id',selected.id);
-    if(error){console.error('SITMAUD map location:',error);toast('No se pudo guardar la ubicación: '+error.message);return;}
-    selected.latitude=Number(lat);selected.longitude=Number(lng);manualMode=false;
-    refreshMarkers();renderList(filteredRecords());showSelected();
-    map.setView([Number(lat),Number(lng)],17);
-    toast('Ubicación guardada correctamente.');
-  }
-  async function loadRecords(){
-    const host=document.getElementById('territorialResults');if(host)host.innerHTML='<div class="territorial-empty">Consultando inmuebles y cuentas territoriales…</div>';
-    const query=window.imaudClient.from('properties').select('id,contributor_id,organization_id,address,latitude,longitude,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,organization_name,contract_number,contributor:contributors!properties_contributor_id_fkey(id,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,contract_number),assessments(id,status)').eq('is_active',true).order('address');
-    const [propertyResult,paymentResult]=await Promise.all([query,window.imaudClient.from('demo_payments').select('contributor_id,treasury_status')]);
-    if(propertyResult.error){console.error('SITMAUD territorial records:',propertyResult.error);if(host)host.innerHTML='<div class="territorial-empty error">No se pudieron consultar los registros. Verifica los permisos de lectura de inmuebles y contribuyentes.</div>';return;}
-    const payments=paymentResult.error?[]:(paymentResult.data||[]);
-    records=(propertyResult.data||[]).map(p=>({...p,mapStatus:statusOf(p,payments)}));
-    const count=document.getElementById('territorialCount');if(count)count.textContent=records.length+' registros';
-    const located=records.filter(p=>p.latitude!=null&&p.longitude!=null).length;
-    const locatedCount=document.getElementById('territorialLocatedCount');if(locatedCount)locatedCount.textContent=located+' ubicados';
-    renderList(filteredRecords());refreshMarkers();showSelected();
-    const bounds=records.filter(p=>p.latitude!=null&&p.longitude!=null).map(p=>[Number(p.latitude),Number(p.longitude)]);
-    if(bounds.length)map.fitBounds(bounds,{padding:[28,28],maxZoom:15});
-  }
-  function init(){
-    const container=document.getElementById('territorialMap');if(!container)return;
-    loadLeaflet().then(()=>{
-      if(!document.getElementById('territorialMap'))return;
-      if(map){map.remove();map=null;}
-      map=L.map(container,{scrollWheelZoom:true}).setView([11.4045,-69.6734],12);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
-      map.on('click',event=>{if(manualMode&&selected)saveCoordinates(event.latlng.lat,event.latlng.lng);});
-      loadRecords().then(()=>setTimeout(()=>map.invalidateSize(),120));
-    }).catch(error=>{container.innerHTML='<div class="territorial-empty error">'+escape(error.message)+'</div>';});
-  }
-  window.mapView=function(){
-    return '<div class="page-head"><div><div class="eyebrow">SITMAUD · CONTROL Y ANÁLISIS</div><h1>Mapa territorial</h1><p>Ubica contribuyentes, inmuebles y condominios desde un único visor geográfico.</p></div><button class="btn btn-light" id="territorialRefresh">↻ Actualizar</button></div>'+
-    '<section class="territorial-toolbar card"><div class="territorial-search-wrap"><label for="territorialSearch">Buscar registro</label><input id="territorialSearch" type="search" placeholder="Nombre, cédula, RIF, contrato o dirección…"></div><div><label for="territorialKind">Tipo de registro</label><select id="territorialKind"><option value="all">Todos los registros</option><option value="inmueble">Inmuebles</option><option value="condominio">Condominios / organizaciones</option></select></div><div class="territorial-counts"><b id="territorialCount">— registros</b><small id="territorialLocatedCount">— ubicados</small></div></section>'+
-    '<div class="territorial-layout"><section class="card territorial-map-card"><div class="territorial-map-heading"><b>Visor geográfico · Coro y municipio Miranda</b><span>OpenStreetMap</span></div><div id="territorialMap" class="territorial-map-canvas"></div><div class="territorial-legend"><span><i class="paid"></i>Al día</span><span><i class="debt"></i>Con deuda</span><span><i class="validation"></i>Pago por validar / sin liquidación</span></div></section><aside class="territorial-side"><section class="card territorial-results-card"><div class="territorial-side-heading"><b>Registros encontrados</b><small>Selecciona uno para asignarle ubicación</small></div><div id="territorialResults" class="territorial-results"></div></section><section class="card territorial-selected-card"><div class="territorial-side-heading"><b>Ubicación del registro</b><small>La geolocalización se guarda en el inmueble asociado</small></div><div id="territorialSelected" class="territorial-selected"><p>Selecciona un registro de la lista.</p></div></section></aside></div>';
-  };
-  document.addEventListener('click',event=>{
-    if(event.target.closest('[data-view="mapa"]'))setTimeout(init,80);
-    if(event.target.closest('#territorialRefresh'))loadRecords();
-    const result=event.target.closest('[data-territorial-select]');
-    if(result){selected=records.find(p=>p.id===result.dataset.territorialSelect)||null;manualMode=false;renderList(filteredRecords());showSelected();if(selected?.latitude!=null&&selected?.longitude!=null)map?.setView([Number(selected.latitude),Number(selected.longitude)],17);return;}
-    if(event.target.closest('#territorialGps')){
-      if(!selected)return;
-      if(!navigator.geolocation){toast('Este navegador no permite obtener la ubicación GPS.');return;}
-      const button=document.getElementById('territorialGps');button.disabled=true;button.textContent='Obteniendo ubicación…';
-      navigator.geolocation.getCurrentPosition(pos=>saveCoordinates(pos.coords.latitude,pos.coords.longitude).finally(()=>{if(button.isConnected){button.disabled=false;button.textContent='◎ Usar mi GPS';}}),error=>{toast(error.code===1?'Debes permitir el acceso a la ubicación.':'No se pudo obtener la ubicación GPS.');if(button.isConnected){button.disabled=false;button.textContent='◎ Usar mi GPS';}},{enableHighAccuracy:true,timeout:15000,maximumAge:0});
-    }
-    if(event.target.closest('#territorialManual')){manualMode=!manualMode;showSelected();if(manualMode)toast('Haz clic en el mapa para guardar el punto.');}
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const money=n=>new Intl.NumberFormat('es-VE',{maximumFractionDigits:0}).format(Number(n||0));
+ let map=null, layer=null, records=[], selected=null, placing=false, satellite=false, filtersOpen=false;
+ const notify=m=>typeof window.toast==='function'?window.toast(m):alert(m);
+ const name=p=>p.contributor?.kind==='juridico'?(p.contributor?.legal_name||p.organization_name||'Condominio'):[p.contributor?.first_name,p.contributor?.last_name].filter(Boolean).join(' ')||p.contributor?.legal_name||p.organization_name||'Contribuyente';
+ const idText=p=>[p.contributor?.identification_type,p.contributor?.identification_number].filter(Boolean).join('-')||'Sin identificación';
+ const contract=p=>p.contributor?.contract_number||'Sin contrato';
+ function status(p){
+  if((p.assessments||[]).some(a=>['pending','partially_paid'].includes(a.status)))return {key:'debt',label:'Con deuda'};
+  if((p.pendingPayments||[]).length)return {key:'validation',label:'Por validar'};
+  return {key:'paid',label:'Al día'};
+ }
+ function markerIcon(p){
+  const s=status(p);
+  const symbol=s.key==='paid'?'✓':s.key==='debt'?'!':'◷';
+  return L.divIcon({className:'sitmaud-pin-host',html:'<span class="sitmaud-pin '+s.key+'"><b>'+symbol+'</b></span>',iconSize:[34,42],iconAnchor:[17,39],popupAnchor:[0,-36]});
+ }
+ function currentFilter(){
+  const q=(document.getElementById('territorialSearch')?.value||'').trim().toLocaleLowerCase('es-VE');
+  const kind=document.getElementById('territorialKind')?.value||'all';
+  return records.filter(p=>{
+   const text=[name(p),idText(p),contract(p),p.address,p.parish_name,p.sector_name,p.organization_name].join(' ').toLocaleLowerCase('es-VE');
+   const condo=Boolean(p.is_consolidated_master||p.contributor?.service_account_type==='condominio'||p.organization_name);
+   return (!q||text.includes(q))&&(kind==='all'||(kind==='condominio'?condo:kind==='contribuyente'?true:!p.is_consolidated_master));
   });
-  document.addEventListener('input',event=>{if(event.target.id==='territorialSearch')renderList(filteredRecords());});
-  document.addEventListener('change',event=>{if(event.target.id==='territorialKind')renderList(filteredRecords());});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&map&&document.getElementById('territorialMap'))setTimeout(()=>map.invalidateSize(),100);});
+ }
+ function updateStats(){
+  const located=records.filter(p=>p.latitude!=null&&p.longitude!=null);
+  const values=[
+   ['territorialStatLocated',located.length],['territorialStatPaid',located.filter(p=>status(p).key==='paid').length],
+   ['territorialStatDebt',located.filter(p=>status(p).key==='debt').length],['territorialStatValidation',located.filter(p=>status(p).key==='validation').length]
+  ];
+  values.forEach(([id,n])=>{const el=document.getElementById(id);if(el)el.textContent=money(n)});
+ }
+ function recentList(){
+  const host=document.getElementById('territorialRecent');if(!host)return;
+  const rows=records.filter(p=>p.latitude!=null&&p.longitude!=null).sort((a,b)=>new Date(b.location_updated_at||b.updated_at||b.created_at||0)-new Date(a.location_updated_at||a.updated_at||a.created_at||0)).slice(0,5);
+  host.innerHTML=rows.length?rows.map(p=>'<button class="territorial-recent-row" type="button" data-territorial-id="'+esc(p.id)+'"><span class="territorial-recent-pin '+status(p).key+'">⌖</span><span><b>'+esc(idText(p))+'</b><strong>'+esc(name(p))+'</strong><small>'+esc(contract(p))+'</small></span><time>'+(p.location_updated_at?new Date(p.location_updated_at).toLocaleDateString('es-VE'):'')+'</time></button>').join(''):'<div class="territorial-no-recent">Todavía no hay ubicaciones registradas.</div>';
+ }
+ function selectedPanel(){
+  const host=document.getElementById('territorialSelected');if(!host)return;
+  if(!selected){host.innerHTML='<div class="territorial-select-empty">Busca un registro y selecciónalo para asignar su ubicación.</div>';return;}
+  const s=status(selected);
+  host.innerHTML='<div class="territorial-record-card"><div class="territorial-record-title"><span class="territorial-record-symbol">⌂</span><div><b>'+esc(name(selected))+'</b><small>'+esc(idText(selected))+'</small></div><button type="button" id="territorialClear" aria-label="Cerrar">×</button></div><p><b>Contrato:</b> '+esc(contract(selected))+'</p><p><b>Sector:</b> '+esc(selected.sector_name||'No especificado')+'</p><span class="territorial-state '+s.key+'">'+(s.key==='paid'?'✓':s.key==='debt'?'!':'◷')+' '+esc(s.label)+'</span><div class="territorial-coords">'+(selected.latitude!=null?'Lat. '+Number(selected.latitude).toFixed(6)+' · Long. '+Number(selected.longitude).toFixed(6):'Este registro aún no tiene ubicación asignada.')+'</div><button type="button" class="btn btn-primary territorial-expedient" id="territorialOpenRecord">↗ Ver expediente</button></div>';
+ }
+ function renderSearchResults(){
+  const host=document.getElementById('territorialSearchResults');if(!host)return;
+  const rows=currentFilter().slice(0,30);
+  host.innerHTML=rows.length?rows.map(p=>'<button type="button" class="territorial-search-result" data-territorial-id="'+esc(p.id)+'"><span class="territorial-result-dot '+status(p).key+'"></span><span><b>'+esc(name(p))+'</b><small>'+esc(idText(p))+' · '+esc(contract(p))+'</small></span><em>'+(p.latitude!=null?'Ubicado':'Sin ubicación')+'</em></button>').join(''):'<div class="territorial-no-recent">No se encontraron registros con esos datos.</div>';
+ }
+ function popup(p){
+  const s=status(p);
+  return '<div class="territorial-popup"><b>'+esc(name(p))+'</b><span>'+esc(idText(p))+'</span><strong>Contrato: '+esc(contract(p))+'</strong><span>Sector: '+esc(p.sector_name||'No especificado')+'</span><i class="'+s.key+'">'+esc(s.label)+'</i><button type="button" data-territorial-popup="'+esc(p.id)+'">Ver expediente</button></div>';
+ }
+ function drawMarkers(){
+  if(!map||!layer)return;layer.clearLayers();
+  records.filter(p=>p.latitude!=null&&p.longitude!=null).forEach(p=>{
+   const m=L.marker([Number(p.latitude),Number(p.longitude)],{icon:markerIcon(p)}).addTo(layer);
+   m.bindPopup(popup(p),{maxWidth:260});
+   m.on('click',()=>{selected=p;selectedPanel()});
+  });
+  updateStats();recentList();
+ }
+ function tileLayer(){
+  if(!map)return;
+  if(window.__sitmaudBaseTiles)map.removeLayer(window.__sitmaudBaseTiles);
+  const url=satellite?'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}':'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  window.__sitmaudBaseTiles=L.tileLayer(url,{maxZoom:19,attribution:satellite?'Tiles &copy; Esri':'&copy; OpenStreetMap contributors'}).addTo(map);
+  const label=document.getElementById('territorialLayerToggle');if(label)label.textContent=satellite?'Satélite':'Mapa';
+ }
+ async function saveLocation(lat,lng){
+  if(!selected)return;
+  const {error}=await window.imaudClient.from('properties').update({latitude:Number(lat),longitude:Number(lng)}).eq('id',selected.id);
+  if(error){console.error('SITMAUD geolocation:',error);notify('No se pudo guardar la ubicación: '+error.message);return;}
+  selected.latitude=Number(lat);selected.longitude=Number(lng);selected.location_updated_at=new Date().toISOString();placing=false;
+  drawMarkers();selectedPanel();renderSearchResults();map.setView([lat,lng],17);notify('Ubicación guardada correctamente.');
+ }
+ async function loadData(){
+  const result=document.getElementById('territorialSearchResults');if(result)result.innerHTML='<div class="territorial-no-recent">Cargando registros de SITMAUD…</div>';
+  const [pr,ar,dr]=await Promise.all([
+   window.imaudClient.from('properties').select('id,contributor_id,address,latitude,longitude,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,organization_name,created_at,updated_at,contributor:contributors!properties_contributor_id_fkey(id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name),assessments(id,status,period_start)').eq('is_active',true).order('created_at',{ascending:false}),
+   window.imaudClient.from('assessments').select('id,property_id,status'),
+   window.imaudClient.from('demo_payments').select('contributor_id,treasury_status,paid_at')
+  ]);
+  if(!document.getElementById('territorialSearchResults'))return;
+  if(pr.error){console.error('SITMAUD map query:',pr.error);result.innerHTML='<div class="territorial-no-recent error">No se pudieron cargar los registros: '+esc(pr.error.message)+'</div>';return;}
+  const assessments=ar.error?[]:(ar.data||[]),payments=dr.error?[]:(dr.data||[]);
+  records=(pr.data||[]).map(p=>({...p,assessments:assessments.filter(a=>a.property_id===p.id),pendingPayments:payments.filter(x=>x.contributor_id===p.contributor_id&&(x.treasury_status||'pending')==='pending')}));
+  updateStats();recentList();renderSearchResults();drawMarkers();
+  const located=records.filter(p=>p.latitude!=null&&p.longitude!=null);
+  if(located.length)map.fitBounds(located.map(p=>[Number(p.latitude),Number(p.longitude)]),{padding:[30,30],maxZoom:16});
+  else map.setView([11.4045,-69.6734],14);
+ }
+ function initMap(){
+  const el=document.getElementById('territorialMapCanvas');if(!el)return;
+  const ready=()=>{if(!document.getElementById('territorialMapCanvas'))return;if(map){map.remove();map=null;}
+   map=L.map(el,{zoomControl:false,scrollWheelZoom:true}).setView([11.4045,-69.6734],14);
+   L.control.zoom({position:'topleft'}).addTo(map);layer=L.layerGroup().addTo(map);tileLayer();
+   map.on('click',e=>{if(placing&&selected)saveLocation(e.latlng.lat,e.latlng.lng)});
+   loadData().then(()=>setTimeout(()=>map.invalidateSize(),160));
+  };
+  if(window.L){ready();return;}
+  if(!document.querySelector('link[data-sitmaud-leaflet]')){const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';css.dataset.sitmaudLeaflet='1';document.head.appendChild(css);}
+  const script=document.createElement('script');script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';script.onload=ready;script.onerror=()=>{el.innerHTML='<div class="territorial-no-recent error">No se pudo cargar el mapa. Verifica tu conexión.</div>'};document.head.appendChild(script);
+ }
+ window.mapView=function(){
+  return '<div class="territorial-page-head"><div class="territorial-page-title"><span class="territorial-page-icon">⌖</span><div><h1>Mapa territorial</h1><p>Georreferenciación y control de contribuyentes, inmuebles y condominios.</p></div></div><div class="territorial-head-actions"><button class="btn btn-primary" id="territorialLoadLocation">＋ Cargar ubicación</button><button class="btn btn-light" id="territorialExport">⇧ Exportar</button><button class="btn btn-light" id="territorialFilters">⚑ Filtros</button></div></div>'+
+  '<div class="territorial-stats-grid"><article><span class="territorial-stat-icon green">⌖</span><div><b id="territorialStatLocated">—</b><small>Ubicaciones registradas</small></div></article><article><span class="territorial-stat-icon green">✓</span><div><b id="territorialStatPaid">—</b><small>Al día</small></div></article><article><span class="territorial-stat-icon red">!</span><div><b id="territorialStatDebt">—</b><small>Con deuda</small></div></article><article><span class="territorial-stat-icon amber">◷</span><div><b id="territorialStatValidation">—</b><small>Por validar</small></div></article></div>'+
+  '<div class="territorial-main-grid"><aside class="territorial-control-column"><section class="card territorial-load-card"><h3>⌖ Cargar ubicación</h3><p>Busca un registro existente para asignar su ubicación en el mapa.</p><label for="territorialKind">Tipo de registro</label><select id="territorialKind"><option value="contribuyente">Contribuyente</option><option value="inmueble">Inmueble</option><option value="condominio">Condominio</option><option value="all">Todos</option></select><div class="territorial-searchbox"><span>⌕</span><input id="territorialSearch" placeholder="Cédula, RIF o N.º de contrato"></div><button class="btn btn-primary territorial-search-button" id="territorialSearchButton">Buscar</button><div id="territorialSearchResults" class="territorial-search-results"></div></section><section class="card territorial-recent-card"><h3>Últimas ubicaciones</h3><div id="territorialRecent"></div><button type="button" class="territorial-history-link" id="territorialHistory">Ver historial de ubicaciones →</button></section></aside>'+
+  '<section class="card territorial-map-panel"><div class="territorial-map-tools"><button type="button" id="territorialGps" title="Centrar en mi ubicación">◎</button><div class="territorial-map-spacer"></div><button type="button" id="territorialLayerToggle">Mapa</button><button type="button" id="territorialSatelliteToggle">Satélite</button></div><div id="territorialMapCanvas" class="territorial-map-canvas"></div><div class="territorial-map-footer"><span><i class="paid"></i>Al día</span><span><i class="debt"></i>Con deuda</span><span><i class="validation"></i>Por validar</span><small>OpenStreetMap / Esri World Imagery</small></div></section></div>'+
+  '<div class="territorial-location-hint" id="territorialHint" hidden>Registro seleccionado. Pulsa «Marcar ubicación» y luego el punto exacto en el mapa.</div>';
+ };
+ document.addEventListener('click',e=>{
+  if(e.target.closest('[data-view="mapa"]'))setTimeout(initMap,90);
+  if(e.target.closest('#territorialLoadLocation')){document.getElementById('territorialSearch')?.focus();notify('Busca el contribuyente, inmueble o condominio y selecciónalo para cargar su ubicación.');}
+  if(e.target.closest('#territorialSearchButton'))renderSearchResults();
+  const item=e.target.closest('[data-territorial-id]');if(item){selected=records.find(p=>p.id===item.dataset.territorialId)||null;selectedPanel();if(selected?.latitude!=null)map?.setView([Number(selected.latitude),Number(selected.longitude)],17);else{placing=true;notify('Ahora puedes usar GPS o marcar el punto exacto en el mapa.')}return;}
+  if(e.target.closest('#territorialClear')){selected=null;selectedPanel();return;}
+  if(e.target.closest('#territorialSatelliteToggle')){satellite=true;tileLayer();document.getElementById('territorialSatelliteToggle').classList.add('active');document.getElementById('territorialLayerToggle').classList.remove('active');return;}
+  if(e.target.closest('#territorialLayerToggle')){satellite=false;tileLayer();document.getElementById('territorialLayerToggle').classList.add('active');document.getElementById('territorialSatelliteToggle').classList.remove('active');return;}
+  if(e.target.closest('#territorialGps')){if(!navigator.geolocation){notify('GPS no disponible en este navegador.');return;}navigator.geolocation.getCurrentPosition(pos=>{if(selected)saveLocation(pos.coords.latitude,pos.coords.longitude);else map?.setView([pos.coords.latitude,pos.coords.longitude],17)},()=>notify('No se pudo obtener tu ubicación. Revisa los permisos del navegador.'),{enableHighAccuracy:true,timeout:15000});return;}
+  if(e.target.closest('#territorialExport')){const rows=records.filter(p=>p.latitude!=null&&p.longitude!=null);const csv=[['Contribuyente','Identificación','Contrato','Dirección','Parroquia','Sector','Latitud','Longitud','Estado'],...rows.map(p=>[name(p),idText(p),contract(p),p.address,p.parish_name,p.sector_name,p.latitude,p.longitude,status(p).label])].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='sitmaud-ubicaciones.csv';a.click();URL.revokeObjectURL(a.href);return;}
+  if(e.target.closest('#territorialFilters')){const kind=document.getElementById('territorialKind');kind.focus();kind.click();return;}
+  if(e.target.closest('#territorialOpenRecord')||e.target.closest('[data-territorial-popup]')){const id=e.target.closest('[data-territorial-popup]')?.dataset.territorialPopup||selected?.id;const p=records.find(x=>x.id===id);if(p&&window.showPropertyDetails)window.showPropertyDetails(p.id);else notify('Expediente seleccionado: '+name(p||selected));return;}
+  if(e.target.closest('#territorialHistory')){const located=records.filter(p=>p.latitude!=null&&p.longitude!=null);notify('Historial disponible: '+located.length+' ubicaciones registradas.');}
+ });
+ document.addEventListener('input',e=>{if(e.target.id==='territorialSearch')renderSearchResults()});
+ document.addEventListener('change',e=>{if(e.target.id==='territorialKind')renderSearchResults()});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&map&&document.getElementById('territorialMapCanvas'))setTimeout(()=>map.invalidateSize(),100)});
 })();

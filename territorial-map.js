@@ -206,6 +206,18 @@
     if(!panel)return;
     panel.hidden=!panel.hidden;
   }
+  function openLocationHistory() {
+    document.getElementById('territorialHistoryModal')?.remove();
+    const history=rows.filter(p=>p.latitude!=null&&p.longitude!=null)
+      .sort((a,b)=>new Date(b.updated_at||b.created_at||0)-new Date(a.updated_at||a.created_at||0));
+    const modal=document.createElement('div');
+    modal.id='territorialHistoryModal';
+    modal.className='territorial-history-backdrop';
+    modal.innerHTML='<section class="territorial-history-dialog" role="dialog" aria-modal="true" aria-labelledby="territorialHistoryTitle"><header><div><h2 id="territorialHistoryTitle">Historial de ubicaciones</h2><p>Registros que actualmente tienen coordenadas geográficas.</p></div><button type="button" data-close-territorial-history aria-label="Cerrar">×</button></header><div class="territorial-history-list">'+
+      (history.length?history.map(p=>'<article><span class="territorial-recent-pin '+recordStatus(p).key+'">⌖</span><div><b>'+esc(personName(p))+'</b><small>'+esc(identification(p))+' · '+esc(contract(p))+'</small><small>'+esc(p.address||'Dirección no registrada')+'</small></div><time>'+esc(p.updated_at?new Date(p.updated_at).toLocaleDateString('es-VE'):'')+'</time><button type="button" data-history-record="'+esc(p.id)+'">Ver</button></article>').join(''):'<p class="territorial-no-recent">Todavía no hay ubicaciones registradas.</p>')+
+      '</div><footer><span>'+history.length+' ubicación(es) registradas</span><button type="button" class="btn btn-primary" data-close-territorial-history>Cerrar</button></footer></section>';
+    document.body.appendChild(modal);
+  }
   window.mapView=function() {
     return '<div class="territorial-page-head"><div class="territorial-page-title"><span class="territorial-page-icon">⌖</span><div><h1>Mapa territorial</h1><p>Georreferenciación y control de contribuyentes, inmuebles y condominios.</p></div></div><div class="territorial-head-actions"><button class="btn btn-primary" id="territorialLoadLocation">＋ Cargar ubicación</button><button class="btn btn-light" id="territorialExport">⇧ Exportar</button><button class="btn btn-light" id="territorialFilters">⚑ Filtros</button></div></div>'+
     '<div class="territorial-stats-grid"><article><span class="territorial-stat-icon green">⌖</span><div><b id="territorialStatLocated">—</b><small>Ubicaciones registradas</small></div></article><article><span class="territorial-stat-icon green">✓</span><div><b id="territorialStatPaid">—</b><small>Al día</small></div></article><article><span class="territorial-stat-icon red">!</span><div><b id="territorialStatDebt">—</b><small>Con deuda</small></div></article><article><span class="territorial-stat-icon amber">◷</span><div><b id="territorialStatValidation">—</b><small>Por validar</small></div></article></div>'+
@@ -244,7 +256,10 @@
     if(event.target.closest('#territorialLayerToggle')){satellite=false;setBaseLayer();return;}
     if(event.target.closest('#territorialExport')){exportLocations();return;}
     if(event.target.closest('#territorialFilters')){showFilters();return;}
-    if(event.target.closest('#territorialHistory')){const n=rows.filter(p=>p.latitude!=null&&p.longitude!=null).length;notify('Hay '+n+' ubicaciones registradas. El historial de cambios requiere habilitar una bitácora geográfica en la base de datos.');return;}
+    if(event.target.closest('#territorialHistory')){openLocationHistory();return;}
+    if(event.target.closest('[data-close-territorial-history]')){document.getElementById('territorialHistoryModal')?.remove();return;}
+    const historyRecord=event.target.closest('[data-history-record]');
+    if(historyRecord){const p=rows.find(x=>x.id===historyRecord.dataset.historyRecord);document.getElementById('territorialHistoryModal')?.remove();if(p){selected=p;renderSelected();map?.setView([Number(p.latitude),Number(p.longitude)],17);}return;}
     if(event.target.closest('#territorialOpenRecord')){
       if(selected&&typeof window.sitmaudShowPropertyDetails==='function')window.sitmaudShowPropertyDetails(selected.id);
       else notify('No se pudo abrir el expediente del inmueble.');

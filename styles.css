@@ -927,3 +927,23 @@ body.modal-open{overflow:hidden}
 .staff-reg-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 .staff-reg-actions .btn:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:600px){.staff-reg-dialog{padding:17px}.staff-reg-fields{grid-template-columns:1fr}.staff-reg-actions{flex-direction:column}.staff-reg-actions .btn{width:100%}}
+
+
+/* SITMAUD · Consulta de solvencias */
+.solvency-intro{display:flex;align-items:center;justify-content:space-between;padding:24px;margin-bottom:18px;background:#fff}
+.solvency-kicker{font-size:10px;letter-spacing:.14em;font-weight:800;color:#718092}
+.solvency-intro h3{margin:8px 0 6px;color:#183b5b;font-size:20px}.solvency-intro p{margin:0;max-width:700px;color:#697887;line-height:1.6;font-size:13px}
+.solvency-intro-mark{font-size:44px;color:#2e668d;padding:0 18px}
+.solvency-search{display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:16px;flex-wrap:wrap}
+.solvency-search label{font-size:13px;font-weight:700;color:#34495e}.solvency-search input{flex:1;min-width:240px;max-width:560px}
+.solvency-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:12px}
+.solvency-row{padding:18px;display:flex;flex-direction:column;gap:10px}
+.solvency-person{display:flex;align-items:center;gap:12px}.solvency-avatar{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:#edf3f8;color:#245b80;font-size:19px}
+.solvency-person b{display:block;color:#243b50}.solvency-person small,.solvency-meta small{display:block;color:#788695;font-size:11px;margin-top:4px}
+.solvency-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.solvency-state{display:inline-flex;padding:6px 9px;border-radius:20px;font-size:11px;font-weight:750;background:#edf1f4;color:#536273}
+.solvency-state.paid{background:#e8f4ed;color:#267247}.solvency-state.pending{background:#fff3e5;color:#9b5a13}.solvency-state.unverified{background:#edf1f4;color:#596879}
+.solvency-row p{margin:0;color:#657486;font-size:12px;line-height:1.5}.solvency-row .btn{align-self:flex-start}
+.solvency-notice{margin-top:18px;padding:16px 18px;border-left:3px solid #a8b7c5}.solvency-notice b{color:#34495e}.solvency-notice p{margin:6px 0 0;color:#6d7b89;font-size:12px;line-height:1.6}
+.solvency-detail{width:min(760px,94vw);padding:22px;max-height:86vh;overflow:auto}.solvency-detail header{display:flex;justify-content:space-between;gap:14px;margin-bottom:18px}.solvency-detail h2{margin:6px 0;color:#1d3d59}.solvency-detail header p,.solvency-detail-note{font-size:12px;color:#718092}
+@media(max-width:640px){.solvency-intro-mark{display:none}.solvency-search{align-items:stretch}.solvency-search input{max-width:none}.solvency-meta{align-items:flex-start;flex-direction:column}}

@@ -857,7 +857,7 @@ function officialBilling(){return productionModule('Facturación','La emisión d
 
 function solvencyModule(){
  return head('Consulta de solvencias','Verifica el estado de las obligaciones oficiales de cada contribuyente antes de iniciar una solicitud.')+
- '<section class="card solvency-intro"><div><span class="solvency-kicker">CONSULTA ADMINISTRATIVA</span><h3>Verificación de cuenta</h3><p>Busca por nombre, cédula, RIF o número de contrato. La consulta solo considera liquidaciones oficiales; los registros DEMO quedan excluidos.</p></div><div class="solvency-intro-mark">▣</div></section>'+
+ '<section class="card solvency-intro"><div><span class="solvency-kicker">CONSULTA ADMINISTRATIVA</span><h3>Verificación de cuenta</h3><p>Busca por nombre, cédula, RIF o número de contrato. Consulta las liquidaciones oficiales registradas en el sistema.</p></div><div class="solvency-intro-mark">▣</div></section>'+
  '<section class="card solvency-search"><label for="solvencySearch">Buscar contribuyente</label><input id="solvencySearch" class="search" type="search" placeholder="Nombre, cédula, RIF o número de contrato"><span id="solvencyCount" class="table-count">Consultando registros…</span></section>'+
  '<section id="solvencyResults" class="solvency-results"><div class="contributors-loading">Consultando obligaciones oficiales…</div></section>'+
  '<section class="card solvency-notice"><b>Emisión de certificado</b><p>La emisión de solvencias oficiales permanece bloqueada hasta configurar el consecutivo institucional, el registro de emisión, los permisos de firma y el sello autorizado. Esta pantalla es únicamente de consulta y no genera certificados.</p></section>';

@@ -19,7 +19,7 @@
   }
   function contract(p) { return p.contributor?.contract_number || p.contract_number || 'Sin contrato'; }
   function recordType(p) {
-    return p.is_consolidated_master || p.contributor?.service_account_type === 'condominio' || p.organization_name ? 'condominio' : 'inmueble';
+    return p.is_consolidated_master === true || p.contributor?.service_account_type === 'condominio' ? 'condominio' : 'inmueble';
   }
   function recordStatus(p) {
     const assessments = (p.assessments || []).filter(a => a.is_demo === false);
@@ -32,7 +32,7 @@
     const kind = document.getElementById('territorialKind')?.value || 'all';
     return rows.filter(p => {
       const text = [personName(p),identification(p),contract(p),p.address,p.parish_name,p.sector_name,p.organization_name].join(' ').toLocaleLowerCase('es-VE');
-      const matchesKind = kind === 'all' || (kind === 'contribuyente' ? true : recordType(p) === kind);
+      const matchesKind = kind === 'all' || (kind === 'contribuyente' ? Boolean(p.contributor) : recordType(p) === kind);
       const matchesStatus = statusFilter === 'all' || recordStatus(p).key === statusFilter;
       const matchesType = typeFilter === 'all' || recordType(p) === typeFilter;
       return (!query || text.includes(query)) && matchesKind && matchesStatus && matchesType;
@@ -90,7 +90,8 @@
     const matches=filteredRows().slice(0,30);
     host.innerHTML=matches.length ? matches.map(p=>{
       const s=recordStatus(p);
-      return '<button type="button" class="territorial-search-result" data-territorial-id="'+esc(p.id)+'"><span class="territorial-result-dot '+s.key+'"></span><span><b>'+esc(personName(p))+'</b><small>'+esc(identification(p))+' · '+esc(contract(p))+'</small></span><em>'+(p.latitude!=null?'Ubicado':'Sin ubicación')+'</em></button>';
+      const kindLabel=recordType(p)==='condominio'?'Condominio':'Inmueble asociado';
+      return '<button type="button" class="territorial-search-result" data-territorial-id="'+esc(p.id)+'"><span class="territorial-result-dot '+s.key+'"></span><span><b>'+esc(personName(p))+'</b><small>'+esc(kindLabel+' · '+(p.address||'Dirección pendiente'))+'</small><small>'+esc(identification(p)+' · '+contract(p))+'</small></span><em>'+(p.latitude!=null?'Ubicado':'Sin ubicación')+'</em></button>';
     }).join('') : '<div class="territorial-no-recent">No se encontraron registros con esos datos.</div>';
   }
   function renderSelected() {
@@ -98,7 +99,8 @@
     if(!host)return;
     if(!selected){host.innerHTML='<div class="territorial-select-empty">Busca un registro existente y selecciónalo para asignar su ubicación.</div>';return;}
     const s=recordStatus(selected);
-    host.innerHTML='<div class="territorial-record-card"><div class="territorial-record-title"><span class="territorial-record-symbol">⌂</span><div><b>'+esc(personName(selected))+'</b><small>'+esc(identification(selected))+'</small></div><button type="button" id="territorialClear" aria-label="Cerrar">×</button></div><p><b>Contrato:</b> '+esc(contract(selected))+'</p><p><b>Sector:</b> '+esc(selected.sector_name||'No especificado')+'</p><span class="territorial-state '+s.key+'">'+s.symbol+' '+esc(s.label)+'</span><div class="territorial-coords">'+(selected.latitude!=null?'Lat. '+Number(selected.latitude).toFixed(6)+' · Long. '+Number(selected.longitude).toFixed(6):'Este registro todavía no tiene ubicación asignada.')+'</div><div class="territorial-selected-actions"><button type="button" class="btn btn-primary" id="territorialStartPlace">⌖ Marcar ubicación</button><button type="button" class="btn btn-light" id="territorialSelectedGps">◎ Usar GPS</button></div><button type="button" class="btn btn-light territorial-expedient" id="territorialOpenRecord">↗ Ver expediente</button></div>';
+    const kindLabel=recordType(selected)==='condominio'?'Condominio':'Inmueble';
+    host.innerHTML='<div class="territorial-record-card"><div class="territorial-record-title"><span class="territorial-record-symbol">⌂</span><div><b>'+esc(personName(selected))+'</b><small>'+esc(kindLabel+' · '+identification(selected))+'</small></div><button type="button" id="territorialClear" aria-label="Cerrar">×</button></div><p><b>Dirección:</b> '+esc(selected.address||'No registrada')+'</p><p><b>Contrato:</b> '+esc(contract(selected))+'</p><p><b>Sector:</b> '+esc(selected.sector_name||'No especificado')+'</p><span class="territorial-state '+s.key+'">'+s.symbol+' '+esc(s.label)+'</span><div class="territorial-coords">'+(selected.latitude!=null?'Lat. '+Number(selected.latitude).toFixed(6)+' · Long. '+Number(selected.longitude).toFixed(6):'Este registro todavía no tiene ubicación asignada.')+'</div><div class="territorial-selected-actions"><button type="button" class="btn btn-primary" id="territorialStartPlace">⌖ Marcar ubicación</button><button type="button" class="btn btn-light" id="territorialSelectedGps">◎ Usar GPS</button></div><button type="button" class="btn btn-light territorial-expedient" id="territorialOpenRecord">↗ Ver expediente</button></div>';
   }
   function setBaseLayer() {
     if(!map)return;

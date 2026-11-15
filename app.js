@@ -14,7 +14,7 @@ function dashboard(){
   {key:'revenue_today',label:'Recaudación del día',icon:'↗',note:'Pagos confirmados'},
   {key:'revenue_total',label:'Recaudación acumulada',icon:'▤',note:'Pagos confirmados'},
   {key:'debts_pending',label:'Obligaciones pendientes',icon:'!',note:'Liquidaciones oficiales pendientes'},
-  {key:'certificates_total',label:'Solvencias emitidas',icon:'▣',note:'Módulo pendiente de habilitación'}
+  {key:'certificates_total',label:'Solvencias emitidas',icon:'▣',note:'Certificados oficiales emitidos'}
  ];
  return head('Indicadores generales','Datos administrativos y financieros procedentes del sistema oficial.')+
  '<div class="grid kpis home-indicators">'+metrics.map(m=>'<article class="card kpi home-kpi"><div class="kpi-top"><span>'+m.label+'</span><span class="kpi-icon">'+m.icon+'</span></div><div class="kpi-value" data-metric-value="'+m.key+'">—</div><div class="kpi-note" data-metric-note="'+m.key+'">'+m.note+'</div></article>').join('')+'</div>';
@@ -37,10 +37,11 @@ function formatDashboardCurrencyMap(map){
 async function loadDashboardMetrics(){
  if(state.view!=='inicio'||!document.body.classList.contains('sitmaud-authenticated'))return;
  document.querySelectorAll('[data-metric-value]').forEach(el=>el.textContent='…');
- const [base,condos,officialDebt]=await Promise.all([
+ const [base,condos,officialDebt,issuedCertificates]=await Promise.all([
   imaudClient.rpc('get_dashboard_metrics'),
   imaudClient.from('residential_organizations').select('id',{count:'exact',head:true}).eq('consolidated_billing',true),
-  imaudClient.from('assessments').select('id',{count:'exact',head:true}).eq('is_demo',false).in('status',['pending','partially_paid'])
+  imaudClient.from('assessments').select('id',{count:'exact',head:true}).eq('is_demo',false).in('status',['pending','partially_paid']),
+  imaudClient.from('solvency_certificates').select('id',{count:'exact',head:true}).eq('status','issued')
  ]);
  if(state.view!=='inicio')return;
  const values=base.error?null:base.data;
@@ -58,7 +59,8 @@ async function loadDashboardMetrics(){
  const condo=document.querySelector('[data-metric-value="condominiums_total"]');
  if(condo)condo.textContent=condos.error?'No disponible':formatDashboardCount(condos.count||0);
  const cert=document.querySelector('[data-metric-value="certificates_total"]');
- if(cert)cert.textContent=values?.certificates_configured?formatDashboardCount(values.certificates_total):'No disponible';
+ if(cert)cert.textContent=issuedCertificates.error?'No disponible':formatDashboardCount(issuedCertificates.count||0);
+ if(issuedCertificates.error)console.error('SITMAUD solvency certificate metric:',issuedCertificates.error);
 }
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function contributorName(p){return p.kind==='juridico'?(p.legal_name||'Sin razón social'):[p.first_name,p.last_name].filter(Boolean).join(' ')||p.legal_name||'Sin nombre';}

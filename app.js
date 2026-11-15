@@ -1,28 +1,23 @@
-const state={view:'inicio',people:[],parishes:[],sectors:[],paymentDebtors:[],paymentBankCatalog:[],paymentPage:1,currentPaymentContributor:null,currentPaymentAssessments:[],udcRate:null,payments:[{ref:'DEMO-00031',person:'María Fernanda Rojas',period:'Noviembre 2026',amount:'3,00',date:'11/11/2026',status:'Registrado'},{ref:'DEMO-00030',person:'José Antonio Acosta',period:'Noviembre 2026',amount:'1,50',date:'10/11/2026',status:'Registrado'}],staff:[]};
+const state={view:'inicio',people:[],parishes:[],sectors:[],paymentDebtors:[],paymentBankCatalog:[],paymentPage:1,currentPaymentContributor:null,currentPaymentAssessments:[],udcRate:null,payments:[],staff:[]};
 const $=s=>document.querySelector(s);const money=n=>new Intl.NumberFormat('es-VE',{minimumFractionDigits:2}).format(n);
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)}
 const titleMap={inicio:'Inicio',contribuyentes:'Contribuyentes',inmuebles:'Inmuebles',organizaciones:'Condominios',condominio_registro:'Registrar condominio',pagos:'Recaudación y pagos',facturacion:'Facturación',reportes:'Reportes',mapa:'Mapa territorial',ordenanza:'Ordenanza y tarifas',funcionarios:'Funcionarios y permisos',bitacora:'Bitácora'};
 function head(title,sub,action=''){return `<div class="page-head"><div><div class="eyebrow">SITMAUD · GESTIÓN MUNICIPAL</div><h1>${title}</h1><p>${sub}</p></div>${action}</div>`}
 function table(headers,rows){return `<div class="card table-card"><table><thead><tr>${headers.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`}
 function dashboard(){
-  const metrics=[
-    {key:'contributors_total',label:'Total de contribuyentes',icon:'♙',note:'Personas y organizaciones registradas'},
-    {key:'properties_total',label:'Total de inmuebles',icon:'⌂',note:'Inmuebles activos registrados'},
-    {key:'condominiums_total',label:'Condominios registrados',icon:'▥',note:'Cuentas jurídicas con ficha matriz'},
-    {key:'payments_total',label:'Pagos DEMO registrados',icon:'▧',note:'Total histórico de pagos simulados guardados'},
-    {key:'payments_today',label:'Pagos DEMO de hoy',icon:'◷',note:'Fecha local de Coro'},
-    {key:'revenue_today',label:'Monto DEMO de hoy',icon:'↗',note:'Simulaciones, no ingresos reales'},
-    {key:'revenue_total',label:'Monto DEMO acumulado',icon:'▤',note:'Total histórico de simulaciones'},
-    {key:'debts_pending',label:'Deudas pendientes',icon:'!',note:'Obligaciones pendientes o parcialmente pagadas'},
-    {key:'certificates_total',label:'Certificados de solvencia emitidos',icon:'▣',note:'Indicador pendiente de habilitar el módulo'}
-  ];
-  return head('Indicadores generales','Resumen de los principales datos de SITMAUD.')+
-    '<div class="grid kpis home-indicators">'+metrics.map(m=>`
-      <article class="card kpi home-kpi">
-        <div class="kpi-top"><span>${m.label}</span><span class="kpi-icon">${m.icon}</span></div>
-        <div class="kpi-value" data-metric-value="${m.key}">—</div>
-        <div class="kpi-note" data-metric-note="${m.key}">${m.note}</div>
-      </article>`).join('')+'</div>';
+ const metrics=[
+  {key:'contributors_total',label:'Total de contribuyentes',icon:'♙',note:'Registros del sistema'},
+  {key:'properties_total',label:'Total de inmuebles',icon:'⌂',note:'Inmuebles activos'},
+  {key:'condominiums_total',label:'Condominios registrados',icon:'▥',note:'Cuentas matrices'},
+  {key:'payments_total',label:'Pagos registrados',icon:'▧',note:'Operaciones oficiales'},
+  {key:'payments_today',label:'Pagos de hoy',icon:'◷',note:'Fecha local de Coro'},
+  {key:'revenue_today',label:'Recaudación del día',icon:'↗',note:'Pagos confirmados'},
+  {key:'revenue_total',label:'Recaudación acumulada',icon:'▤',note:'Pagos confirmados'},
+  {key:'debts_pending',label:'Obligaciones pendientes',icon:'!',note:'Liquidaciones oficiales pendientes'},
+  {key:'certificates_total',label:'Solvencias emitidas',icon:'▣',note:'Módulo pendiente de habilitación'}
+ ];
+ return head('Indicadores generales','Datos administrativos y financieros procedentes del sistema oficial.')+
+ '<div class="grid kpis home-indicators">'+metrics.map(m=>'<article class="card kpi home-kpi"><div class="kpi-top"><span>'+m.label+'</span><span class="kpi-icon">'+m.icon+'</span></div><div class="kpi-value" data-metric-value="'+m.key+'">—</div><div class="kpi-note" data-metric-note="'+m.key+'">'+m.note+'</div></article>').join('')+'</div>';
 }
 function formatDashboardCount(value){
   return new Intl.NumberFormat('es-VE',{maximumFractionDigits:0}).format(Number(value||0));
@@ -42,37 +37,26 @@ function formatDashboardCurrencyMap(map){
 async function loadDashboardMetrics(){
  if(state.view!=='inicio'||!document.body.classList.contains('sitmaud-authenticated'))return;
  document.querySelectorAll('[data-metric-value]').forEach(el=>el.textContent='…');
- const [base,demo,condos]=await Promise.all([imaudClient.rpc('get_dashboard_metrics'),imaudClient.rpc('get_demo_dashboard_metrics'),imaudClient.from('residential_organizations').select('id',{count:'exact',head:true}).eq('consolidated_billing',true)]);
- const condoCard=document.querySelector('[data-metric-value="condominiums_total"]');
- if(condoCard)condoCard.textContent=condos.error?'No disponible':formatDashboardCount(condos.count||0);
+ const [base,condos]=await Promise.all([
+  imaudClient.rpc('get_dashboard_metrics'),
+  imaudClient.from('residential_organizations').select('id',{count:'exact',head:true}).eq('consolidated_billing',true)
+ ]);
  if(state.view!=='inicio')return;
- for(const key of ['contributors_total','properties_total','debts_pending']){
+ const values=base.error?null:base.data;
+ if(base.error) console.error('SITMAUD official metrics:',base.error);
+ for(const key of ['contributors_total','properties_total','payments_total','payments_today','debts_pending']){
   const el=document.querySelector('[data-metric-value="'+key+'"]');
-  if(el)el.textContent=base.error||!base.data?'No disponible':formatDashboardCount(base.data[key]);
- }
- if(base.error)console.error('Indicadores generales SITMAUD:',base.error);
- const cert=document.querySelector('[data-metric-value="certificates_total"]');
- const certNote=document.querySelector('[data-metric-note="certificates_total"]');
- if(cert)cert.textContent=base.data?.certificates_configured?formatDashboardCount(base.data.certificates_total):'Pendiente';
- if(certNote)certNote.textContent=base.data?.certificates_configured?'Certificados emitidos':'El módulo de certificados aún no está habilitado';
- if(demo.error||!demo.data){
-  for(const key of ['payments_total','payments_today','revenue_today','revenue_total']){
-   const el=document.querySelector('[data-metric-value="'+key+'"]');if(el)el.textContent='No disponible';
-  }
-  console.error('Indicadores DEMO SITMAUD:',demo.error);return;
- }
- const values=demo.data;
- for(const key of ['payments_total','payments_today']){
-  const el=document.querySelector('[data-metric-value="'+key+'"]');if(el)el.textContent=formatDashboardCount(values[key]);
+  if(el)el.textContent=values?formatDashboardCount(values[key]):'No disponible';
  }
  for(const key of ['revenue_total','revenue_today']){
-  const el=document.querySelector('[data-metric-value="'+key+'"]');if(el)el.textContent='Bs. '+formatDashboardMoney(values[key]);
+  const el=document.querySelector('[data-metric-value="'+key+'"]');
+  if(el)el.textContent=values?formatDashboardCurrencyMap(values[key]):'No disponible';
  }
- const todayNote=document.querySelector('[data-metric-note="payments_today"]');
- if(todayNote)todayNote.textContent='Hoy '+values.day_local+' · Coro';
-
+ const condo=document.querySelector('[data-metric-value="condominiums_total"]');
+ if(condo)condo.textContent=condos.error?'No disponible':formatDashboardCount(condos.count||0);
+ const cert=document.querySelector('[data-metric-value="certificates_total"]');
+ if(cert)cert.textContent=values?.certificates_configured?formatDashboardCount(values.certificates_total):'No disponible';
 }
-
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function contributorName(p){return p.kind==='juridico'?(p.legal_name||'Sin razón social'):[p.first_name,p.last_name].filter(Boolean).join(' ')||p.legal_name||'Sin nombre';}
 function contributorType(kind){return ({natural_venezolano:'Persona natural',natural_extranjero:'Persona extranjera',juridico:'Persona jurídica'})[kind]||kind||'—';}
@@ -82,7 +66,7 @@ function listPeople(){
  '<div class="contributors-layout"><section class="card contributors-table-card"><div class="table-toolbar"><div><h3>Directorio de contribuyentes</h3><p>Registros guardados en SITMAUD</p></div><span id="contributorsCount" class="table-count">Cargando…</span></div><div id="peopleTable" class="contributors-table-wrap"><div class="contributors-loading">Consultando contribuyentes…</div></div></section><aside class="contributors-stats"><article class="card contributor-stat"><span class="stat-icon">♙</span><small>Total contribuyentes</small><strong id="statTotal">—</strong></article><article class="card contributor-stat"><span class="stat-icon blue">♟</span><small>Personas naturales</small><strong id="statNatural">—</strong></article><article class="card contributor-stat"><span class="stat-icon violet">▦</span><small>Personas jurídicas</small><strong id="statLegal">—</strong></article><article class="card contributor-stat"><span class="stat-icon green">✓</span><small>Con correo registrado</small><strong id="statEmail">—</strong></article></aside></div>';
 }
 function contributorPaymentSummary(p){
- const confirmed=[...(p.payments||[]).filter(x=>x.status==='confirmed'&&x.paid_at),...(p.demo_payments||[]).map(x=>({...x,status:'confirmed'}))].sort((a,b)=>new Date(b.paid_at)-new Date(a.paid_at));
+ const confirmed=(p.payments||[]).filter(x=>x.status==='confirmed'&&x.paid_at).sort((a,b)=>new Date(b.paid_at)-new Date(a.paid_at));
  const last=confirmed[0]?.paid_at||null;
  const assessments=(p.properties||[]).flatMap(x=>x.assessments||[]);
  const debt=assessments.some(x=>['pending','partially_paid'].includes(x.status));
@@ -137,7 +121,7 @@ async function toggleContributorActive(person){
 async function loadContributors(){
  const target=document.getElementById('peopleTable'); if(!target)return;
  target.innerHTML='<div class="contributors-loading">Consultando contribuyentes…</div>';
- const {data,error}=await imaudClient.from('contributors').select('id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,status,created_at,properties(id,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,assessments(id,status)),payments(id,status,paid_at),demo_payments(id,paid_at,receipt_number)').order('created_at',{ascending:false});
+ const {data,error}=await imaudClient.from('contributors').select('id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,status,created_at,properties(id,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,assessments(id,status)),payments(id,status,paid_at)').order('created_at',{ascending:false});
  if(state.view!=='contribuyentes')return;
  if(error){console.error('SITMAUD contributors:',error);target.innerHTML='<div class="contributors-empty"><b>No se pudieron cargar los contribuyentes</b><span>Verifica que tu usuario tenga permiso de consulta y vuelve a intentarlo.</span></div>';return;}
  state.people=data||[];
@@ -861,10 +845,20 @@ document.addEventListener('change',event=>{
  if(event.target.matches('[data-staff-permission]'))saveStaffPermissionCheckbox(event.target);
 });
 function log(){return head('Bitácora de auditoría','Registro demostrativo de eventos y trazabilidad administrativa.')+`<div class="notice">En producción, la bitácora deberá ser de solo anexado, con fecha/hora del servidor, actor, IP, acción, entidad afectada y valores anteriores/nuevos cuando corresponda.</div>${table(['Fecha y hora','Usuario','Módulo','Acción','Resultado'],[['11/11/2026 09:42','Usuario intendente','Contribuyentes','Consulta de expediente','<span class="status">Correcto</span>'],['11/11/2026 09:18','Recaudador demo','Pagos','Registro de pago ficticio','<span class="status">Correcto</span>'],['10/11/2026 16:03','Administrador demo','Reportes','Exportación CSV de prueba','<span class="status">Correcto</span>']].map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join(''))}`}
+function productionModule(title,detail){
+ return head(title,'Gestión institucional de SITMAUD.')+
+ '<section class="card" style="padding:28px;max-width:850px"><h3>Operación pendiente de habilitación</h3><p>'+detail+'</p><p style="color:#667788;font-size:12px">Este módulo no permite efectuar operaciones financieras hasta completar los controles tributarios, la validación de Tesorería y la autorización institucional.</p></section>';
+}
+function officialBilling(){return productionModule('Facturación','La emisión de comprobantes oficiales se habilitará únicamente cuando existan pagos reales confirmados y documentos aprobados.');}
+function officialReports(){return productionModule('Reportes','La consulta de recaudación requiere integrar registros financieros definitivos y auditoría.');}
+function officialPayments(){return productionModule('Recaudación y pagos','Los cobros se mantienen bloqueados hasta disponer de tarifas aprobadas, liquidaciones oficiales y conciliación bancaria.');}
+function officialCondoRegistration(){return productionModule('Registro de condominios','El registro de nuevas cuentas matrices está temporalmente restringido hasta separar sus funciones de las liquidaciones de prueba.');}
+function officialAudit(){return productionModule('Bitácora','El visor de auditoría se habilitará al comprobar permisos y trazabilidad de los eventos reales.');}
+
 window.sitmaudShowPropertyDetails=showPropertyDetails;
-function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:()=>window.renderCondominiumRegistration(),pagos:payments,facturacion:invoices,reportes:reports,mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:log};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='condominio_registro')window.initializeCondominiumRegistration();if(v==='inmuebles')loadProperties();if(v==='pagos'){loadPaymentDebtors();loadDemoPayments();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}if(v==='funcionarios')loadStaffPermissionMatrix();}
+function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:officialPayments,facturacion:officialBilling,reportes:officialReports,mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}if(v==='funcionarios')loadStaffPermissionMatrix();}
 function go(v){state.view=v;render();window.scrollTo(0,0)}
-document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')openCondoRegistration();else if(act==='new-payment')openPaymentModal();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-staff')openStaffRegistrationPreview();else if(act==='new-org')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
+document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')go('condominio_registro');else if(act==='new-payment')toast('La recaudación aún no está habilitada.');else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-staff')openStaffRegistrationPreview();else if(act==='new-org')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
 document.addEventListener('click',e=>{const toggle=e.target.closest('#paymentBankToggle');if(toggle){const input=document.getElementById('paymentBankSearch'),list=document.getElementById('paymentBankResults');if(!input||!list)return;if(!list.hidden){list.hidden=true;input.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false')}else{input.value='';filterPaymentBanks();toggle.setAttribute('aria-expanded','true');input.focus()}return}const input=e.target.closest('#paymentBankSearch');if(input){filterPaymentBanks();return}const bank=e.target.closest('[data-bank-code]');if(bank){choosePaymentBank(bank.dataset.bankCode);return}const list=document.getElementById('paymentBankResults');if(list&&!e.target.closest('.payment-bank-combobox')){list.hidden=true;document.getElementById('paymentBankSearch')?.setAttribute('aria-expanded','false');document.getElementById('paymentBankToggle')?.setAttribute('aria-expanded','false')}});
 document.addEventListener('click',e=>{const person=e.target.closest('[data-payment-person]');if(person){const found=state.paymentDebtors.find(p=>p.id===person.dataset.paymentPerson);if(found)openPaymentModal(found);return}const page=e.target.closest('[data-payment-page]');if(page){state.paymentPage=Number(page.dataset.paymentPage);const host=document.getElementById('paymentDebtorsTable');if(host)host.innerHTML=paymentDebtorTable();return}if(e.target.closest('#menuToggle'))$('#sidebar').classList.toggle('open')});
 function exportCSV(){const rows=[['Referencia','Contribuyente','Periodo','Importe demo','Fecha'],...state.payments.map(p=>[p.ref,p.person,p.period,p.amount,p.date])];const csv=rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='imaud-reporte-demostracion.csv';a.click();URL.revokeObjectURL(a.href);toast('CSV demostrativo descargado')}

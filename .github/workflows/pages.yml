@@ -1,4 +1,4 @@
-name: Deploy IMAUD preview to GitHub Pages
+name: Deploy SITMAUD institutional preview to GitHub Pages
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -23,12 +23,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Assemble public site (exclude demo and internal files)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/assets
+          for file in index.html funcionario.html contribuyente-v2.html contribuyente-cuenta.html \
+            styles.css auth.css billing.css territorial-map.css \
+            auth.js app.js territorial-map.js contributor-documents.js; do
+            test -f "$file"
+            cp "$file" dist/"$file"
+          done
+          cp -R assets/. dist/assets/
+          if grep -RlE 'href="./contribuyente-demo.html"|src="billing.js|src="reports.js|src="treasury-validation.js' dist --include='*.html'; then
+            echo "Forbidden demo link or script in public HTML" >&2
+            exit 1
+          fi
+          echo "Public site contains only approved website assets; no migrations, archives or demo pages."
       - name: Configure Pages
         uses: actions/configure-pages@v5
-      - name: Upload static site
+      - name: Upload public site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: "./dist"
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

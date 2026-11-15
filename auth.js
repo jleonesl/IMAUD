@@ -31,7 +31,7 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
    if(role) role.textContent=profile.role.replaceAll('_',' ');
    document.querySelector('.demo-pill')?.remove();
    const banner=document.querySelector('.demo-banner');
-   if(banner){banner.innerHTML='<b>ENTORNO DE PRUEBAS</b><span>La autenticación está activa. Las operaciones financieras aún no están habilitadas.</span>'}
+   if(banner){banner.innerHTML='<b>PREPARACIÓN INSTITUCIONAL</b><span>Operaciones financieras y liquidaciones oficiales deshabilitadas hasta completar la verificación institucional.</span>'}
    window.imaudCurrentProfile=profile;
    window.dispatchEvent(new Event('imaud:authenticated'));
  }

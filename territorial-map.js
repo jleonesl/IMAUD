@@ -22,11 +22,10 @@
     return p.is_consolidated_master || p.contributor?.service_account_type === 'condominio' || p.organization_name ? 'condominio' : 'inmueble';
   }
   function recordStatus(p) {
-    const assessments = p.assessments || [];
-    if (assessments.some(a => ['pending','partially_paid'].includes(a.status))) return {key:'debt',label:'Con deuda',symbol:'!'};
-    if ((p.pendingPayments || []).length) return {key:'validation',label:'Por validar',symbol:'◷'};
-    if (assessments.length && assessments.every(a => a.status === 'paid')) return {key:'paid',label:'Al día',symbol:'✓'};
-    return {key:'validation',label:'Por validar',symbol:'◷'};
+    const assessments = (p.assessments || []).filter(a => a.is_demo === false);
+    if (assessments.some(a => ['pending','partially_paid'].includes(a.status))) return {key:'debt',label:'Con obligación pendiente',symbol:'!'};
+    if (assessments.length && assessments.every(a => a.status === 'paid')) return {key:'paid',label:'Sin deuda registrada',symbol:'✓'};
+    return {key:'validation',label:'Sin liquidación oficial',symbol:'?'};
   }
   function filteredRows() {
     const query = (document.getElementById('territorialSearch')?.value || '').trim().toLocaleLowerCase('es-VE');
@@ -146,20 +145,17 @@
   }
   async function loadData() {
     const host=document.getElementById('territorialSearchResults');
-    const [properties,payments]=await Promise.all([
+    const properties=await
       imaudClient.from('properties')
-        .select('id,contributor_id,address,latitude,longitude,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,organization_name,created_at,updated_at,contributor:contributors!properties_contributor_id_fkey(id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name),assessments(id,status,period_start)')
-        .eq('is_active',true).order('created_at',{ascending:false}),
-      imaudClient.from('demo_payments').select('contributor_id,treasury_status')
-    ]);
+        .select('id,contributor_id,address,latitude,longitude,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,organization_name,created_at,updated_at,contributor:contributors!properties_contributor_id_fkey(id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name),assessments(id,status,period_start,is_demo)')
+        .eq('is_active',true).order('created_at',{ascending:false});
     if(!document.getElementById('territorialMapCanvas'))return;
     if(properties.error){
       console.error('SITMAUD territorial records:',properties.error);
       if(host)host.innerHTML='<div class="territorial-no-recent error">No se pudieron consultar los registros. '+esc(properties.error.message)+'</div>';
       return;
     }
-    const paymentRows=payments.error?[]:(payments.data||[]);
-    rows=(properties.data||[]).map(p=>({...p,pendingPayments:paymentRows.filter(x=>x.contributor_id===p.contributor_id&&(x.treasury_status||'pending')==='pending')}));
+    rows=properties.data||[];
     stats();renderRecent();renderResults();drawMarkers();
     const located=rows.filter(p=>p.latitude!=null&&p.longitude!=null);
     if(located.length)map.fitBounds(located.map(p=>[Number(p.latitude),Number(p.longitude)]),{padding:[28,28],maxZoom:16});
@@ -221,7 +217,7 @@
   window.mapView=function() {
     return '<div class="territorial-page-head"><div class="territorial-page-title"><span class="territorial-page-icon">⌖</span><div><h1>Mapa territorial</h1><p>Georreferenciación y control de contribuyentes, inmuebles y condominios.</p></div></div><div class="territorial-head-actions"><button class="btn btn-primary" id="territorialLoadLocation">＋ Cargar ubicación</button><button class="btn btn-light" id="territorialExport">⇧ Exportar</button><button class="btn btn-light" id="territorialFilters">⚑ Filtros</button></div></div>'+
     '<div class="territorial-stats-grid"><article><span class="territorial-stat-icon green">⌖</span><div><b id="territorialStatLocated">—</b><small>Ubicaciones registradas</small></div></article><article><span class="territorial-stat-icon green">✓</span><div><b id="territorialStatPaid">—</b><small>Al día</small></div></article><article><span class="territorial-stat-icon red">!</span><div><b id="territorialStatDebt">—</b><small>Con deuda</small></div></article><article><span class="territorial-stat-icon amber">◷</span><div><b id="territorialStatValidation">—</b><small>Por validar</small></div></article></div>'+
-    '<div class="territorial-filter-panel card" id="territorialFilterPanel" hidden><label>Estado de cuenta<select id="territorialStatusFilter"><option value="all">Todos los estados</option><option value="paid">Al día</option><option value="debt">Con deuda</option><option value="validation">Por validar</option></select></label><label>Tipo de registro<select id="territorialTypeFilter"><option value="all">Todos</option><option value="inmueble">Inmuebles</option><option value="condominio">Condominios</option></select></label></div>'+
+    '<div class="territorial-filter-panel card" id="territorialFilterPanel" hidden><label>Estado de cuenta<select id="territorialStatusFilter"><option value="all">Todos los estados</option><option value="paid">Al día</option><option value="debt">Con deuda</option><option value="validation">Sin liquidación oficial</option></select></label><label>Tipo de registro<select id="territorialTypeFilter"><option value="all">Todos</option><option value="inmueble">Inmuebles</option><option value="condominio">Condominios</option></select></label></div>'+
     '<div class="territorial-main-grid"><aside class="territorial-control-column"><section class="card territorial-load-card"><h3>⌖ Cargar ubicación</h3><p>Busca un registro existente para asignar su ubicación en el mapa.</p><label for="territorialKind">Tipo de registro</label><select id="territorialKind"><option value="contribuyente">Contribuyente</option><option value="inmueble">Inmueble</option><option value="condominio">Condominio</option><option value="all">Todos los registros</option></select><div class="territorial-searchbox"><span>⌕</span><input id="territorialSearch" autocomplete="off" placeholder="Cédula, RIF o N.º de contrato"></div><button class="btn btn-primary territorial-search-button" id="territorialSearchButton">Buscar</button><div id="territorialSearchResults" class="territorial-search-results"></div><div id="territorialSelected" class="territorial-selected"><div class="territorial-select-empty">Selecciona un registro para asignarle ubicación.</div></div></section><section class="card territorial-recent-card"><h3>Últimas ubicaciones</h3><div id="territorialRecent"></div><button type="button" class="territorial-history-link" id="territorialHistory">Ver historial de ubicaciones →</button></section></aside>'+
     '<section class="card territorial-map-panel"><div class="territorial-map-tools"><button type="button" id="territorialGps" title="Centrar en mi ubicación">◎</button></div><div class="territorial-layer-switch"><button type="button" id="territorialLayerToggle" class="active">Mapa</button><button type="button" id="territorialSatelliteToggle">Satélite</button></div><div id="territorialMapCanvas" class="territorial-map-canvas"></div><div class="territorial-map-footer"><span><i class="paid"></i>Al día</span><span><i class="debt"></i>Con deuda</span><span><i class="validation"></i>Por validar</span><small>Cartografía OpenStreetMap · Satélite Esri</small></div></section></div>'+
     '<div class="territorial-location-hint" id="territorialHint" hidden>Modo de ubicación activo: pulsa el punto exacto del mapa para guardar las coordenadas.</div>';

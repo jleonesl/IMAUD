@@ -37,14 +37,15 @@ function formatDashboardCurrencyMap(map){
 async function loadDashboardMetrics(){
  if(state.view!=='inicio'||!document.body.classList.contains('sitmaud-authenticated'))return;
  document.querySelectorAll('[data-metric-value]').forEach(el=>el.textContent='…');
- const [base,condos]=await Promise.all([
+ const [base,condos,officialDebt]=await Promise.all([
   imaudClient.rpc('get_dashboard_metrics'),
-  imaudClient.from('residential_organizations').select('id',{count:'exact',head:true}).eq('consolidated_billing',true)
+  imaudClient.from('residential_organizations').select('id',{count:'exact',head:true}).eq('consolidated_billing',true),
+  imaudClient.from('assessments').select('id',{count:'exact',head:true}).eq('is_demo',false).in('status',['pending','partially_paid'])
  ]);
  if(state.view!=='inicio')return;
  const values=base.error?null:base.data;
  if(base.error) console.error('SITMAUD official metrics:',base.error);
- for(const key of ['contributors_total','properties_total','payments_total','payments_today','debts_pending']){
+ for(const key of ['contributors_total','properties_total','payments_total','payments_today']){
   const el=document.querySelector('[data-metric-value="'+key+'"]');
   if(el)el.textContent=values?formatDashboardCount(values[key]):'No disponible';
  }
@@ -52,6 +53,8 @@ async function loadDashboardMetrics(){
   const el=document.querySelector('[data-metric-value="'+key+'"]');
   if(el)el.textContent=values?formatDashboardCurrencyMap(values[key]):'No disponible';
  }
+ const debts=document.querySelector('[data-metric-value="debts_pending"]');
+ if(debts)debts.textContent=officialDebt.error?'No disponible':formatDashboardCount(officialDebt.count||0);
  const condo=document.querySelector('[data-metric-value="condominiums_total"]');
  if(condo)condo.textContent=condos.error?'No disponible':formatDashboardCount(condos.count||0);
  const cert=document.querySelector('[data-metric-value="certificates_total"]');
@@ -68,7 +71,7 @@ function listPeople(){
 function contributorPaymentSummary(p){
  const confirmed=(p.payments||[]).filter(x=>x.status==='confirmed'&&x.paid_at).sort((a,b)=>new Date(b.paid_at)-new Date(a.paid_at));
  const last=confirmed[0]?.paid_at||null;
- const assessments=(p.properties||[]).flatMap(x=>x.assessments||[]);
+ const assessments=(p.properties||[]).flatMap(x=>(x.assessments||[]).filter(a=>a.is_demo===false));
  const debt=assessments.some(x=>['pending','partially_paid'].includes(x.status));
  return {administrative:p.status==='inactive'?'inactive':'active',debtStatus:debt?'pending':assessments.length?'paid':'none',lastPayment:last?new Intl.DateTimeFormat('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'America/Caracas'}).format(new Date(last)):'—'};
 }
@@ -121,7 +124,7 @@ async function toggleContributorActive(person){
 async function loadContributors(){
  const target=document.getElementById('peopleTable'); if(!target)return;
  target.innerHTML='<div class="contributors-loading">Consultando contribuyentes…</div>';
- const {data,error}=await imaudClient.from('contributors').select('id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,status,created_at,properties(id,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,assessments(id,status)),payments(id,status,paid_at)').order('created_at',{ascending:false});
+ const {data,error}=await imaudClient.from('contributors').select('id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,email,phone,contact_address,contact_parish_name,contact_sector_name,is_property_owner,status,created_at,properties(id,is_active,is_consolidated_master,consolidated_units,parish_name,sector_name,assessments(id,status,is_demo)),payments(id,status,paid_at)').order('created_at',{ascending:false});
  if(state.view!=='contribuyentes')return;
  if(error){console.error('SITMAUD contributors:',error);target.innerHTML='<div class="contributors-empty"><b>No se pudieron cargar los contribuyentes</b><span>Verifica que tu usuario tenga permiso de consulta y vuelve a intentarlo.</span></div>';return;}
  state.people=data||[];
@@ -235,7 +238,7 @@ async function loadProperties(){
  target.innerHTML='<div class="contributors-loading">Consultando inmuebles…</div>';
  const results=await Promise.all([
   imaudClient.from('properties').select('id,address,property_type,property_use,is_consolidated_master,consolidated_units,parish_id,sector_id,parish_name,sector_name,typology_override,typology_override_reason,organization_name,reference,notes,is_active,created_at,contributor:contributors!properties_contributor_id_fkey(id,contract_number,kind,identification_type,identification_number,legal_name,first_name,last_name),parish:parishes!properties_parish_id_fkey(name),sector:sectors!properties_sector_id_fkey(name,default_typology)').eq('is_consolidated_master',false).order('created_at',{ascending:false}),
-  imaudClient.from('assessments').select('id,property_id,status,period_start,total_amount,coefficient_snapshot,udc_value_snapshot,udc_currency_code,is_demo'),
+  imaudClient.from('assessments').select('id,property_id,status,period_start,total_amount,coefficient_snapshot,udc_value_snapshot,udc_currency_code,is_demo').eq('is_demo',false),
   imaudClient.from('parishes').select('id,name').eq('is_active',true).order('name'),
   imaudClient.from('sectors').select('id,name,parish_id,default_typology').eq('is_active',true).order('name')
  ]);
@@ -247,7 +250,6 @@ async function loadProperties(){
  const assessmentById=new Map(assessments.map(x=>[x.id,x]));
  const paymentDates=new Map();
  (allocations.data||[]).forEach(x=>{const payment=x.payment,a=assessmentById.get(x.assessment_id);if(payment&&payment.status==='confirmed'&&payment.paid_at&&a){if(!paymentDates.has(a.property_id))paymentDates.set(a.property_id,[]);paymentDates.get(a.property_id).push(payment.paid_at)}});
- (results[4]?.data||[]).forEach(x=>{const a=assessmentById.get(x.assessment_id),paid=x.demo_payment?.paid_at;if(a&&paid){if(!paymentDates.has(a.property_id))paymentDates.set(a.property_id,[]);paymentDates.get(a.property_id).push(paid)}});
  state.properties=rows.map(p=>({...p,assessments:assessments.filter(a=>a.property_id===p.id),lastPayment:(paymentDates.get(p.id)||[]).sort((a,b)=>new Date(b)-new Date(a))[0]||null}));
  state.parishes=par.error?[]:(par.data||[]);
  state.sectors=sr.error?[]:(sr.data||[]);
@@ -387,7 +389,7 @@ function showPropertyDetails(id){
 }
 function organizations(){
  return head('Condominios','Registro y administración de cuentas jurídicas con cobro consolidado.','<button class="btn btn-primary" data-go="condominio_registro">＋ Registrar condominio</button>')+
- '<section class="card condo-directory-panel"><div class="table-toolbar"><div><h3>Directorio de condominios</h3><p>Ficha matriz, responsable, tipología y situación de cobranza DEMO</p></div></div><div id="condoDirectory" class="condo-directory"><div class="contributors-loading">Cargando condominios registrados…</div></div></section>';
+ '<section class="card condo-directory-panel"><div class="table-toolbar"><div><h3>Directorio de condominios</h3><p>Ficha matriz, responsable, tipología y situación de cuenta oficial</p></div></div><div id="condoDirectory" class="condo-directory"><div class="contributors-loading">Cargando condominios registrados…</div></div></section>';
 }
 async function loadOrganizations(){
  const target=document.getElementById('condoDirectory');if(!target)return;
@@ -410,12 +412,12 @@ async function loadOrganizations(){
  }
  const ids=properties.map(x=>x.id);
  if(ids.length){
-  const {data,error}=await imaudClient.from('assessments').select('property_id,status,total_amount,is_demo').in('property_id',ids).eq('is_demo',true);
+  const {data,error}=await imaudClient.from('assessments').select('property_id,status,total_amount,is_demo').in('property_id',ids).eq('is_demo',false);
   if(!error)assessments=data||[];
  }
  if(!document.getElementById('condoDirectory'))return;
  const propertyMap=new Map(properties.map(x=>[x.organization_id,x]));
- target.innerHTML='<div class="condo-directory-scroll"><table><thead><tr><th>Condominio / Razón social</th><th>RIF y contrato</th><th>Administrador responsable</th><th>Viviendas</th><th>Ubicación</th><th>Tipología</th><th>Deuda DEMO</th><th>Acciones</th></tr></thead><tbody>'+
+ target.innerHTML='<div class="condo-directory-scroll"><table><thead><tr><th>Condominio / Razón social</th><th>RIF y contrato</th><th>Administrador responsable</th><th>Viviendas</th><th>Ubicación</th><th>Tipología</th><th>Obligación pendiente</th><th>Acciones</th></tr></thead><tbody>'+
  contributors.map(c=>{
   const o=orgByContributor.get(c.id),p=o?propertyMap.get(o.id):null;
   const pending=assessments.filter(a=>a.property_id===p?.id&&['pending','partially_paid'].includes(a.status));
@@ -440,7 +442,7 @@ function assessmentBalance(assessment){
 function debtRowsFromContributor(person){
  const rows=[];
  (person.properties||[]).filter(property=>property.is_active!==false).forEach(property=>{
-  (property.assessments||[]).filter(assessment=>['pending','partially_paid'].includes(assessment.status)).forEach(assessment=>{
+  (property.assessments||[]).filter(assessment=>assessment.is_demo===false&&['pending','partially_paid'].includes(assessment.status)).forEach(assessment=>{
    const balance=assessmentBalance(assessment);
    if(balance>0) rows.push({id:assessment.id,propertyId:property.id,propertyAddress:property.is_consolidated_master?('Cuenta matriz · '+(property.consolidated_units||0)+' viviendas'):property.address,periodStart:assessment.period_start,periodEnd:assessment.period_end,total:Number(assessment.total_amount||0),balance,status:assessment.status});
   });
@@ -472,7 +474,7 @@ function paymentDebtorTable(){
 async function loadPaymentDebtors(){
  const target=document.getElementById('paymentDebtorsTable');if(!target)return;
  target.innerHTML='<div class="contributors-loading">Consultando obligaciones pendientes…</div>';
- const select='id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,properties(id,address,property_type,property_use,is_active,is_consolidated_master,consolidated_units,assessments(id,period_start,period_end,total_amount,status,payment_allocations(amount,payments(status))))';
+ const select='id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,properties(id,address,property_type,property_use,is_active,is_consolidated_master,consolidated_units,assessments(id,period_start,period_end,total_amount,status,is_demo,payment_allocations(amount,payments(status))))';
  const {data,error}=await imaudClient.from('contributors').select(select).order('created_at',{ascending:false});
  if(state.view!=='pagos')return;
  if(error){console.error('SITMAUD payment debtors:',error);target.innerHTML='<div class="payment-debt-empty"><b>No se pudieron consultar las obligaciones.</b><span>Verifica los permisos de lectura de contribuyentes, inmuebles, liquidaciones y aplicaciones de pago.</span></div>';const count=document.getElementById('paymentDebtorCount');if(count)count.textContent='Consulta no disponible';return;}

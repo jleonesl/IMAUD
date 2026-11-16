@@ -56,6 +56,9 @@ jobs:
               raise SystemExit("Leaflet dependencies are not declared for the territorial map.")
           print("All local assets and map dependencies are present.")
           PY
+          node --check dist/app.js
+          node --check dist/territorial-map.js
+          node --check dist/auth.js
           echo "Public site contains only approved website assets; no migrations, archives or demo pages."
       - name: Configure Pages
         uses: actions/configure-pages@v5

@@ -650,8 +650,51 @@ function updatePaymentTotal(){
 }
 
 function paymentForm(){return head('Registrar pago de prueba','Simulación de liquidación y comprobante. No procesa dinero real.','<button class="btn btn-light" data-go="pagos">← Volver</button>')+`<div class="card form-card"><div class="notice">No introducir datos reales ni referencias bancarias reales. Esta pantalla es exclusivamente demostrativa.</div><form id="paymentForm"><div class="form-grid"><div class="field full"><label>Contribuyente</label><select name="person">${state.people.map(p=>`<option>${p.name}</option>`).join('')}</select></div><div class="field"><label>Inmueble</label><select><option>Casa · Las Velitas</option><option>Unidad residencial</option></select></div><div class="field"><label>Período</label><select name="period"><option>Noviembre 2026</option><option>Octubre 2026</option><option>Septiembre 2026</option></select></div><div class="field"><label>Importe demostrativo (Bs.)</label><input name="amount" type="number" min="0.01" step=".01" value="3.00" required></div><div class="field"><label>Medio de pago</label><select><option>Transferencia (simulación)</option><option>Pago móvil (simulación)</option><option>Efectivo (simulación)</option><option>Punto de venta (simulación)</option></select></div></div><div class="form-actions"><button class="btn btn-primary">Registrar operación de prueba</button></div></form></div>`}
-function invoices(){return head('Facturación','Comprobantes de operaciones registradas en el entorno de prueba.')+`<div class="notice">Los comprobantes reales deberán cumplir los requisitos tributarios y de facturación aplicables. Esta vista genera únicamente muestras no fiscales.</div><div class="card panel"><div class="panel-head"><h3>Comprobante de demostración</h3><button class="btn btn-primary" data-action="print-sample">Imprimir muestra</button></div><div class="invoice" id="invoice"><div style="text-align:center;border-bottom:2px solid #173f5d;padding-bottom:14px"><h2 style="color:#173f5d;margin:0">SITMAUD</h2><b style="font-size:10px">INSTITUTO MUNICIPAL DE ASEO URBANO Y DOMICILIARIO</b><p style="font-size:9px">Alcaldía del Municipio Miranda · Coro, estado Falcón</p><strong>COMPROBANTE DE PAGO — DEMOSTRACIÓN</strong></div><p><b>Referencia:</b> DEMO-00031</p><p><b>Contribuyente:</b> María Fernanda Rojas</p><p><b>Identificación:</b> V-12.345.678</p><p><b>Período:</b> Noviembre 2026</p><p><b>Concepto:</b> Servicio de aseo domiciliario (dato ficticio)</p><h2 style="text-align:right;color:#173f5d">TOTAL: Bs. 3,00</h2><p style="text-align:center;font-size:9px">DOCUMENTO SIN VALIDEZ FISCAL · DATOS FICTICIOS</p></div></div>`}
-function reports(){return head('Reportes','Consulta y exportación de información demostrativa.')+`<div class="grid module-grid"><div class="card module-card"><div class="module-icon">▥</div><h3>Recaudación diaria</h3><p>Operaciones, montos y medios de pago por fecha.</p><button class="btn btn-light" data-action="export">Exportar CSV demo</button></div><div class="card module-card"><div class="module-icon">⌖</div><h3>Por parroquia y sector</h3><p>Distribución territorial de contribuyentes e inmuebles.</p><button class="btn btn-light" data-action="export">Exportar CSV demo</button></div><div class="card module-card"><div class="module-icon">▤</div><h3>Estado de cuenta</h3><p>Obligaciones, pagos y saldos demostrativos.</p><button class="btn btn-light" data-action="export">Exportar CSV demo</button></div></div>`}
+function invoices(){return head('Facturación','Consulta e impresión de comprobantes DEMO generados por los pagos de prueba.')+
+ '<div class="notice">Entorno de pruebas: estos comprobantes no son facturas fiscales ni acreditan pagos reales.</div>'+
+ '<section class="card panel"><div class="panel-head"><div><h3>Comprobantes registrados</h3><p>Se cargan desde el historial de pagos de prueba.</p></div><button class="btn btn-light" data-action="refresh-invoices">↻ Actualizar</button></div><div id="invoiceRecords"><div class="contributors-loading">Consultando comprobantes…</div></div></section>'+
+ '<section class="card panel" id="invoicePreviewPanel" hidden><div class="panel-head"><h3>Vista previa del comprobante</h3><button class="btn btn-primary" data-action="print-invoice">Imprimir comprobante</button></div><div class="invoice" id="invoicePreview"></div></section>'}
+async function loadInvoiceRecords(){
+ const host=document.getElementById('invoiceRecords');if(!host)return;
+ const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,treasury_status,contributor:contributors!demo_payments_contributor_id_fkey(kind,identification_type,identification_number,first_name,last_name,legal_name,contract_number)').order('paid_at',{ascending:false}).limit(100);
+ if(!host.isConnected)return;
+ if(error){host.innerHTML='<div class="contributors-empty">No se pudieron consultar los comprobantes: '+escapeHTML(error.message)+'</div>';return;}
+ if(!data?.length){host.innerHTML='<div class="contributors-empty"><b>No hay comprobantes de prueba todavía.</b><span>Registra un pago DEMO en Recaudación y pagos para generar el primero.</span></div>';return;}
+ host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Comprobante</th><th>Contribuyente</th><th>Contrato</th><th>Fecha</th><th>Medio</th><th>Importe</th><th>Estado</th><th></th></tr></thead><tbody>'+data.map(p=>'<tr><td><b>'+escapeHTML(p.receipt_number)+'</b></td><td>'+escapeHTML(contributorName(p.contributor||{}))+'</td><td>'+escapeHTML(p.contributor?.contract_number||'—')+'</td><td>'+escapeHTML(new Date(p.paid_at).toLocaleDateString('es-VE',{timeZone:'America/Caracas'}))+'</td><td>'+escapeHTML(p.payment_method)+'</td><td>Bs. '+money(p.amount)+'</td><td><span class="status">'+escapeHTML(p.treasury_status||'pending')+'</span></td><td><button class="btn btn-light btn-sm" data-invoice-id="'+p.id+'">Ver comprobante</button></td></tr>').join('')+'</tbody></table></div>';
+}
+async function showInvoice(id){
+ const {data,error}=await imaudClient.from('demo_payments').select('id,receipt_number,amount,paid_at,payment_method,external_reference,bank_code,treasury_status,contributor:contributors!demo_payments_contributor_id_fkey(kind,identification_type,identification_number,first_name,last_name,legal_name,contract_number)').eq('id',id).single();
+ if(error){toast('No se pudo abrir el comprobante: '+error.message);return;}
+ const c=data.contributor||{},name=contributorName(c),date=new Date(data.paid_at).toLocaleString('es-VE',{timeZone:'America/Caracas',dateStyle:'long',timeStyle:'short'});
+ const panel=document.getElementById('invoicePreviewPanel'),host=document.getElementById('invoicePreview');if(!panel||!host)return;
+ host.innerHTML='<div style="text-align:center;border-bottom:2px solid #173f5d;padding-bottom:14px"><h2 style="color:#173f5d;margin:0">SITMAUD</h2><b>INSTITUTO MUNICIPAL DE ASEO URBANO Y DOMICILIARIO</b><p>Alcaldía del Municipio Miranda · Coro, estado Falcón</p><strong>RECIBO DE PAGO — DEMOSTRACIÓN</strong></div><p><b>N.º de comprobante:</b> '+escapeHTML(data.receipt_number)+'</p><p><b>Contribuyente:</b> '+escapeHTML(name)+'</p><p><b>Identificación:</b> '+escapeHTML((c.identification_type||'')+'-'+(c.identification_number||''))+'</p><p><b>N.º de contrato:</b> '+escapeHTML(c.contract_number||'—')+'</p><p><b>Fecha:</b> '+escapeHTML(date)+'</p><p><b>Medio:</b> '+escapeHTML(data.payment_method)+'</p><p><b>Referencia:</b> '+escapeHTML(data.external_reference||'No aplica')+'</p><h2 style="text-align:right;color:#173f5d">MONTO PAGADO: Bs. '+money(data.amount)+'</h2><p style="text-align:center;font-size:10px">DOCUMENTO SIN VALIDEZ FISCAL · OPERACIÓN DE PRUEBA</p>';
+ panel.hidden=false;panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function reports(){return head('Reportes','Consulta filtrada de operaciones DEMO, distribución territorial y estado de cuenta.')+
+ '<div class="notice">Los reportes de esta sección consultan operaciones de prueba. No representan recaudación oficial.</div>'+
+ '<section class="card panel"><form id="demoReportForm"><div class="form-grid"><div class="field"><label>Tipo de reporte</label><select name="kind"><option value="collection">Recaudación y pagos</option><option value="territory">Parroquia y sector</option><option value="accounts">Estado de cuenta</option></select></div><div class="field"><label>Desde</label><input type="date" name="from" required></div><div class="field"><label>Hasta</label><input type="date" name="to" required></div></div><div class="form-actions"><button class="btn btn-primary" type="submit" id="runDemoReport">Consultar reporte</button></div></form></section>'+
+ '<section class="card panel" id="demoReportResult"><div class="contributors-empty">Selecciona un tipo y rango de fechas para consultar.</div></section>'}
+async function runDemoReport(form){
+ const f=new FormData(form),button=document.getElementById('runDemoReport'),host=document.getElementById('demoReportResult');
+ button.disabled=true;button.textContent='Consultando…';
+ try{
+  const {data,error}=await imaudClient.rpc('get_filtered_demo_report',{p_kind:f.get('kind'),p_from:f.get('from'),p_to:f.get('to'),p_export:false});
+  if(error)throw error;
+  const result=data||{},rows=Array.isArray(result.rows)?result.rows:[];
+  if(!rows.length){host.innerHTML='<div class="contributors-empty"><b>Sin resultados para ese período.</b><span>Prueba con otro rango de fechas.</span></div>';return;}
+  const columns=Object.keys(rows[0]);
+  host.innerHTML='<div class="panel-head"><div><h3>Resultado del reporte · DEMO</h3><p>'+escapeHTML(result.date_from)+' al '+escapeHTML(result.date_to)+' · '+rows.length+' registro(s)</p></div><strong>Bs. '+money(result.total_bs||0)+'</strong></div><div class="payment-debt-scroll"><table><thead><tr>'+columns.map(k=>'<th>'+escapeHTML(k.replaceAll('_',' '))+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+columns.map(k=>'<td>'+escapeHTML(typeof row[k]==='object'?JSON.stringify(row[k]):row[k]??'—')+'</td>').join('')+'</tr>').join('')+'</tbody></table></div><button class="btn btn-light" type="button" data-action="export-report">Exportar resultado CSV</button>';
+  window.sitmaudLastDemoReport=rows;
+ }catch(error){host.innerHTML='<div class="contributors-empty"><b>No se pudo generar el reporte.</b><span>'+escapeHTML(error.message||'Error de consulta')+'</span></div>';}
+ finally{button.disabled=false;button.textContent='Consultar reporte';}
+}
+function exportDemoReport(){
+ const rows=window.sitmaudLastDemoReport||[];if(!rows.length){toast('Primero consulta un reporte.');return;}
+ const cols=Object.keys(rows[0]),csv=[cols,...rows.map(r=>cols.map(k=>typeof r[k]==='object'?JSON.stringify(r[k]):r[k]??''))].map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='SITMAUD-reporte-DEMO.csv';a.click();URL.revokeObjectURL(a.href);
+}
+
 function mapView(){return typeof window.renderTerritorialMap==='function'?window.renderTerritorialMap():head('Mapa territorial','Cargando el módulo territorial…')+'<div class="card panel">Preparando cartografía y herramientas de ubicación.</div>';}
 function ordinance(){
  return head('Ordenanza y tarifas','Unidad de Cambio Dinámico, vigencias y criterios tarifarios.')+
@@ -903,14 +946,84 @@ function showSolvencyDetail(id){
 
 function officialReports(){return productionModule('Reportes','La consulta de recaudación requiere integrar registros financieros definitivos y auditoría.');}
 function officialPayments(){return productionModule('Recaudación y pagos','Los cobros se mantienen bloqueados hasta disponer de tarifas aprobadas, liquidaciones oficiales y conciliación bancaria.');}
-function officialCondoRegistration(){return productionModule('Registro de condominios','El registro de nuevas cuentas matrices está temporalmente restringido hasta separar sus funciones de las liquidaciones de prueba.');}
-function officialAudit(){return productionModule('Bitácora','El visor de auditoría se habilitará al comprobar permisos y trazabilidad de los eventos reales.');}
+function officialCondoRegistration(){
+ return head('Registrar condominio','Alta de persona jurídica, cuenta matriz consolidada y viviendas cubiertas.')+
+ '<div class="notice">Registro de prueba conectado a Supabase. Genera una obligación DEMO del mes vigente; no crea una deuda fiscal oficial.</div>'+
+ '<section class="card panel"><form id="demoCondoForm"><div class="form-grid">'+
+ '<div class="field full"><label>Razón social registrada en el RIF *</label><input name="legal_name" required minlength="4" placeholder="Condominio Residencias…"></div>'+
+ '<div class="field"><label>RIF jurídico *</label><input name="rif" required placeholder="J-12345678-9"></div>'+
+ '<div class="field"><label>Correo del condominio</label><input name="email" type="email"></div>'+
+ '<div class="field"><label>Teléfono</label><input name="phone"></div>'+
+ '<div class="field"><label>Nombre comercial del condominio *</label><input name="display_name" required minlength="3"></div>'+
+ '<div class="field"><label>Cantidad de viviendas *</label><input name="unit_count" type="number" min="1" max="100000" required></div>'+
+ '<div class="field full"><label>Dirección de la cuenta matriz *</label><textarea name="address" required minlength="5" rows="2"></textarea></div>'+
+ '<div class="field"><label>Parroquia *</label><select name="parish_id" id="demoCondoParish" required><option value="">Cargando…</option></select></div>'+
+ '<div class="field"><label>Sector *</label><select name="sector_id" id="demoCondoSector" required disabled><option value="">Seleccione parroquia</option></select></div>'+
+ '<div class="field"><label>Tipología de cobro *</label><select name="billing_typology" id="demoCondoTypology" required><option value="">Seleccione sector primero</option><option>TIPO I</option><option>TIPO II</option><option>TIPO III</option></select><small id="demoCondoSectorType">La tipología del sector se mostrará al seleccionarlo.</small></div>'+
+ '<div class="field"><label>Motivo si la tipología es distinta a la del sector</label><input name="typology_reason" minlength="15" placeholder="Justificación institucional (si aplica)"></div>'+
+ '<div class="field"><label>Administrador / responsable *</label><input name="responsible_name" required minlength="3"></div>'+
+ '<div class="field"><label>Cédula del responsable</label><input name="responsible_id"></div>'+
+ '<div class="field"><label>Teléfono del responsable</label><input name="responsible_phone"></div>'+
+ '<div class="field"><label>Correo del responsable</label><input name="responsible_email" type="email"></div>'+
+ '</div><div class="form-actions"><button type="button" class="btn btn-light" data-go="organizaciones">Cancelar</button><button type="submit" class="btn btn-primary" id="saveDemoCondo">Registrar cuenta matriz DEMO</button></div></form></section>';
+}
+async function loadDemoCondoCatalogs(){
+ const [p,s]=await Promise.all([imaudClient.from('parishes').select('id,name').eq('is_active',true).order('name'),imaudClient.from('sectors').select('id,name,parish_id,default_typology').eq('is_active',true).order('name')]);
+ const parish=document.getElementById('demoCondoParish'),sector=document.getElementById('demoCondoSector');
+ if(!parish||!sector)return;
+ if(p.error||s.error){parish.innerHTML='<option value="">No disponible</option>';toast('No se pudo cargar el catálogo territorial.');return;}
+ state.demoCondoParishes=p.data||[];state.demoCondoSectors=s.data||[];
+ parish.innerHTML='<option value="">Seleccione parroquia</option>'+state.demoCondoParishes.map(x=>'<option value="'+x.id+'">'+escapeHTML(x.name)+'</option>').join('');
+ sector.innerHTML='<option value="">Seleccione primero la parroquia</option>';
+}
+function updateDemoCondoSectors(){
+ const parish=document.getElementById('demoCondoParish'),sector=document.getElementById('demoCondoSector'),typ=document.getElementById('demoCondoTypology'),hint=document.getElementById('demoCondoSectorType');if(!parish||!sector)return;
+ const rows=(state.demoCondoSectors||[]).filter(x=>x.parish_id===parish.value);
+ sector.disabled=!parish.value||!rows.length;sector.innerHTML='<option value="">Seleccione sector</option>'+rows.map(x=>'<option value="'+x.id+'">'+escapeHTML(x.name)+'</option>').join('');
+ typ.value='';hint.textContent='La tipología del sector se mostrará al seleccionarlo.';
+}
+function applyDemoCondoTypology(){
+ const sector=document.getElementById('demoCondoSector'),typ=document.getElementById('demoCondoTypology'),hint=document.getElementById('demoCondoSectorType');
+ const row=(state.demoCondoSectors||[]).find(x=>x.id===sector?.value);if(!row)return;
+ const current=row.default_typology||'';typ.value=current;hint.textContent='Tipología predeterminada del sector: '+(current||'Sin clasificar')+'. Si seleccionas otra, debes justificarla y tener permiso de tarifas.';
+}
+async function saveDemoCondo(form){
+ const f=new FormData(form),button=document.getElementById('saveDemoCondo');button.disabled=true;button.textContent='Registrando…';
+ const selectedSector=(state.demoCondoSectors||[]).find(x=>x.id===f.get('sector_id'));
+ try{
+  const {data,error}=await imaudClient.rpc('register_demo_condominium_full',{
+   p_legal_name:String(f.get('legal_name')).trim(),p_rif:String(f.get('rif')).trim(),p_email:String(f.get('email')||'').trim()||null,p_phone:String(f.get('phone')||'').trim()||null,
+   p_display_name:String(f.get('display_name')).trim(),p_address:String(f.get('address')).trim(),p_parish_id:f.get('parish_id'),p_sector_id:f.get('sector_id'),p_unit_count:Number(f.get('unit_count')),
+   p_responsible_name:String(f.get('responsible_name')).trim(),p_responsible_id:String(f.get('responsible_id')||'').trim()||null,p_responsible_phone:String(f.get('responsible_phone')||'').trim()||null,p_responsible_email:String(f.get('responsible_email')||'').trim()||null,
+   p_billing_typology:f.get('billing_typology'),p_typology_reason:String(f.get('typology_reason')||'').trim()||null
+  });
+  if(error)throw error;
+  toast('Condominio registrado. Contrato: '+(data.contract_number||'asignado'));
+  go('organizaciones');
+ }catch(error){toast('No se pudo registrar el condominio: '+(error.message||'Error'));button.disabled=false;button.textContent='Registrar cuenta matriz DEMO';}
+}
+
+function officialAudit(){return head('Bitácora de auditoría','Eventos registrados por las operaciones del sistema y trazabilidad administrativa.')+
+ '<div class="notice">Registro de solo consulta. Los eventos se conservan en el servidor y no pueden editarse desde esta pantalla.</div>'+
+ '<section class="card panel"><div class="panel-head"><div><h3>Actividad reciente</h3><p>Últimos 100 eventos de auditoría.</p></div><button class="btn btn-light" data-action="refresh-audit">↻ Actualizar</button></div><div id="auditRecords"><div class="contributors-loading">Consultando bitácora…</div></div></section>'}
+async function loadAuditRecords(){
+ const host=document.getElementById('auditRecords');if(!host)return;
+ const {data,error}=await imaudClient.from('audit_log').select('id,occurred_at,actor_user_id,action,entity_table,entity_id,after_data').order('occurred_at',{ascending:false}).limit(100);
+ if(!host.isConnected)return;
+ if(error){host.innerHTML='<div class="contributors-empty">No se pudo consultar la bitácora: '+escapeHTML(error.message)+'</div>';return;}
+ if(!data?.length){host.innerHTML='<div class="contributors-empty"><b>No hay eventos registrados.</b></div>';return;}
+ host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Fecha y hora</th><th>Actor</th><th>Acción</th><th>Módulo / tabla</th><th>Registro</th><th>Detalle</th></tr></thead><tbody>'+data.map(x=>'<tr><td>'+escapeHTML(new Date(x.occurred_at).toLocaleString('es-VE',{timeZone:'America/Caracas'}))+'</td><td>'+escapeHTML(x.actor_user_id||'Sistema')+'</td><td>'+escapeHTML(x.action)+'</td><td>'+escapeHTML(x.entity_table||'—')+'</td><td>'+escapeHTML(x.entity_id||'—')+'</td><td>'+escapeHTML(JSON.stringify(x.after_data||{}).slice(0,180))+'</td></tr>').join('')+'</tbody></table></div>';
+}
+
 
 window.sitmaudShowPropertyDetails=showPropertyDetails;
-function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:officialPayments,facturacion:officialBilling,solvencias:solvencyModule,reportes:officialReports,mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics();if(v==='solvencias')loadSolvencyRecords();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}if(v==='funcionarios')loadStaffPermissionMatrix();}
+function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:payments,facturacion:invoices,solvencias:solvencyModule,reportes:reports,mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics();if(v==='solvencias')loadSolvencyRecords();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(v==='pagos'){loadPaymentDebtors();loadDemoPayments()}if(v==='facturacion')loadInvoiceRecords();if(v==='reportes'){const form=document.getElementById('demoReportForm');if(form){const d=new Date(),today=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);form.elements.from.value=today;form.elements.to.value=today;}}if(v==='condominio_registro')loadDemoCondoCatalogs();if(v==='bitacora')loadAuditRecords();if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}if(v==='funcionarios')loadStaffPermissionMatrix();}
 function go(v){state.view=v;render();window.scrollTo(0,0)}
-document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')go('condominio_registro');else if(act==='new-payment')toast('La recaudación aún no está habilitada.');else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-solvency-detail'){document.getElementById('solvencyDetailModal')?.remove();}else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-staff')openStaffRegistrationPreview();else if(act==='new-org')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
+document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')go('condominio_registro');else if(act==='new-payment')openPaymentModal();else if(act==='refresh-invoices')loadInvoiceRecords();else if(act==='print-invoice')window.print();else if(act==='refresh-audit')loadAuditRecords();else if(act==='export-report')exportDemoReport();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-solvency-detail'){document.getElementById('solvencyDetailModal')?.remove();}else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-staff')openStaffRegistrationPreview();else if(act==='new-org')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
 document.addEventListener('input',e=>{if(e.target.id==='solvencySearch')renderSolvencyRows()});
+document.addEventListener('change',e=>{if(e.target.id==='demoCondoParish')updateDemoCondoSectors();if(e.target.id==='demoCondoSector')applyDemoCondoTypology()});
+document.addEventListener('click',e=>{const invoice=e.target.closest('[data-invoice-id]');if(invoice)showInvoice(invoice.dataset.invoiceId)});
+document.addEventListener('submit',e=>{if(e.target.id==='demoCondoForm'){e.preventDefault();saveDemoCondo(e.target)}if(e.target.id==='demoReportForm'){e.preventDefault();runDemoReport(e.target)}});
 document.addEventListener('click',e=>{const detail=e.target.closest('[data-solvency-detail]');if(detail){showSolvencyDetail(detail.dataset.solvencyDetail);return}});
 document.addEventListener('click',e=>{const toggle=e.target.closest('#paymentBankToggle');if(toggle){const input=document.getElementById('paymentBankSearch'),list=document.getElementById('paymentBankResults');if(!input||!list)return;if(!list.hidden){list.hidden=true;input.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false')}else{input.value='';filterPaymentBanks();toggle.setAttribute('aria-expanded','true');input.focus()}return}const input=e.target.closest('#paymentBankSearch');if(input){filterPaymentBanks();return}const bank=e.target.closest('[data-bank-code]');if(bank){choosePaymentBank(bank.dataset.bankCode);return}const list=document.getElementById('paymentBankResults');if(list&&!e.target.closest('.payment-bank-combobox')){list.hidden=true;document.getElementById('paymentBankSearch')?.setAttribute('aria-expanded','false');document.getElementById('paymentBankToggle')?.setAttribute('aria-expanded','false')}});
 document.addEventListener('click',e=>{const person=e.target.closest('[data-payment-person]');if(person){const found=state.paymentDebtors.find(p=>p.id===person.dataset.paymentPerson);if(found)openPaymentModal(found);return}const page=e.target.closest('[data-payment-page]');if(page){state.paymentPage=Number(page.dataset.paymentPage);const host=document.getElementById('paymentDebtorsTable');if(host)host.innerHTML=paymentDebtorTable();return}if(e.target.closest('#menuToggle'))$('#sidebar').classList.toggle('open')});

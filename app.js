@@ -947,51 +947,49 @@ function showSolvencyDetail(id){
 function officialReports(){return productionModule('Reportes','La consulta de recaudación requiere integrar registros financieros definitivos y auditoría.');}
 function officialPayments(){return productionModule('Recaudación y pagos','Los cobros se mantienen bloqueados hasta disponer de tarifas aprobadas, liquidaciones oficiales y conciliación bancaria.');}
 function officialCondoRegistration(){
- return head('Registrar condominio','Alta de persona jurídica, cuenta matriz consolidada y viviendas cubiertas.')+
- '<div class="notice">Registro de prueba conectado a Supabase. Genera una obligación DEMO del mes vigente; no crea una deuda fiscal oficial.</div>'+
- '<section class="card panel"><form id="demoCondoForm"><div class="form-grid">'+
+ return head('Registrar condominio','Registro institucional de persona jurídica, cuenta matriz consolidada y viviendas cubiertas.')+
+ '<section class="card panel"><div class="notice">El condominio se registra como una cuenta matriz única. La tipología de cobro puede diferir de la del sector cuando exista autorización institucional y justificación registrada.</div><form id="officialCondoForm"><div class="form-grid">'+
  '<div class="field full"><label>Razón social registrada en el RIF *</label><input name="legal_name" required minlength="4" placeholder="Condominio Residencias…"></div>'+
  '<div class="field"><label>RIF jurídico *</label><input name="rif" required placeholder="J-12345678-9"></div>'+
  '<div class="field"><label>Correo del condominio</label><input name="email" type="email"></div>'+
  '<div class="field"><label>Teléfono</label><input name="phone"></div>'+
- '<div class="field"><label>Nombre comercial del condominio *</label><input name="display_name" required minlength="3"></div>'+
- '<div class="field"><label>Cantidad de viviendas *</label><input name="unit_count" type="number" min="1" max="100000" required></div>'+
+ '<div class="field"><label>Nombre del condominio / urbanización *</label><input name="display_name" required minlength="3"></div>'+
+ '<div class="field"><label>Cantidad de viviendas cubiertas *</label><input name="unit_count" type="number" min="1" max="100000" required></div>'+
  '<div class="field full"><label>Dirección de la cuenta matriz *</label><textarea name="address" required minlength="5" rows="2"></textarea></div>'+
- '<div class="field"><label>Parroquia *</label><select name="parish_id" id="demoCondoParish" required><option value="">Cargando…</option></select></div>'+
- '<div class="field"><label>Sector *</label><select name="sector_id" id="demoCondoSector" required disabled><option value="">Seleccione parroquia</option></select></div>'+
- '<div class="field"><label>Tipología de cobro *</label><select name="billing_typology" id="demoCondoTypology" required><option value="">Seleccione sector primero</option><option>TIPO I</option><option>TIPO II</option><option>TIPO III</option></select><small id="demoCondoSectorType">La tipología del sector se mostrará al seleccionarlo.</small></div>'+
- '<div class="field"><label>Motivo si la tipología es distinta a la del sector</label><input name="typology_reason" minlength="15" placeholder="Justificación institucional (si aplica)"></div>'+
+ '<div class="field"><label>Parroquia *</label><select name="parish_id" id="officialCondoParish" required><option value="">Cargando…</option></select></div>'+
+ '<div class="field"><label>Sector donde se ubica *</label><select name="sector_id" id="officialCondoSector" required disabled><option value="">Seleccione parroquia</option></select></div>'+
+ '<div class="field"><label>Tipología de cobro *</label><select name="billing_typology" id="officialCondoTypology" required><option value="">Seleccione sector primero</option><option value="TIPO I">TIPO I</option><option value="TIPO II">TIPO II</option><option value="TIPO III">TIPO III</option></select><small id="officialCondoSectorType">La tipología del sector se mostrará al seleccionarlo.</small></div>'+
+ '<div class="field"><label>Justificación si la tipología es distinta</label><input name="typology_reason" minlength="15" placeholder="Justificación institucional (si aplica)"></div>'+
  '<div class="field"><label>Administrador / responsable *</label><input name="responsible_name" required minlength="3"></div>'+
  '<div class="field"><label>Cédula del responsable</label><input name="responsible_id"></div>'+
  '<div class="field"><label>Teléfono del responsable</label><input name="responsible_phone"></div>'+
  '<div class="field"><label>Correo del responsable</label><input name="responsible_email" type="email"></div>'+
- '</div><div class="form-actions"><button type="button" class="btn btn-light" data-go="organizaciones">Cancelar</button><button type="submit" class="btn btn-primary" id="saveDemoCondo">Registrar cuenta matriz DEMO</button></div></form></section>';
+ '</div><div class="form-actions"><button type="button" class="btn btn-light" data-go="organizaciones">Cancelar</button><button type="submit" class="btn btn-primary" id="saveOfficialCondo">Registrar condominio</button></div></form></section>';
 }
-async function loadDemoCondoCatalogs(){
+async function loadOfficialCondoCatalogs(){
  const [p,s]=await Promise.all([imaudClient.from('parishes').select('id,name').eq('is_active',true).order('name'),imaudClient.from('sectors').select('id,name,parish_id,default_typology').eq('is_active',true).order('name')]);
- const parish=document.getElementById('demoCondoParish'),sector=document.getElementById('demoCondoSector');
+ const parish=document.getElementById('officialCondoParish'),sector=document.getElementById('officialCondoSector');
  if(!parish||!sector)return;
  if(p.error||s.error){parish.innerHTML='<option value="">No disponible</option>';toast('No se pudo cargar el catálogo territorial.');return;}
- state.demoCondoParishes=p.data||[];state.demoCondoSectors=s.data||[];
- parish.innerHTML='<option value="">Seleccione parroquia</option>'+state.demoCondoParishes.map(x=>'<option value="'+x.id+'">'+escapeHTML(x.name)+'</option>').join('');
+ state.officialCondoParishes=p.data||[];state.officialCondoSectors=s.data||[];
+ parish.innerHTML='<option value="">Seleccione parroquia</option>'+state.officialCondoParishes.map(x=>'<option value="'+x.id+'">'+escapeHTML(x.name)+'</option>').join('');
  sector.innerHTML='<option value="">Seleccione primero la parroquia</option>';
 }
-function updateDemoCondoSectors(){
- const parish=document.getElementById('demoCondoParish'),sector=document.getElementById('demoCondoSector'),typ=document.getElementById('demoCondoTypology'),hint=document.getElementById('demoCondoSectorType');if(!parish||!sector)return;
- const rows=(state.demoCondoSectors||[]).filter(x=>x.parish_id===parish.value);
+function updateOfficialCondoSectors(){
+ const parish=document.getElementById('officialCondoParish'),sector=document.getElementById('officialCondoSector'),typ=document.getElementById('officialCondoTypology'),hint=document.getElementById('officialCondoSectorType');if(!parish||!sector)return;
+ const rows=(state.officialCondoSectors||[]).filter(x=>x.parish_id===parish.value);
  sector.disabled=!parish.value||!rows.length;sector.innerHTML='<option value="">Seleccione sector</option>'+rows.map(x=>'<option value="'+x.id+'">'+escapeHTML(x.name)+'</option>').join('');
  typ.value='';hint.textContent='La tipología del sector se mostrará al seleccionarlo.';
 }
-function applyDemoCondoTypology(){
- const sector=document.getElementById('demoCondoSector'),typ=document.getElementById('demoCondoTypology'),hint=document.getElementById('demoCondoSectorType');
- const row=(state.demoCondoSectors||[]).find(x=>x.id===sector?.value);if(!row)return;
- const current=row.default_typology||'';typ.value=current;hint.textContent='Tipología predeterminada del sector: '+(current||'Sin clasificar')+'. Si seleccionas otra, debes justificarla y tener permiso de tarifas.';
+function applyOfficialCondoTypology(){
+ const sector=document.getElementById('officialCondoSector'),typ=document.getElementById('officialCondoTypology'),hint=document.getElementById('officialCondoSectorType');
+ const row=(state.officialCondoSectors||[]).find(x=>x.id===sector?.value);if(!row)return;
+ const current=row.default_typology||'';typ.value=current;hint.textContent='Tipología predeterminada del sector: '+(current||'Sin clasificar')+'. Si corresponde una clasificación particular, el sistema exigirá permiso institucional y justificación.';
 }
-async function saveDemoCondo(form){
- const f=new FormData(form),button=document.getElementById('saveDemoCondo');button.disabled=true;button.textContent='Registrando…';
- const selectedSector=(state.demoCondoSectors||[]).find(x=>x.id===f.get('sector_id'));
+async function saveOfficialCondo(form){
+ const f=new FormData(form),button=document.getElementById('saveOfficialCondo');button.disabled=true;button.textContent='Registrando…';
  try{
-  const {data,error}=await imaudClient.rpc('register_demo_condominium_full',{
+  const {data,error}=await imaudClient.rpc('register_official_condominium',{
    p_legal_name:String(f.get('legal_name')).trim(),p_rif:String(f.get('rif')).trim(),p_email:String(f.get('email')||'').trim()||null,p_phone:String(f.get('phone')||'').trim()||null,
    p_display_name:String(f.get('display_name')).trim(),p_address:String(f.get('address')).trim(),p_parish_id:f.get('parish_id'),p_sector_id:f.get('sector_id'),p_unit_count:Number(f.get('unit_count')),
    p_responsible_name:String(f.get('responsible_name')).trim(),p_responsible_id:String(f.get('responsible_id')||'').trim()||null,p_responsible_phone:String(f.get('responsible_phone')||'').trim()||null,p_responsible_email:String(f.get('responsible_email')||'').trim()||null,
@@ -999,8 +997,9 @@ async function saveDemoCondo(form){
   });
   if(error)throw error;
   toast('Condominio registrado. Contrato: '+(data.contract_number||'asignado'));
+  if(data.billing_notice)toast(data.billing_notice);
   go('organizaciones');
- }catch(error){toast('No se pudo registrar el condominio: '+(error.message||'Error'));button.disabled=false;button.textContent='Registrar cuenta matriz DEMO';}
+ }catch(error){toast('No se pudo registrar el condominio: '+(error.message||'Error'));button.disabled=false;button.textContent='Registrar condominio';}
 }
 
 function officialAudit(){return head('Bitácora de auditoría','Eventos registrados por las operaciones del sistema y trazabilidad administrativa.')+
@@ -1017,7 +1016,7 @@ async function loadAuditRecords(){
 
 
 window.sitmaudShowPropertyDetails=showPropertyDetails;
-function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:payments,facturacion:invoices,solvencias:solvencyModule,reportes:reports,mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics();if(v==='solvencias')loadSolvencyRecords();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(v==='pagos'){loadPaymentDebtors();loadDemoPayments()}if(v==='facturacion')loadInvoiceRecords();if(v==='reportes'){const form=document.getElementById('demoReportForm');if(form){const d=new Date(),today=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);form.elements.from.value=today;form.elements.to.value=today;}}if(v==='condominio_registro')loadDemoCondoCatalogs();if(v==='bitacora')loadAuditRecords();if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}if(v==='funcionarios')loadStaffPermissionMatrix();}
+function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:payments,facturacion:invoices,solvencias:solvencyModule,reportes:reports,mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio')loadDashboardMetrics();if(v==='solvencias')loadSolvencyRecords();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(v==='pagos'){loadPaymentDebtors();loadDemoPayments()}if(v==='facturacion')loadInvoiceRecords();if(v==='reportes'){const form=document.getElementById('demoReportForm');if(form){const d=new Date(),today=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);form.elements.from.value=today;form.elements.to.value=today;}}if(v==='condominio_registro')loadOfficialCondoCatalogs();if(v==='bitacora')loadAuditRecords();if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}if(v==='funcionarios')loadStaffPermissionMatrix();}
 function go(v){state.view=v;render();window.scrollTo(0,0)}
 document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')go('condominio_registro');else if(act==='new-payment')openPaymentModal();else if(act==='refresh-invoices')loadInvoiceRecords();else if(act==='print-invoice')window.print();else if(act==='refresh-audit')loadAuditRecords();else if(act==='export-report')exportDemoReport();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-solvency-detail'){document.getElementById('solvencyDetailModal')?.remove();}else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-staff')openStaffRegistrationPreview();else if(act==='new-org')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
 document.addEventListener('input',e=>{if(e.target.id==='solvencySearch')renderSolvencyRows()});
@@ -1050,7 +1049,7 @@ document.addEventListener('click',async e=>{
  }
 });
 
-document.addEventListener('submit',e=>{if(e.target.id==='demoCondoForm'){e.preventDefault();saveDemoCondo(e.target)}if(e.target.id==='demoReportForm'){e.preventDefault();runDemoReport(e.target)}});
+document.addEventListener('submit',e=>{if(e.target.id==='officialCondoForm'){e.preventDefault();saveOfficialCondo(e.target)}if(e.target.id==='demoReportForm'){e.preventDefault();runDemoReport(e.target)}});
 document.addEventListener('click',e=>{const detail=e.target.closest('[data-solvency-detail]');if(detail){showSolvencyDetail(detail.dataset.solvencyDetail);return}});
 document.addEventListener('click',e=>{const toggle=e.target.closest('#paymentBankToggle');if(toggle){const input=document.getElementById('paymentBankSearch'),list=document.getElementById('paymentBankResults');if(!input||!list)return;if(!list.hidden){list.hidden=true;input.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false')}else{input.value='';filterPaymentBanks();toggle.setAttribute('aria-expanded','true');input.focus()}return}const input=e.target.closest('#paymentBankSearch');if(input){filterPaymentBanks();return}const bank=e.target.closest('[data-bank-code]');if(bank){choosePaymentBank(bank.dataset.bankCode);return}const list=document.getElementById('paymentBankResults');if(list&&!e.target.closest('.payment-bank-combobox')){list.hidden=true;document.getElementById('paymentBankSearch')?.setAttribute('aria-expanded','false');document.getElementById('paymentBankToggle')?.setAttribute('aria-expanded','false')}});
 document.addEventListener('click',e=>{const person=e.target.closest('[data-payment-person]');if(person){const found=state.paymentDebtors.find(p=>p.id===person.dataset.paymentPerson);if(found)openPaymentModal(found);return}const page=e.target.closest('[data-payment-page]');if(page){state.paymentPage=Number(page.dataset.paymentPage);const host=document.getElementById('paymentDebtorsTable');if(host)host.innerHTML=paymentDebtorTable();return}if(e.target.closest('#menuToggle'))$('#sidebar').classList.toggle('open')});

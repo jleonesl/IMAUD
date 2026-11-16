@@ -39,6 +39,23 @@ jobs:
             echo "Forbidden demo link or script in public HTML" >&2
             exit 1
           fi
+          echo "Verify local application dependencies"
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          root = Path("dist")
+          html = (root / "index.html").read_text(encoding="utf-8")
+          for attr in ("src", "href"):
+              for value in re.findall(rf'{attr}="([^"]+)"', html):
+                  if value.startswith(("https://", "http://", "#", "mailto:")):
+                      continue
+                  path = value.split("?", 1)[0]
+                  if path and not (root / path).is_file():
+                      raise SystemExit(f"Missing published asset: {path}")
+          if "leaflet@1.9.4/dist/leaflet.js" not in html or "leaflet@1.9.4/dist/leaflet.css" not in html:
+              raise SystemExit("Leaflet dependencies are not declared for the territorial map.")
+          print("All local assets and map dependencies are present.")
+          PY
           echo "Public site contains only approved website assets; no migrations, archives or demo pages."
       - name: Configure Pages
         uses: actions/configure-pages@v5

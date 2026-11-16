@@ -1023,6 +1023,33 @@ document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');
 document.addEventListener('input',e=>{if(e.target.id==='solvencySearch')renderSolvencyRows()});
 document.addEventListener('change',e=>{if(e.target.id==='demoCondoParish')updateDemoCondoSectors();if(e.target.id==='demoCondoSector')applyDemoCondoTypology()});
 document.addEventListener('click',e=>{const invoice=e.target.closest('[data-invoice-id]');if(invoice)showInvoice(invoice.dataset.invoiceId)});
+document.addEventListener('click',async e=>{
+ const review=e.target.closest('[data-treasury-review]');
+ if(review){
+  const id=review.dataset.treasuryReview;
+  const action=String(window.prompt('Revisión DEMO de Tesorería. Escribe VALIDAR, INCIDENCIA o REVERSAR:','VALIDAR')||'').trim().toLowerCase();
+  const map={validar:'validate',incidencia:'incident',reversar:'reverse'};
+  const operation=map[action];if(!operation){toast('Acción cancelada o no reconocida.');return;}
+  let notes=null;
+  if(operation!=='validate'){notes=window.prompt('Describe el motivo y respaldo (mínimo 20 caracteres):','');if(!notes||notes.trim().length<20){toast('La descripción debe tener al menos 20 caracteres.');return;}}
+  if(!window.confirm('¿Confirmas la acción '+action.toUpperCase()+' sobre este comprobante DEMO?'))return;
+  review.disabled=true;review.textContent='Procesando…';
+  const {data,error}=await imaudClient.rpc('review_demo_payment_treasury',{p_payment_id:id,p_action:operation,p_reference:null,p_notes:notes});
+  if(error){toast('Tesorería no pudo completar la acción: '+error.message);review.disabled=false;review.textContent='Ver / Validar';return;}
+  toast('Tesorería actualizó el comprobante DEMO: '+(data?.treasury_status||operation));
+  await loadDemoPayments();await loadPaymentDebtors();
+  return;
+ }
+ const proof=e.target.closest('[data-proof-payment-id]');
+ if(proof){
+  const {data,error}=await imaudClient.from('demo_payments').select('proof_storage_path').eq('id',proof.dataset.proofPaymentId).single();
+  if(error||!data?.proof_storage_path){toast('No se encontró el comprobante adjunto.');return;}
+  const signed=await imaudClient.storage.from('imaud-payment-proofs').createSignedUrl(data.proof_storage_path,120);
+  if(signed.error){toast('No se pudo abrir el adjunto: '+signed.error.message);return;}
+  window.open(signed.data.signedUrl,'_blank','noopener');
+ }
+});
+
 document.addEventListener('submit',e=>{if(e.target.id==='demoCondoForm'){e.preventDefault();saveDemoCondo(e.target)}if(e.target.id==='demoReportForm'){e.preventDefault();runDemoReport(e.target)}});
 document.addEventListener('click',e=>{const detail=e.target.closest('[data-solvency-detail]');if(detail){showSolvencyDetail(detail.dataset.solvencyDetail);return}});
 document.addEventListener('click',e=>{const toggle=e.target.closest('#paymentBankToggle');if(toggle){const input=document.getElementById('paymentBankSearch'),list=document.getElementById('paymentBankResults');if(!input||!list)return;if(!list.hidden){list.hidden=true;input.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false')}else{input.value='';filterPaymentBanks();toggle.setAttribute('aria-expanded','true');input.focus()}return}const input=e.target.closest('#paymentBankSearch');if(input){filterPaymentBanks();return}const bank=e.target.closest('[data-bank-code]');if(bank){choosePaymentBank(bank.dataset.bankCode);return}const list=document.getElementById('paymentBankResults');if(list&&!e.target.closest('.payment-bank-combobox')){list.hidden=true;document.getElementById('paymentBankSearch')?.setAttribute('aria-expanded','false');document.getElementById('paymentBankToggle')?.setAttribute('aria-expanded','false')}});

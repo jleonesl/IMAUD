@@ -155,6 +155,7 @@
   // No fabricated UCD, invoice sequence, bank, verification QR or exchange-rate values.
   async function showDocument(id){
     const preview=id==='template';
+    if(!preview)imaudClient.rpc('record_staff_activity',{p_action:'receipt_opened',p_module:'facturacion',p_reference:id}).then(({error})=>{if(error)console.warn('Bitácora:',error.message)});
     const p=preview?{id:'template',receipt_number:'—',amount:0,currency_code:'VES',created_at:null,invoice_issued_at:null,status:'pending',paid_at:null,payment_method:'—',external_reference:'—',contributor:{kind:'natural',first_name:'—',last_name:'',contract_number:'—',identification_type:'',identification_number:'—'}}:payments.find(row=>row.id===id);if(!p)return;
     document.getElementById('billModal')?.remove();
     const container=document.createElement('div');
@@ -305,6 +306,7 @@
     await loadReliefHistory();
   }
   function exportCSV(){
+    imaudClient.rpc('record_staff_activity',{p_action:'report_exported',p_module:'reportes',p_reference:null}).then(({error})=>{if(error)console.warn('Bitácora:',error.message)});
     if(document.getElementById('officialFinancialFilter')?.elements.group.value!=='operations'){exportTerritorialReport();return;}
     if(limited){window.alert('La consulta alcanzó el máximo de 500 operaciones. No es seguro exportar un reporte incompleto.');return;}
     const cols=['N.º comprobante','Contribuyente','Identificación','Contrato','Fecha registro','Fecha liquidación','Banco / referencia','Método','Estado','Moneda','Monto'];

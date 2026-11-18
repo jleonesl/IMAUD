@@ -876,25 +876,52 @@ function openStaffRegistrationPreview(){
  overlay.id='staffRegistrationPreview';
  overlay.className='staff-reg-overlay';
  overlay.innerHTML='<section class="staff-reg-dialog" role="dialog" aria-modal="true" aria-labelledby="staffRegistrationTitle">'+
- '<div class="staff-reg-header"><div><div class="eyebrow">SITMAUD · GESTIÓN DE USUARIOS</div><h2 id="staffRegistrationTitle">Registrar funcionario</h2><p>Datos básicos del funcionario. Los permisos se asignarán desde la matriz después de crear su cuenta.</p></div><button type="button" class="staff-reg-close" data-close-staff-preview aria-label="Cerrar">×</button></div>'+
- '<div class="staff-reg-info">Vista preliminar del formulario. No crea usuarios ni envía invitaciones todavía.</div>'+
+ '<div class="staff-reg-header"><div><div class="eyebrow">SITMAUD · GESTIÓN DE USUARIOS</div><h2 id="staffRegistrationTitle">Registrar funcionario</h2><p>La invitación se envía al correo del funcionario. Todos los permisos deben asignarse después desde la matriz.</p></div><button type="button" class="staff-reg-close" data-close-staff-preview aria-label="Cerrar">×</button></div>'+
+ '<form id="sitmaudStaffInviteForm">'+
  '<div class="staff-reg-fields">'+
- '<label class="field"><span>Nombres *</span><input type="text" placeholder="Ej. María Elena" autocomplete="off"></label>'+
- '<label class="field"><span>Apellidos *</span><input type="text" placeholder="Ej. Rodríguez" autocomplete="off"></label>'+
- '<label class="field"><span>Cédula de identidad *</span><input type="text" inputmode="numeric" placeholder="Ej. V-12345678"></label>'+
- '<label class="field"><span>Correo institucional *</span><input type="email" placeholder="funcionario@institucion.gob.ve"></label>'+
- '<label class="field"><span>Teléfono de contacto</span><input type="tel" placeholder="Ej. 04XX-XXXXXXX"></label>'+
- '<label class="field"><span>Cargo o área *</span><select><option value="">Seleccionar cargo…</option><option>Recaudación</option><option>Tesorería</option><option>Administración / Análisis</option><option>Otro</option></select></label>'+
- '</div><p class="staff-reg-footnote">Al habilitar el registro real, se enviará un enlace de activación al correo del funcionario para crear su propia contraseña de manera segura. El intendente asignará sus permisos por separado.</p>'+
- '<div class="staff-reg-actions"><button type="button" class="btn btn-light" data-close-staff-preview>Cerrar</button><button class="btn btn-primary" type="button" disabled title="El alta de cuentas aún no está habilitada">Crear funcionario (próximamente)</button></div></section>';
+ '<label class="field"><span>Nombres *</span><input name="first_name" required maxlength="90" type="text" placeholder="Ej. María Elena" autocomplete="given-name"></label>'+
+ '<label class="field"><span>Apellidos *</span><input name="last_name" required maxlength="90" type="text" placeholder="Ej. Rodríguez" autocomplete="family-name"></label>'+
+ '<label class="field"><span>Cédula de identidad *</span><input name="identification_number" required type="text" pattern="[VEve]-?[0-9]{6,10}" placeholder="Ej. V-12345678"></label>'+
+ '<label class="field"><span>Correo del funcionario *</span><input name="email" required type="email" maxlength="180" placeholder="funcionario@institucion.gob.ve" autocomplete="email"></label>'+
+ '<label class="field"><span>Teléfono de contacto</span><input name="phone" maxlength="30" type="tel" placeholder="Ej. 04XX-XXXXXXX"></label>'+
+ '<label class="field"><span>Cargo o área *</span><input name="job_title" required minlength="3" maxlength="120" placeholder="Ej. Recaudador, Analista o Tesorero"></label>'+
+ '<label class="field"><span>Perfil de cuenta *</span><select name="role" required><option value="">Selecciona el perfil…</option><option value="recaudador">Recaudador</option><option value="administrador_analista">Administrador / Analista / Tesorería</option></select></label>'+
+ '</div><p class="staff-reg-footnote">El funcionario recibirá una invitación. Su acceso inicial no incluye permisos operativos hasta que el superusuario los asigne individualmente.</p>'+
+ '<div class="staff-reg-info" id="sitStaffInviteNotice" aria-live="polite">Registro disponible solo para el superusuario maestro.</div>'+
+ '<div class="staff-reg-actions"><button type="button" class="btn btn-light" data-close-staff-preview>Cerrar</button><button class="btn btn-primary" type="submit" id="sitStaffInviteSubmit">Enviar invitación</button></div></form></section>';
  document.body.appendChild(overlay);
  document.body.classList.add('modal-open');
  overlay.addEventListener('click',ev=>{if(ev.target===overlay||ev.target.closest('[data-close-staff-preview]')){overlay.remove();document.body.classList.remove('modal-open');}});
- overlay.querySelector('.staff-reg-close')?.focus();
+ overlay.querySelector('#sitmaudStaffInviteForm')?.addEventListener('submit',async ev=>{
+   ev.preventDefault();
+   const form=ev.currentTarget;
+   if(!form.reportValidity())return;
+   const submit=form.querySelector('#sitStaffInviteSubmit'),notice=form.querySelector('#sitStaffInviteNotice');
+   const payload=Object.fromEntries(new FormData(form).entries());
+   submit.disabled=true;submit.textContent='Creando invitación…';notice.textContent='Verificando autorizaciones y enviando invitación de acceso…';
+   try{
+     const {data,error}=await imaudClient.functions.invoke('invite-sitmaud-staff',{body:payload});
+     if(error){
+       let detail=error.message||'No se pudo enviar la invitación.';
+       try{if(error.context){const body=await error.context.json();detail=body.error||detail;}}catch(_){}
+       throw new Error(detail);
+     }
+     if(!data?.ok)throw new Error(data?.error||'El servidor no confirmó la creación.');
+     notice.textContent='Funcionario invitado correctamente. Cuenta sin permisos; asígnalos en la matriz.';
+     toast('Invitación enviada. Ahora asigna permisos al funcionario.');
+     await loadStaffPermissionMatrix();
+     form.reset();
+   }catch(error){
+     notice.textContent='No se completó el registro: '+(error.message||'Comprueba la configuración de invitaciones.');
+   }finally{
+     if(submit.isConnected){submit.disabled=false;submit.textContent='Enviar invitación';}
+   }
+ });
+ overlay.querySelector('[name="first_name"]')?.focus();
 }
 function staff(){
  return head('Funcionarios y permisos','Gestión de cuentas y autorizaciones exclusivamente por el intendente.','<button type="button" class="btn btn-primary" data-action="new-staff">＋ Registrar funcionario</button>')+
- '<div class="notice">Solo el intendente puede asignar o revocar permisos. Registrar pagos, validar su acreditación en Tesorería y revertirlos son tres autorizaciones diferentes.</div>'+
+ '<div class="notice">Solo el superusuario maestro puede crear funcionarios y asignar o revocar permisos. Registrar pagos, validar su acreditación en Tesorería y revertirlos son tres autorizaciones diferentes.</div>'+
  '<div class="grid module-grid"><div class="card panel"><h3 style="margin-top:0">Usuarios intendentes</h3><div class="kpi-value">Acceso integral</div><p style="font-size:10px;color:#82919c">Superusuarios responsables de la creación de funcionarios y sus permisos.</p></div><div class="card panel"><h3 style="margin-top:0">Administradores analistas</h3><div class="kpi-value">Permisos a medida</div><p style="font-size:10px;color:#82919c">Acceso asignado por módulo y operación.</p></div><div class="card panel"><h3 style="margin-top:0">Recaudadores / Tesorería</h3><div class="kpi-value">Funciones separadas</div><p style="font-size:10px;color:#82919c">Registrar un pago no concede permiso para validarlo ni revertirlo.</p></div></div>'+
  '<section class="card panel staff-permission-panel" style="margin-top:16px"><div class="panel-head"><div><h3>Permisos por funcionario</h3><p>Selecciona un funcionario existente para administrar las autorizaciones que realmente se guardan en SITMAUD.</p></div><span id="staffPermissionStatus">Verificando acceso…</span></div>'+
  '<div class="staff-permission-selector"><label for="staffPermissionUser">Funcionario</label><select id="staffPermissionUser" disabled><option value="">Cargando funcionarios…</option></select></div>'+

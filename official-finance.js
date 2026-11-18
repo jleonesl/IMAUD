@@ -301,14 +301,12 @@
     if(assessment.error){node.textContent='Error al consultar deudas: '+assessment.error.message;return;}
     const rows=assessment.data||[];
     if(!rows.length){node.textContent='Este contribuyente no tiene obligaciones oficiales pendientes.';return;}
-    // Verify registered legal authorizations indirectly through an authorized server-side
-    // action. Do not show sensitive legal records in the client.
     reliefCandidates=rows;
     const addresses=new Map(properties.data.map(p=>[p.id,p.address]));
     node.innerHTML='<div class="panel-head"><div><h3>Meses pendientes · '+safe(contributor(c))+'</h3><p>Contrato '+safe(c.contract_number||'—')+' · selecciona uno, varios o todos los períodos.</p></div></div>'+
        '<div class="payment-debt-scroll"><table><thead><tr><th><input id="reliefSelectAll" type="checkbox" aria-label="Seleccionar todos los meses"></th><th>Mes</th><th>Inmueble</th><th>Saldo original</th><th>Estado</th></tr></thead><tbody>'+
        rows.map(x=>'<tr><td><input class="relief-month-check" type="checkbox" value="'+safe(x.id)+'" aria-label="Exonerar '+safe(x.period_start)+'"></td><td><b>'+safe(x.period_start)+'</b></td><td>'+safe(addresses.get(x.property_id)||'Cuenta matriz')+'</td><td>'+safe(money(x.total_amount,'VES'))+'</td><td>'+safe(x.status)+'</td></tr>').join('')+
-       '</tbody></table></div><p class="panel-hint">Las exoneraciones requieren autorización legal institucional previa; no crean ingresos ni borran registros.</p>'+
+       '</tbody></table></div><p class="panel-hint">Solo funcionarios con el permiso «Exonerar deudas» pueden exonerar los meses seleccionados. El motivo y cada operación quedarán exclusivamente en la bitácora; nunca se contabilizarán como recaudación.</p>'+
        '<div class="form-actions"><button type="button" class="btn btn-primary" id="applyReliefMonths" data-relief-apply disabled>Exonerar meses seleccionados</button></div>';
     const all=document.getElementById('reliefSelectAll');
     if(all)all.checked=false;
@@ -324,15 +322,18 @@
     if(!reliefAllowed)return;
     const ids=[...document.querySelectorAll('.relief-month-check:checked')].map(x=>x.value);
     if(!ids.length||ids.length>100)return;
-    if(!window.confirm('¿Exonerar los '+ids.length+' mes(es) seleccionados? El sistema verificará las autorizaciones legales y registrará cada operación en la bitácora.'))return;
+    const reason=window.prompt('Fundamento de exoneración de los '+ids.length+' mes(es) seleccionados (12 caracteres mínimo). El movimiento quedará únicamente en la bitácora:','');
+    if(reason===null)return;
+    if(reason.trim().length<12||reason.trim().length>500){window.alert('Indica el fundamento (12 a 500 caracteres).');return;}
+    if(!window.confirm('¿Confirmas la exoneración DIRECTA de '+ids.length+' período(s)? Solo se exonerará el saldo pendiente; se conservarán pagos previos y se registrará la operación en la bitácora.'))return;
     button.disabled=true;
-    const {data,error}=await imaudClient.rpc('apply_authorized_debt_exonerations',{p_assessment_ids:ids});
+    const {data,error}=await imaudClient.rpc('exonerate_official_assessments',{p_assessment_ids:ids,p_reason:reason.trim()});
     if(error){
       window.alert('No se aplicó ninguna exoneración: '+error.message);
       button.disabled=false;return;
     }
     const host=document.getElementById('officialReliefObligations');
-    if(host)host.innerHTML='<div class="notice">Se exoneraron '+safe(data.applied)+' períodos autorizados. Los movimientos quedaron en la bitácora del funcionario y no se sumaron a recaudación.</div>';
+    if(host)host.innerHTML='<div class="notice">Se exoneraron '+safe(data.applied)+' períodos. Los movimientos están en la bitácora del funcionario y no se sumaron a recaudación.</div>';
     reliefCandidates=[];await loadOverview();
   }
   async function exportCSV(){

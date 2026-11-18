@@ -7,7 +7,7 @@
   const label=(status)=>({pending:'Por liquidar',confirmed:'Liquidado',reversed:'Rechazado / reversado'})[status]||status||'—';
   const contributor=(p)=>p?.kind==='juridico'?(p?.legal_name||'Persona jurídica'):([p?.first_name,p?.last_name].filter(Boolean).join(' ')||'Contribuyente');
   const byCurrency=(obj)=>{const x=Object.entries(obj||{});return x.length?x.map(([c,v])=>money(v,c)).join(' · '):'Bs. 0,00'};
-  let payments=[],currentReport=[];
+  let payments=[],currentReport=[],limited=false;
   function header(t,sub){return '<div class="page-head"><div><div class="eyebrow">SITMAUD · CONTROL ADMINISTRATIVO</div><h1>'+t+'</h1><p>'+sub+'</p></div></div>';}
   const metrics='<section class="card panel" id="financialOverview"><div class="contributors-loading">Consultando indicadores institucionales…</div></section>';
   function financeKpis(){return metrics}
@@ -47,7 +47,7 @@
     if(!document.getElementById('officialPaymentRows')&&!document.getElementById('officialInvoiceRows')&&!document.getElementById('officialReportRows'))return;
     const {data,error}=await imaudClient.from('payments').select('id,receipt_number,amount,currency_code,paid_at,created_at,liquidated_at,payment_method,external_reference,status,registration_channel,evidence_path,contributor:contributors!payments_contributor_id_fkey(kind,legal_name,first_name,last_name,contract_number,identification_type,identification_number)').order('created_at',{ascending:false}).limit(500);
     if(error){for(const h of ['officialPaymentRows','officialInvoiceRows','officialReportRows']){const node=document.getElementById(h);if(node)node.innerHTML='<div class="contributors-empty">Error al consultar operaciones oficiales: '+safe(error.message)+'</div>';}return;}
-    payments=data||[];
+    payments=data||[];limited=payments.length>=500;
     renderPaymentRows();renderInvoiceRows();
     const form=document.getElementById('officialFinancialFilter');if(form)renderReportRows(form);
   }
@@ -71,10 +71,10 @@
     if(!from||!to){node.innerHTML='<div class="contributors-empty">Selecciona el rango de fechas.</div>';return;}
     if(from>to){node.innerHTML='<div class="contributors-empty">La fecha de inicio debe ser anterior al final.</div>';return;}
     currentReport=payments.filter(p=>{
-      const day=(p.created_at||'').slice(0,10);
+      const day=p.created_at?new Date(p.created_at).toLocaleDateString('en-CA',{timeZone:'America/Caracas'}):'';
       return day>=from&&day<=to&&(!status||p.status===status);
     });
-    node.innerHTML='<p><b>'+currentReport.length+'</b> operaciones registradas en el rango seleccionado. Se filtra por fecha de registro.</p>'+
+    node.innerHTML='<p><b>'+currentReport.length+'</b> operaciones registradas en el rango seleccionado. Se filtra por fecha de registro de Coro.</p>'+(limited?'<p class="notice">La consulta alcanzó el límite de 500 operaciones. Este listado no es un reporte completo; exportación deshabilitada hasta incorporar paginación.</p>':'')+
       (currentReport.length?'<div class="payment-debt-scroll"><table><thead><tr><th>Fecha</th><th>N.º</th><th>Contribuyente</th><th>Estado</th><th>Monto</th></tr></thead><tbody>'+currentReport.map(p=>'<tr><td>'+safe(fmtDate(p.created_at))+'</td><td>'+safe(p.receipt_number)+'</td><td>'+safe(contributor(p.contributor))+'</td><td>'+safe(label(p.status))+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td></tr>').join('')+'</tbody></table></div>':'<div class="contributors-empty">No se encontraron operaciones para el rango indicado.</div>');
   }
   async function verifyReadiness(){
@@ -116,6 +116,7 @@
     }catch(e){window.alert('La liquidación no se completó: '+(e.message||'Error de permisos o validación'));btn.disabled=false;}
   }
   function exportCSV(){
+    if(limited){window.alert('La consulta alcanzó el máximo de 500 operaciones. No es seguro exportar un reporte incompleto.');return;}
     const cols=['N.º comprobante','Contribuyente','Identificación','Contrato','Fecha registro','Fecha liquidación','Banco / referencia','Método','Estado','Moneda','Monto'];
     const rows=currentReport.map(p=>[p.receipt_number,contributor(p.contributor),(p.contributor?.identification_type||'')+'-'+(p.contributor?.identification_number||''),p.contributor?.contract_number,fmtDate(p.created_at),fmtDate(p.liquidated_at),p.external_reference,p.payment_method,label(p.status),p.currency_code,p.amount]);
     const csv=[cols,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');

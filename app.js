@@ -1022,24 +1022,82 @@ async function saveOfficialCondo(form){
  }catch(error){toast('No se pudo registrar el condominio: '+(error.message||'Error'));button.disabled=false;button.textContent='Registrar condominio';}
 }
 
-function officialAudit(){return head('Bitácora de auditoría','Eventos registrados por las operaciones del sistema y trazabilidad administrativa.')+
- '<div class="notice">Registro de solo consulta. Los eventos se conservan en el servidor y no pueden editarse desde esta pantalla.</div>'+
- '<section class="card panel"><div class="panel-head"><div><h3>Actividad reciente</h3><p>Últimos 100 eventos de auditoría.</p></div><button class="btn btn-light" data-action="refresh-audit">↻ Actualizar</button></div><div id="auditRecords"><div class="contributors-loading">Consultando bitácora…</div></div></section>'}
-async function loadAuditRecords(){
- const host=document.getElementById('auditRecords');if(!host)return;
- const {data,error}=await imaudClient.from('audit_log').select('id,occurred_at,actor_user_id,action,entity_table,entity_id,after_data').order('occurred_at',{ascending:false}).limit(100);
+function officialAudit(){
+ return head('Bitácora de auditoría','Trazabilidad institucional de acceso, consultas, cambios, pagos y autorizaciones.')+
+ '<section class="card panel"><div class="panel-head"><div><h3>Actividad de funcionarios</h3><p>Busca por funcionario y consulta los eventos registrados en los servidores del sistema.</p></div><button class="btn btn-light" data-action="refresh-audit">Actualizar</button></div>'+
+ '<form id="auditFilterForm"><div class="form-grid">'+
+ '<div class="field"><label for="auditActor">Funcionario</label><select id="auditActor" name="actor"><option value="">Todos los funcionarios</option></select></div>'+
+ '<div class="field"><label for="auditPeriod">Período</label><select id="auditPeriod" name="period"><option value="day">Hoy</option><option value="week">Últimos 7 días</option><option value="month" selected>Este mes</option><option value="2months">Últimos 2 meses</option><option value="3months">Últimos 3 meses</option><option value="4months">Últimos 4 meses</option><option value="custom">Rango personalizado</option><option value="all">Todo el historial</option></select></div>'+
+ '<div class="field"><label for="auditFrom">Desde</label><input type="date" id="auditFrom" name="from"></div>'+
+ '<div class="field"><label for="auditTo">Hasta</label><input type="date" id="auditTo" name="to"></div></div>'+
+ '<div class="form-actions"><button class="btn btn-primary" type="submit">Consultar bitácora</button></div></form>'+
+ '<p class="panel-hint">Fechas y horas de Santa Ana de Coro. La bitácora es de solo consulta: no permite modificar ni borrar movimientos.</p>'+
+ '<div id="auditStatus" style="font-size:12px;color:#6f8193;margin:9px 0"></div>'+
+ '<div id="auditRecords"><div class="contributors-loading">Consultando bitácora…</div></div>'+
+ '<div class="form-actions"><button type="button" class="btn btn-light" id="auditPrev" data-audit-page="previous" disabled>Anterior</button><span id="auditPageLabel">Página 1</span><button type="button" class="btn btn-light" id="auditNext" data-audit-page="next" disabled>Siguiente</button></div></section>';
+}
+let auditPageOffset=0,auditFilterReady=false;
+const auditCaracasDate=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+function auditSetPeriod(form){
+ if(!form)return;
+ const type=form.elements.period.value;
+ if(type==='custom')return;
+ if(type==='all'){form.elements.from.value='';form.elements.to.value='';return;}
+ const today=auditCaracasDate(),date=new Date(today+'T12:00:00Z');
+ let start=new Date(date);
+ if(type==='week')start.setUTCDate(date.getUTCDate()-6);
+ if(type==='month')start.setUTCDate(1);
+ if(['2months','3months','4months'].includes(type)){start.setUTCMonth(date.getUTCMonth()-(Number(type[0])-1));start.setUTCDate(1);}
+ form.elements.from.value=start.toISOString().slice(0,10);form.elements.to.value=today;
+}
+async function auditLoadActors(){
+ const select=document.getElementById('auditActor');
+ if(!select)return;
+ const {data,error}=await imaudClient.rpc('get_staff_audit_users');
+ if(!select.isConnected)return;
+ if(error){document.getElementById('auditStatus').textContent='No se pudo obtener el listado de funcionarios: '+error.message;return;}
+ const active=select.value;
+ select.innerHTML='<option value="">Todos los funcionarios</option>'+
+ (data||[]).map(x=>'<option value="'+escapeHTML(x.user_id)+'">'+escapeHTML(x.display_name||'Funcionario')+' · '+escapeHTML(x.email||'Sin correo')+(x.is_active?'':' · Inactivo')+'</option>').join('');
+ if((data||[]).some(x=>x.user_id===active))select.value=active;
+}
+async function loadAuditRecords(reset=false){
+ const host=document.getElementById('auditRecords'),form=document.getElementById('auditFilterForm');if(!host||!form)return;
+ if(!auditFilterReady){auditSetPeriod(form);auditFilterReady=true;await auditLoadActors();}
+ if(reset)auditPageOffset=0;
+ const f=new FormData(form),from=String(f.get('from')||''),to=String(f.get('to')||''),actor=String(f.get('actor')||'');
+ if(from&&to&&from>to){host.innerHTML='<div class="contributors-empty">El rango de fechas es inválido.</div>';return;}
+ host.innerHTML='<div class="contributors-loading">Consultando eventos…</div>';
+ const {data,error}=await imaudClient.rpc('get_staff_audit_events',{
+  p_actor:actor||null,p_from:from||null,p_to:to||null,p_limit:100,p_offset:auditPageOffset
+ });
  if(!host.isConnected)return;
  if(error){host.innerHTML='<div class="contributors-empty">No se pudo consultar la bitácora: '+escapeHTML(error.message)+'</div>';return;}
- if(!data?.length){host.innerHTML='<div class="contributors-empty"><b>No hay eventos registrados.</b></div>';return;}
- host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Fecha y hora</th><th>Actor</th><th>Acción</th><th>Módulo / tabla</th><th>Registro</th><th>Detalle</th></tr></thead><tbody>'+data.map(x=>'<tr><td>'+escapeHTML(new Date(x.occurred_at).toLocaleString('es-VE',{timeZone:'America/Caracas'}))+'</td><td>'+escapeHTML(x.actor_user_id||'Sistema')+'</td><td>'+escapeHTML(x.action)+'</td><td>'+escapeHTML(x.entity_table||'—')+'</td><td>'+escapeHTML(x.entity_id||'—')+'</td><td>'+escapeHTML(JSON.stringify(x.after_data||{}).slice(0,180))+'</td></tr>').join('')+'</tbody></table></div>';
+ const rows=data?.events||[],total=Number(data?.total||0);
+ const status=document.getElementById('auditStatus'),prev=document.getElementById('auditPrev'),next=document.getElementById('auditNext'),page=document.getElementById('auditPageLabel');
+ if(status)status.textContent=total.toLocaleString('es-VE')+' eventos registrados · Mostrando '+(rows.length?auditPageOffset+1:0)+'–'+(auditPageOffset+rows.length);
+ if(prev)prev.disabled=auditPageOffset===0;if(next)next.disabled=auditPageOffset+rows.length>=total;
+ if(page)page.textContent='Página '+(Math.floor(auditPageOffset/100)+1);
+ if(!rows.length){host.innerHTML='<div class="contributors-empty">No se encontraron eventos para estos filtros.</div>';return;}
+ const displayDetails=(x)=>{const value=x.details||{};return (typeof value==='object'?JSON.stringify(value):String(value)).slice(0,240);};
+ host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Fecha y hora</th><th>Funcionario</th><th>Correo</th><th>Acción</th><th>Módulo</th><th>Registro</th><th>Detalle</th></tr></thead><tbody>'+
+ rows.map(x=>'<tr><td>'+escapeHTML(new Date(x.occurred_at).toLocaleString('es-VE',{timeZone:'America/Caracas'}))+'</td><td><strong>'+escapeHTML(x.display_name||'Sistema')+'</strong>'+(x.job_title?'<div>'+escapeHTML(x.job_title)+'</div>':'')+'</td><td>'+escapeHTML(x.email||'—')+'</td><td>'+escapeHTML(x.action||'—')+'</td><td>'+escapeHTML(x.module||'—')+'</td><td>'+escapeHTML(x.entity_id||'—')+'</td><td>'+escapeHTML(displayDetails(x))+'</td></tr>').join('')+'</tbody></table></div>';
 }
 
 
 window.sitmaudShowPropertyDetails=showPropertyDetails;
-function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:()=>window.sitmaudOfficialFinance.view('pagos'),facturacion:()=>window.sitmaudOfficialFinance.view('facturacion'),solvencias:solvencyModule,reportes:()=>window.sitmaudOfficialFinance.view('reportes'),mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio'){loadDashboardMetrics();window.sitmaudOfficialFinance.loadOverview();}if(v==='solvencias')loadSolvencyRecords();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(['pagos','facturacion','reportes'].includes(v))window.sitmaudOfficialFinance.mount(v);if(v==='condominio_registro')loadOfficialCondoCatalogs();if(v==='bitacora')loadAuditRecords();if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}if(v==='funcionarios')loadStaffPermissionMatrix();}
-function go(v){state.view=v;render();window.scrollTo(0,0)}
-document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')go('condominio_registro');else if(act==='new-payment')openPaymentModal();else if(act==='refresh-invoices')loadInvoiceRecords();else if(act==='print-invoice')window.print();else if(act==='refresh-audit')loadAuditRecords();else if(act==='export-report')exportDemoReport();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-solvency-detail'){document.getElementById('solvencyDetailModal')?.remove();}else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-staff')openStaffRegistrationPreview();else if(act==='new-org')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
+function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:()=>window.sitmaudOfficialFinance.view('pagos'),facturacion:()=>window.sitmaudOfficialFinance.view('facturacion'),solvencias:solvencyModule,reportes:()=>window.sitmaudOfficialFinance.view('reportes'),mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio'){loadDashboardMetrics();window.sitmaudOfficialFinance.loadOverview();}if(v==='solvencias')loadSolvencyRecords();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(['pagos','facturacion','reportes'].includes(v))window.sitmaudOfficialFinance.mount(v);if(v==='condominio_registro')loadOfficialCondoCatalogs();if(v==='bitacora'){auditFilterReady=false;auditPageOffset=0;loadAuditRecords();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog()}if(v==='funcionarios')loadStaffPermissionMatrix();}
+function go(v){state.view=v;render();window.scrollTo(0,0);recordStaffAudit('module_opened',v);}
+function recordStaffAudit(action,module,reference=null){
+ if(!window.imaudCurrentProfile)return;
+ imaudClient.rpc('record_staff_activity',{p_action:action,p_module:module||null,p_reference:reference}).then(({error})=>{if(error)console.warn('Bitácora de navegación no disponible:',error.message);});
+}
+document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')go('condominio_registro');else if(act==='new-payment')openPaymentModal();else if(act==='refresh-invoices')loadInvoiceRecords();else if(act==='print-invoice')window.print();else if(act==='refresh-audit')loadAuditRecords(true);else if(act==='export-report')exportDemoReport();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-solvency-detail'){document.getElementById('solvencyDetailModal')?.remove();}else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-staff')openStaffRegistrationPreview();else if(act==='new-org')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
 document.addEventListener('input',e=>{if(e.target.id==='solvencySearch')renderSolvencyRows()});
+document.addEventListener('submit',e=>{if(e.target.id==='auditFilterForm'){e.preventDefault();loadAuditRecords(true);}});
+document.addEventListener('change',e=>{if(e.target.id==='auditPeriod'){auditSetPeriod(e.target.form);}});
+document.addEventListener('click',e=>{const target=e.target.closest('[data-audit-page]');if(!target)return;auditPageOffset=Math.max(0,auditPageOffset+(target.dataset.auditPage==='next'?100:-100));loadAuditRecords();});
+
 document.addEventListener('input',e=>{if(e.target.id==='sitCondoReason'){const counter=document.getElementById('sitCondoReasonCount');if(counter)counter.textContent=e.target.value.length+'/300';}});
 document.addEventListener('change',e=>{if(e.target.id==='demoCondoParish')updateDemoCondoSectors();if(e.target.id==='demoCondoSector')applyDemoCondoTypology()});
 document.addEventListener('click',e=>{const invoice=e.target.closest('[data-invoice-id]');if(invoice)showInvoice(invoice.dataset.invoiceId)});

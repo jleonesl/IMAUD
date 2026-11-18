@@ -3,7 +3,7 @@
 'use strict';
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fecha=s=>s?new Date(String(s).slice(0,10)+'T12:00:00Z').toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'}):'—';
-let entries=[];
+let entries=[],canRevoke=false;
 function panel(){
  return '<section class="card panel" id="sitSolvencyDocuments"><div class="panel-head"><div><h3>Certificados de solvencia emitidos</h3><p>Documentos institucionales, estado vigente o revocado y verificación de código. La emisión está reservada a funcionarios autorizados.</p></div><button type="button" class="btn btn-light" data-sit-solvency-refresh>Actualizar</button></div>'+
  '<div id="sitSolvencyDocumentsList">Consultando certificados…</div>'+
@@ -11,9 +11,10 @@ function panel(){
 }
 async function load(){
  const host=document.getElementById('sitSolvencyDocumentsList');if(!host)return;
- const r=await imaudClient.from('solvency_certificates')
+ const [permission,r]=await Promise.all([imaudClient.rpc('has_permission',{permission_code:'solvencies.issue'}),imaudClient.from('solvency_certificates')
   .select('id,certificate_number,contributor_id,contributor_snapshot,property_snapshot,period_start,period_end,issue_date,issued_at,status,revoked_at,revocation_reason')
-  .order('issued_at',{ascending:false}).limit(100);
+  .order('issued_at',{ascending:false}).limit(100)]);
+ canRevoke=!permission.error&&permission.data===true;
  if(!host.isConnected)return;
  if(r.error){host.textContent='No se pudieron consultar certificados: '+r.error.message;return;}
  entries=r.data||[];
@@ -75,6 +76,18 @@ async function show(entry){
  else modal.querySelector('#sitSolvencyQR').textContent=x.certificate_number;
 }
 document.addEventListener('click',event=>{
+ const revoke=event.target.closest('[data-sit-solvency-revoke]');
+ if(revoke){
+   const cert=entries.find(x=>x.id===revoke.dataset.sitSolvencyRevoke);
+   if(!cert||cert.status!=='issued'||!canRevoke)return;
+   const reason=window.prompt('Motivo de revocación de '+cert.certificate_number+' (obligatorio):','');
+   if(reason===null)return;
+   if(reason.trim().length<8){window.alert('Debes documentar un motivo de al menos ocho caracteres.');return;}
+   revoke.disabled=true;
+   imaudClient.rpc('revoke_solvency_certificate',{p_certificate_id:cert.id,p_reason:reason.trim()})
+     .then(({error})=>{if(error)window.alert('No se pudo revocar: '+error.message);else{document.getElementById('sitSolvencyPrintModal')?.remove();load();}})
+     .finally(()=>{if(revoke.isConnected)revoke.disabled=false});
+ }
  if(event.target.closest('[data-sit-solvency-refresh]'))load();
  const print=event.target.closest('[data-sit-solvency-print]');if(print)show(print.dataset.sitSolvencyPrint);
  if(event.target.closest('[data-solvency-close]'))document.getElementById('sitSolvencyPrintModal')?.remove();

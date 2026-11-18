@@ -23,12 +23,69 @@
       '<section class="card panel"><div class="panel-head"><div><h3>Recibos y pagos reportados</h3><p>El documento muestra claramente si el ingreso está pendiente o liquidado.</p></div><button class="btn btn-light" data-official-action="refresh">Actualizar</button></div><div id="officialInvoiceRows">Consultando…</div></section>';
   }
   function reportView(){
-    return header('Reportes financieros','Consulta y seguimiento de pagos registrados y liquidaciones por fecha.')+financeKpis()+
+    return header('Reportes financieros','Recaudación por fecha, parroquia, sector y tipología territorial.')+financeKpis()+
       '<section class="card panel"><form id="officialFinancialFilter"><div class="form-grid">'+
+      '<div class="field"><label>Tipo de reporte</label><select name="group" id="officialReportGroup"><option value="operations">Operaciones financieras</option><option value="parish">Recaudación por parroquia</option><option value="sector">Recaudación por sector</option><option value="typology">Recaudación por tipología I, II y III</option></select></div>'+
+      '<div class="field"><label>Período</label><select name="period" id="officialReportPeriod"><option value="day">Día</option><option value="week">Semana</option><option value="month" selected>Mes</option><option value="year">Año</option><option value="custom">Rango personalizado</option></select></div>'+
       '<div class="field"><label>Desde</label><input type="date" name="from" required></div>'+
       '<div class="field"><label>Hasta</label><input type="date" name="to" required></div>'+
-      '<div class="field"><label>Estado de operación</label><select name="status"><option value="">Todos</option><option value="pending">Por liquidar</option><option value="confirmed">Liquidado</option><option value="reversed">Rechazado / reversado</option></select></div>'+
-      '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Consultar</button><button type="button" class="btn btn-light" data-official-action="export">Exportar CSV</button></div></form><div id="officialReportRows"></div></section>';
+      '<div class="field" id="officialReportStatusField"><label>Estado de operación</label><select name="status"><option value="">Todos</option><option value="pending">Por liquidar</option><option value="confirmed">Liquidado</option><option value="reversed">Rechazado / reversado</option></select></div>'+
+      '</div><div class="form-actions"><button type="submit" class="btn btn-primary">Consultar</button><button type="button" class="btn btn-light" data-official-action="export">Exportar CSV</button></div></form>'+
+      '<p id="officialReportBasis" style="color:#687e90;font-size:11px;margin:8px 0 14px">Los importes por territorio se calculan exclusivamente con liquidaciones autorizadas por Tesorería, según la ubicación de las obligaciones pagadas.</p>'+
+      '<div id="officialReportRows"></div></section>';
+  }
+  let territorialRows=[],territorialGroup='',territorialLoaded=false,territorialTotals={};
+  const caracasDay=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const toISO=(dt)=>dt.toISOString().slice(0,10);
+  function changeReportPeriod(form){
+    if(!form)return;
+    const period=form.elements.period.value;
+    if(period==='custom')return;
+    const now=caracasDay(),end=new Date(now+'T12:00:00Z');
+    let from=now,to=now;
+    if(period==='week'){const day=(end.getUTCDay()+6)%7;end.setUTCDate(end.getUTCDate()-day);from=toISO(end);end.setUTCDate(end.getUTCDate()+6);to=toISO(end);}
+    if(period==='month'){from=now.slice(0,7)+'-01';const [y,m]=now.split('-').map(Number);to=toISO(new Date(Date.UTC(y,m,0)));}
+    if(period==='year'){from=now.slice(0,4)+'-01-01';to=now.slice(0,4)+'-12-31';}
+    form.elements.from.value=from;form.elements.to.value=to;
+  }
+  function changeReportGrouping(form){
+    if(!form)return;
+    const geographic=form.elements.group.value!=='operations';
+    const field=document.getElementById('officialReportStatusField');
+    if(field)field.hidden=geographic;
+    const help=document.getElementById('officialReportBasis');
+    if(help)help.textContent=geographic
+      ?'Recaudación territorial: únicamente pagos LIQUIDADOS, agrupados según los inmuebles y cuentas matrices. Se usa la fecha de liquidación en Coro y se respetan las tipologías propias de condominios.'
+      :'Operaciones financieras por fecha de registro y estado. Para recaudo efectivamente ingresado selecciona “Liquidado”.';
+  }
+  async function loadTerritorialReport(form){
+    const host=document.getElementById('officialReportRows');if(!host||!form)return;
+    const f=new FormData(form),from=String(f.get('from')||''),to=String(f.get('to')||''),group=String(f.get('group')||'');
+    if(!from||!to||from>to){host.innerHTML='<div class="contributors-empty">Selecciona un rango de fechas válido.</div>';return;}
+    territorialLoaded=false;territorialRows=[];territorialGroup=group;territorialTotals={};
+    host.innerHTML='<div class="contributors-loading">Calculando recaudación territorial…</div>';
+    const {data,error}=await imaudClient.rpc('get_official_territorial_revenue',{p_from:from,p_to:to,p_group:group});
+    if(!host.isConnected||form.elements.group.value!==group||form.elements.from.value!==from||form.elements.to.value!==to)return;
+    if(error){host.innerHTML='<div class="contributors-empty">No se pudo generar el reporte territorial: '+safe(error.message)+'</div>';return;}
+    territorialRows=Array.isArray(data?.rows)?data.rows:[];territorialTotals=data?.totals_by_currency||{};territorialLoaded=true;
+    const names={parish:'Parroquia',sector:'Sector',typology:'Tipología'};
+    const tot=Object.entries(territorialTotals);
+    host.innerHTML='<div class="panel-head"><div><h3>Recaudación por '+safe((names[group]||group).toLowerCase())+'</h3><p>Del '+safe(from)+' al '+safe(to)+' · por fecha de liquidación de Tesorería</p></div></div>'+
+      '<p><strong>Total liquidado y aplicado:</strong> '+safe(tot.length?tot.map(([currency,n])=>money(n,currency)).join(' · '):'Bs. 0,00')+'</p>'+
+      (territorialRows.length?
+      '<div class="payment-debt-scroll"><table><thead><tr><th>'+safe(names[group]||'Clasificación')+'</th>'+(group==='sector'?'<th>Parroquia</th>':'')+'<th>Moneda</th><th>Liquidaciones</th><th>Recaudado</th></tr></thead><tbody>'+
+      territorialRows.map(x=>'<tr><td><b>'+safe(x.name)+'</b></td>'+(group==='sector'?'<td>'+safe(x.parent||'—')+'</td>':'')+'<td>'+safe(x.currency)+'</td><td>'+safe(x.payment_count)+'</td><td><strong>'+safe(money(x.amount,x.currency))+'</strong></td></tr>').join('')+'</tbody></table></div>':
+      '<div class="contributors-empty">No hay importes liquidados para los filtros seleccionados.</div>')+
+      '<p style="color:#75899b;font-size:11px;margin-top:12px">Se suman las aplicaciones a obligaciones oficiales, sin contar dos veces una cuenta matriz de condominio. El número de liquidaciones por grupo puede repetirse entre territorios si un mismo pago cubre varios inmuebles.</p>';
+  }
+  function exportTerritorialReport(){
+    if(!territorialLoaded){window.alert('Consulta primero el reporte territorial.');return;}
+    const cols=['Agrupación','Nombre','Parroquia del sector','Moneda','Operaciones liquidadas','Monto liquidado','Fecha desde','Fecha hasta'];
+    const form=document.getElementById('officialFinancialFilter'),from=form?.elements.from.value||'',to=form?.elements.to.value||'';
+    const rows=territorialRows.map(x=>[territorialGroup,x.name,x.parent||'',x.currency,x.payment_count,x.amount,from,to]);
+    const csv=[cols,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+    const a=document.createElement('a'),url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+    a.href=url;a.download='SITMAUD-recaudacion-'+territorialGroup+'-'+from+'-'+to+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),2500);
   }
   async function loadOverview(){
     const host=document.getElementById('financialOverview');if(!host)return;
@@ -67,6 +124,7 @@
   }
   function renderReportRows(form){
     const node=document.getElementById('officialReportRows');if(!node)return;
+    if(form.elements.group?.value!=='operations'){loadTerritorialReport(form);return;}
     const f=new FormData(form),from=String(f.get('from')||''),to=String(f.get('to')||''),status=String(f.get('status')||'');
     if(!from||!to){node.innerHTML='<div class="contributors-empty">Selecciona el rango de fechas.</div>';return;}
     if(from>to){node.innerHTML='<div class="contributors-empty">La fecha de inicio debe ser anterior al final.</div>';return;}
@@ -116,6 +174,7 @@
     }catch(e){window.alert('La liquidación no se completó: '+(e.message||'Error de permisos o validación'));btn.disabled=false;}
   }
   function exportCSV(){
+    if(document.getElementById('officialFinancialFilter')?.elements.group.value!=='operations'){exportTerritorialReport();return;}
     if(limited){window.alert('La consulta alcanzó el máximo de 500 operaciones. No es seguro exportar un reporte incompleto.');return;}
     const cols=['N.º comprobante','Contribuyente','Identificación','Contrato','Fecha registro','Fecha liquidación','Banco / referencia','Método','Estado','Moneda','Monto'];
     const rows=currentReport.map(p=>[p.receipt_number,contributor(p.contributor),(p.contributor?.identification_type||'')+'-'+(p.contributor?.identification_number||''),p.contributor?.contract_number,fmtDate(p.created_at),fmtDate(p.liquidated_at),p.external_reference,p.payment_method,label(p.status),p.currency_code,p.amount]);
@@ -135,14 +194,14 @@
     const pay=e.target.closest('[data-official-liquidate]');if(pay){liquidate(pay.dataset.officialLiquidate,pay);return;}
   });
   document.addEventListener('input',e=>{if(e.target.id==='officialPaySearch')renderPaymentRows();});
-  document.addEventListener('change',e=>{if(e.target.id==='officialPayStatus')renderPaymentRows();});
+  document.addEventListener('change',e=>{if(e.target.id==='officialPayStatus')renderPaymentRows();if(e.target.id==='officialReportPeriod')changeReportPeriod(e.target.form);if(e.target.id==='officialReportGroup')changeReportGrouping(e.target.form);});
   document.addEventListener('submit',e=>{if(e.target.id==='officialFinancialFilter'){e.preventDefault();renderReportRows(e.target);}});
   window.sitmaudOfficialFinance={
     overviewPlaceholder:()=>metrics,
     loadOverview,
     view(v){return v==='pagos'?paymentView():v==='facturacion'?invoiceView():reportView();},
     async mount(v){
-      if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){const d=new Date().toLocaleDateString('en-CA',{timeZone:'America/Caracas'});form.elements.from.value=d.slice(0,7)+'-01';form.elements.to.value=d;}}
+      if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){changeReportPeriod(form);changeReportGrouping(form);}}
       if(v==='pagos'||v==='reportes')loadOverview();
       if(v==='pagos')verifyReadiness();
       await loadPayments();

@@ -86,7 +86,7 @@
     const cols=['Agrupación','Nombre','Parroquia del sector','Moneda','Operaciones liquidadas','Monto liquidado','Fecha desde','Fecha hasta'];
     const form=document.getElementById('officialFinancialFilter'),from=form?.elements.from.value||'',to=form?.elements.to.value||'';
     const rows=territorialRows.map(x=>[territorialGroup,x.name,x.parent||'',x.currency,x.payment_count,x.amount,from,to]);
-    const csv=[cols,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+    const csv=[cols,...rows].map(r=>r.map(v=>{let s=String(v??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}).join(',')).join('\r\n');
     const a=document.createElement('a'),url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
     a.href=url;a.download='SITMAUD-recaudacion-'+territorialGroup+'-'+from+'-'+to+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),2500);
   }
@@ -352,7 +352,7 @@
           label(p.status),p.currency_code,p.amount,p.udc_total,p.rate_effective_date,p.rate_source]);
       }
       if(rows.length!==frozen.total)throw Error('La exportación quedó incompleta. Se ha cancelado.');
-      const csv=[fields,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+      const csv=[fields,...rows].map(r=>r.map(v=>{let s=String(v??'');if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}).join(',')).join('\r\n');
       const a=document.createElement('a'),url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
       a.href=url;a.download='SITMAUD-operaciones-'+frozen.from+'-'+frozen.to+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),2500);
       imaudClient.rpc('record_staff_activity',{p_action:'report_exported',p_module:'reportes',p_reference:frozen.from+'_'+frozen.to})

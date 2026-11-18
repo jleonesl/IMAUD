@@ -973,7 +973,7 @@ function solvencyModule(){
  '<section class="card solvency-intro"><div><span class="solvency-kicker">CONSULTA ADMINISTRATIVA</span><h3>Verificación de cuenta</h3><p>Busca por nombre, cédula, RIF o número de contrato. Consulta las liquidaciones oficiales registradas en el sistema.</p></div><div class="solvency-intro-mark">▣</div></section>'+
  '<section class="card solvency-search"><label for="solvencySearch">Buscar contribuyente</label><input id="solvencySearch" class="search" type="search" placeholder="Nombre, cédula, RIF o número de contrato"><span id="solvencyCount" class="table-count">Consultando registros…</span></section>'+
  '<section id="solvencyResults" class="solvency-results"><div class="contributors-loading">Consultando obligaciones oficiales…</div></section>'+
- '<section class="card solvency-notice"><b>Emisión de certificado</b><p>La emisión requiere autorización individual y una cuenta sin deudas exigibles. Un pago liquidado o una exoneración legalmente aprobada podrá respaldar la solvencia; una solicitud pendiente no.</p></section>';
+ '<section class="card solvency-notice"><b>Emisión de certificado</b><p>La emisión requiere autorización individual, meses completos y pagos liquidados o exoneraciones documentadas. Un pago pendiente no es suficiente.</p></section>'+window.sitmaudSolvencyDocuments.panel();
 }
 let solvencyRows=[],solvencyCanIssue=false,solvencyGrantedAssessments=new Set();
 async function loadSolvencyRecords(){
@@ -1031,7 +1031,7 @@ async function issueOfficialSolvency(id,button){
  const {data,error}=await imaudClient.rpc('issue_solvency_certificate',{p_contributor_id:id,p_period_start:first,p_period_end:to});
  if(error){toast('No se pudo emitir la solvencia: '+error.message);button.disabled=false;return;}
  button.textContent='Solvencia emitida';
- toast('Certificado emitido: '+data.certificate_number);
+ toast('Certificado emitido: '+data.certificate_number); window.sitmaudSolvencyDocuments?.load(); window.sitmaudSolvencyDocuments?.show(data);
 }
 
 function showSolvencyDetail(id){
@@ -1184,7 +1184,7 @@ async function loadAuditRecords(reset=false){
 
 
 window.sitmaudShowPropertyDetails=showPropertyDetails;
-function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:()=>window.sitmaudOfficialFinance.view('pagos'),facturacion:()=>window.sitmaudOfficialFinance.view('facturacion'),solvencias:solvencyModule,reportes:()=>window.sitmaudOfficialFinance.view('reportes'),mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio'){loadDashboardMetrics();window.sitmaudOfficialFinance.loadOverview();}if(v==='solvencias')loadSolvencyRecords();if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(['pagos','facturacion','reportes'].includes(v))window.sitmaudOfficialFinance.mount(v);if(v==='condominio_registro')loadOfficialCondoCatalogs();if(v==='bitacora'){auditFilterReady=false;auditPageOffset=0;loadAuditRecords();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog();loadResidentialEngineReadiness();loadResidentialEngineProperties()}if(v==='funcionarios')loadStaffPermissionMatrix();}
+function render(){const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:()=>window.sitmaudOfficialFinance.view('pagos'),facturacion:()=>window.sitmaudOfficialFinance.view('facturacion'),solvencias:solvencyModule,reportes:()=>window.sitmaudOfficialFinance.view('reportes'),mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio'){loadDashboardMetrics();window.sitmaudOfficialFinance.loadOverview();}if(v==='solvencias'){loadSolvencyRecords();window.sitmaudSolvencyDocuments?.load();}if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(['pagos','facturacion','reportes'].includes(v))window.sitmaudOfficialFinance.mount(v);if(v==='condominio_registro')loadOfficialCondoCatalogs();if(v==='bitacora'){auditFilterReady=false;auditPageOffset=0;loadAuditRecords();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog();loadResidentialEngineReadiness();loadResidentialEngineProperties()}if(v==='funcionarios')loadStaffPermissionMatrix();}
 function go(v){state.view=v;render();window.scrollTo(0,0);recordStaffAudit('module_opened',v);}
 function recordStaffAudit(action,module,reference=null){
  if(!window.imaudCurrentProfile)return;

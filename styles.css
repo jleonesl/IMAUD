@@ -1003,3 +1003,54 @@ body.modal-open{overflow:hidden}
 .sit-condo-registration .sit-condo-actions .btn-primary{background:#173f64;border-color:#173f64}
 @media(max-width:1080px){.sit-condo-registration .sit-condo-grid{grid-template-columns:1fr}}
 @media(max-width:650px){.sit-condo-registration .sit-condo-title-symbol{width:48px;height:48px;flex-basis:48px}.sit-condo-registration .sit-condo-title h2{font-size:19px}.sit-condo-registration .sit-condo-fields-two,.sit-condo-registration .sit-condo-type-row{grid-template-columns:1fr}.sit-condo-registration .sit-condo-card{padding:16px}.sit-condo-registration .sit-condo-actions{flex-wrap:wrap}.sit-condo-registration .sit-condo-actions .btn{flex:1 1 140px}}
+
+
+/* SITMAUD · Inicio 2026 · tarjetas uniformes operativas y financieras */
+.dashboard-section{margin:0 0 22px;min-width:0}
+.dashboard-section-head{display:flex;flex-direction:column;gap:5px;margin:0 0 15px}
+.dashboard-section-head h2{font:800 17px/1.3 Manrope,Arial,sans-serif;color:#153b58;margin:0}
+.dashboard-section-head p{font:500 11px/1.5 'DM Sans',Arial,sans-serif;color:#748b9c;margin:0}
+.dashboard-kpi-grid.home-indicators,
+.dashboard-kpi-grid.financial-kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:16px;
+  margin:0;
+}
+.dashboard-kpi-grid .home-kpi{
+  width:100%;
+  min-width:0;
+  min-height:155px;
+  padding:19px 20px;
+  border:1px solid #e1e9ee;
+  border-radius:13px;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  box-shadow:0 5px 20px rgba(22,55,80,.045);
+}
+.dashboard-kpi-grid .home-kpi .kpi-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:11px;font-weight:700;line-height:1.4;color:#506c80}
+.dashboard-kpi-grid .home-kpi .kpi-icon{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:10px;background:#e8f4f6;color:#128d9a;font-size:17px}
+.dashboard-kpi-grid .home-kpi .kpi-value{font:800 clamp(19px,1.8vw,27px)/1.25 Manrope,Arial,sans-serif;color:#102f4b;margin:12px 0 6px;overflow-wrap:anywhere;letter-spacing:-.02em}
+.dashboard-kpi-grid .home-kpi .kpi-note{font-size:10px;line-height:1.5;color:#8497a4}
+.financial-dashboard{margin-top:26px}
+@media(max-width:1350px){
+ .dashboard-kpi-grid.home-indicators,
+ .dashboard-kpi-grid.financial-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:990px){
+ .dashboard-kpi-grid.home-indicators,
+ .dashboard-kpi-grid.financial-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+ .dashboard-kpi-grid.home-indicators,
+ .dashboard-kpi-grid.financial-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+ .dashboard-kpi-grid .home-kpi{padding:13px;min-height:141px}
+ .dashboard-kpi-grid .home-kpi .kpi-value{font-size:20px}
+ .dashboard-kpi-grid .home-kpi .kpi-icon{width:31px;height:31px}
+}
+@media(max-width:390px){
+ .dashboard-kpi-grid.home-indicators,
+ .dashboard-kpi-grid.financial-kpi-grid{grid-template-columns:1fr}
+}

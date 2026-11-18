@@ -146,7 +146,7 @@
     ]);
     if(rates.error||debt.error){node.textContent='No se pudo verificar la disponibilidad de obligaciones y tarifas. Comprueba tus permisos.';return;}
     if(!rates.count||!debt.count){node.innerHTML='<p><b>Registro de pagos no habilitado:</b> todavía no hay obligaciones oficiales exigibles con tabulador aprobado. No se emitirán cobros sin respaldo normativo.</p>';return;}
-    node.innerHTML='<p>Existen obligaciones oficiales. El registro desde taquilla se habilitará una vez validados los controles de comprobantes bancarios y aplicación de pagos. Actualmente puedes consultar y dar seguimiento a operaciones registradas.</p>';
+    node.innerHTML='<p>Existen obligaciones oficiales. Utiliza el formulario «Registrar pago bancario oficial» para seleccionar meses, calcular la UCD a la tasa del día y adjuntar el comprobante. La operación quedará pendiente hasta la validación de Tesorería.</p>';
   }
   const receiptMonth=(x)=>x?new Date(x+'T12:00:00Z').toLocaleDateString('es-VE',{timeZone:'UTC',month:'long',year:'numeric'}):'—';
   const receiptDate=(x)=>x?new Date(x).toLocaleDateString('es-VE',{timeZone:'America/Caracas',day:'2-digit',month:'2-digit',year:'numeric'}):'—';
@@ -199,7 +199,8 @@
       '</div><div class="sit-receipt-side"><div class="sit-receipt-period"><strong>PERÍODO FACTURADO</strong><span>'+safe(billedPeriod||'No definido')+'</span></div>'+
         '<div class="sit-receipt-verification"><strong>Identificación del documento</strong><span>'+safe(p.receipt_number)+'</span><small>Consultar en SITMAUD. La verificación digital mediante QR todavía no está habilitada.</small></div></div></div>'+
       '<div class="sit-receipt-charge"><div><strong>Concepto</strong><span>Servicio de aseo urbano y domiciliario</span></div><div><strong>'+(paid?'Monto pagado (Bs.)':'Monto registrado (Bs.)')+'</strong><b>'+safe(preview?'—':isVES?receiptMoney(p.amount):'Sin conversión a bolívares')+'</b></div></div>'+
-      '<div class="sit-receipt-payment"><div><span>MÉTODO DE PAGO</span><b>'+safe(p.payment_method||'No registrado')+'</b></div><div><span>BANCO</span><b>No consignado en este registro</b></div><div><span>REFERENCIA</span><b>'+safe(p.external_reference||'No registrada')+'</b></div></div>'+
+      '<div class="sit-receipt-payment"><div><span>MÉTODO DE PAGO</span><b>'+safe(p.payment_method||'No registrado')+'</b></div><div><span>BANCO</span><b>'+safe(p.bank_code||'No consignado')+'</b></div><div><span>REFERENCIA</span><b>'+safe(p.external_reference||'No registrada')+'</b></div></div>'+
+      '<div class="sit-receipt-payment"><div><span>MONTO UCD</span><b>'+safe(p.payment_udc_total==null?'—':String(p.payment_udc_total)+' UCD')+'</b></div><div><span>TASA BCV/UCD</span><b>'+safe(p.rate?String(p.rate.udc_value)+' · '+p.rate.effective_date:'No registrada')+'</b></div><div><span>ORIGEN DE LA TASA</span><b>'+safe(p.rate?.source_url||'No registrado')+'</b></div></div>'+
       '<footer class="sit-receipt-footer">Cuida la ciudad, cumple con tu servicio de aseo.</footer>'+
       '</article>';
     host.style.cssText='';host.innerHTML=doc;

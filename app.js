@@ -907,7 +907,7 @@ function solvencyModule(){
  '<section id="solvencyResults" class="solvency-results"><div class="contributors-loading">Consultando obligaciones oficiales…</div></section>'+
  '<section class="card solvency-notice"><b>Emisión de certificado</b><p>La emisión requiere autorización individual y una cuenta sin deudas exigibles. Un pago liquidado o una exoneración legalmente aprobada podrá respaldar la solvencia; una solicitud pendiente no.</p></section>';
 }
-let solvencyRows=[],solvencyCanIssue=false;
+let solvencyRows=[],solvencyCanIssue=false,solvencyGrantedAssessments=new Set();
 async function loadSolvencyRecords(){
  const host=document.getElementById('solvencyResults');if(!host)return;
  const perm=await imaudClient.rpc('has_permission',{permission_code:'solvencies.issue'});
@@ -917,14 +917,24 @@ async function loadSolvencyRecords(){
  if(state.view!=='solvencias')return;
  if(error){console.error('SITMAUD solvencias:',error);host.innerHTML='<div class="contributors-empty"><b>No se pudo consultar la cuenta</b><span>'+escapeHTML(error.message||'Verifica los permisos de consulta.')+'</span></div>';return;}
  solvencyRows=data||[];
+ solvencyGrantedAssessments=new Set();
+ const assessmentIds=solvencyRows.flatMap(c=>(c.properties||[]).flatMap(p=>(p.assessments||[]).filter(a=>a.is_demo===false).map(a=>a.id)));
+ if(assessmentIds.length){
+  const {data:grants,error:grantsError}=await imaudClient.from('debt_relief_grants').select('assessment_id').in('assessment_id',assessmentIds).is('revoked_at',null);
+  if(grantsError){
+    console.warn('No se pudo comprobar exoneraciones autorizadas:',grantsError.message);
+    const notice=document.querySelector('.solvency-notice');
+    if(notice)notice.insertAdjacentHTML('beforeend','<p class="notice">No se pudieron verificar las exoneraciones. La emisión permanecerá restringida a las cuentas pagadas.</p>');
+  }else solvencyGrantedAssessments=new Set((grants||[]).map(g=>g.assessment_id));
+ }
  renderSolvencyRows();
 }
 function solvencyName(p){return p.kind==='juridico'?(p.legal_name||'Sin razón social'):[p.first_name,p.last_name].filter(Boolean).join(' ')||p.legal_name||'Sin nombre';}
 function solvencyStatus(p){
  const assessments=(p.properties||[]).flatMap(x=>(x.assessments||[]).filter(a=>a.is_demo===false));
  if(!assessments.length)return {key:'unverified',label:'Sin liquidación oficial',detail:'No hay períodos oficiales para verificar.'};
- if(assessments.some(a=>['pending','partially_paid'].includes(a.status)))return {key:'pending',label:'Obligaciones pendientes',detail:'La cuenta mantiene períodos por cancelar o pagos parciales.'};
- if(assessments.every(a=>a.status==='paid'))return {key:'paid',label:'Cuenta al día',detail:'Todas las liquidaciones oficiales consultadas figuran pagadas.'};
+ if(assessments.some(a=>['pending','partially_paid'].includes(a.status)&&!solvencyGrantedAssessments.has(a.id)))return {key:'pending',label:'Obligaciones pendientes',detail:'La cuenta mantiene períodos por cancelar o pagos parciales.'};
+ if(assessments.every(a=>a.status==='paid'||solvencyGrantedAssessments.has(a.id)))return {key:'paid',label:'Cuenta al día',detail:'Obligaciones oficialmente pagadas o cubiertas por exoneraciones institucionales vigentes.'};
  return {key:'unverified',label:'Requiere revisión',detail:'Hay estados que necesitan validación administrativa.'};
 }
 function renderSolvencyRows(){
@@ -944,7 +954,7 @@ async function issueOfficialSolvency(id,button){
  const p=solvencyRows.find(x=>x.id===id);if(!p)return;
  const status=solvencyStatus(p);
  if(status.key!=='paid'){toast('Existen períodos pendientes de verificación.');return;}
- const months=(p.properties||[]).flatMap(prop=>(prop.assessments||[]).filter(a=>a.is_demo===false&&a.status==='paid').map(a=>a.period_start)).filter(Boolean).sort();
+ const months=(p.properties||[]).flatMap(prop=>(prop.assessments||[]).filter(a=>a.is_demo===false&&(a.status==='paid'||solvencyGrantedAssessments.has(a.id))).map(a=>a.period_start)).filter(Boolean).sort();
  if(!months.length){toast('No existen períodos oficialmente liquidados.');return;}
  const first=months[0].slice(0,7)+'-01',last=months[months.length-1];
  const [y,m]=last.split('-').map(Number),to=new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);
@@ -959,7 +969,7 @@ async function issueOfficialSolvency(id,button){
 function showSolvencyDetail(id){
  const p=solvencyRows.find(x=>x.id===id);if(!p)return;
  const assessments=(p.properties||[]).flatMap(prop=>(prop.assessments||[]).filter(a=>a.is_demo===false).map(a=>({...a,address:prop.address})));
- const rows=assessments.length?assessments.map(a=>'<tr><td>'+escapeHTML(a.period_start||'—')+'</td><td>'+escapeHTML(a.address||'Cuenta matriz')+'</td><td>'+escapeHTML(a.status||'Sin estado')+'</td></tr>').join(''):'<tr><td colspan="3">No existen liquidaciones oficiales asociadas.</td></tr>';
+ const rows=assessments.length?assessments.map(a=>'<tr><td>'+escapeHTML(a.period_start||'—')+'</td><td>'+escapeHTML(a.address||'Cuenta matriz')+'</td><td>'+escapeHTML(solvencyGrantedAssessments.has(a.id)?'Exoneración institucional autorizada':(a.status||'Sin estado'))+'</td></tr>').join(''):'<tr><td colspan="3">No existen liquidaciones oficiales asociadas.</td></tr>';
  const modal=document.createElement('div');modal.className='contributor-modal-backdrop open';modal.id='solvencyDetailModal';
  modal.innerHTML='<section class="card solvency-detail" role="dialog" aria-modal="true"><header><div><span class="solvency-kicker">DETALLE DE CUENTA</span><h2>'+escapeHTML(solvencyName(p))+'</h2><p>'+escapeHTML((p.identification_type||'')+(p.identification_number?'-'+p.identification_number:''))+'</p></div><button type="button" class="modal-close" data-action="close-solvency-detail">×</button></header><div class="table-card"><table><thead><tr><th>Período</th><th>Inmueble / cuenta</th><th>Estado oficial</th></tr></thead><tbody>'+rows+'</tbody></table></div><p class="solvency-detail-note">Este detalle es informativo. No constituye certificado de solvencia.</p></section>';
  document.body.appendChild(modal);

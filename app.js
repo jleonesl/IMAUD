@@ -799,6 +799,7 @@ const staffPermissionGroups=[
  {name:'Inmuebles',items:[['properties.read','Consultar'],['properties.create','Registrar'],['properties.update','Editar']]},
  {name:'Condominios',items:[['condominiums.read','Consultar'],['condominiums.create','Registrar'],['condominiums.update','Editar']]},
  {name:'Pagos y Tesorería',items:[['payments.read','Consultar'],['payments.register','Registrar pagos'],['payments.validate','Revisar y validar pagos'],['payments.reverse','Revertir pagos']]},
+ {name:'Exoneraciones y ayuda social',items:[['debt_relief.request','Solicitar exoneración documentada'],['debt_relief.review','Consultar y tramitar solicitudes']]},
  {name:'Facturación',items:[['invoices.read','Consultar comprobantes'],['invoices.issue','Emitir comprobantes']]},
  {name:'Reportes',items:[['reports.read','Consultar'],['reports.export','Exportar']]},
  {name:'Ordenanza y tarifas',items:[['tariffs.read','Consultar'],['tariffs.manage','Administrar tarifas']]},

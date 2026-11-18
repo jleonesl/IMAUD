@@ -17,9 +17,9 @@
       '<div class="payment-debt-toolbar"><input type="search" class="search" id="officialPaySearch" placeholder="Buscar contribuyente, referencia o comprobante"><select class="filter-select" id="officialPayStatus"><option value="">Todos los estados</option><option value="pending">Por liquidar</option><option value="confirmed">Liquidados</option><option value="reversed">Rechazados</option></select></div>'+
       '<div id="officialPaymentRows"><div class="contributors-loading">Consultando pagos…</div></div></section>'+
       '<section class="card panel"><h3>Registro de pagos</h3><p>El registro de una operación oficial requiere obligaciones verificadas, datos bancarios y comprobante cuando corresponda. Nunca se contabilizará como ingreso hasta su liquidación.</p><div id="officialPaymentReadiness">Validando condiciones para registrar…</div></section>'+
-      '<section class="card panel" id="officialDebtReliefPanel" hidden><div class="panel-head"><div><h3>Exoneraciones y ayuda social</h3><p>Solicitudes documentadas; su presentación no elimina ni reduce la deuda.</p></div></div>'+
+      '<section class="card panel" id="officialDebtReliefPanel" hidden><div class="panel-head"><div><h3>Exonerar deudas</h3><p>Selecciona meses pendientes de un contribuyente. Solo funcionarios con permiso de exoneración.</p></div></div>'+
       '<form id="officialDebtReliefLookup"><div class="form-grid"><div class="field"><label for="reliefContributorLookup">N.º de contrato, cédula o RIF</label><input id="reliefContributorLookup" name="identity" required placeholder="Buscar contribuyente"></div></div><div class="form-actions"><button class="btn btn-light" type="submit">Buscar obligaciones</button></div></form>'+
-      '<div id="officialReliefObligations" aria-live="polite"></div><div id="officialDebtReliefHistory" style="margin-top:15px"></div></section>';
+      '<div id="officialReliefObligations" aria-live="polite"></div></section>';
   }
   function invoiceView(){
     return header('Facturación','Documentos basados exclusivamente en pagos registrados en el sistema institucional.')+
@@ -229,12 +229,12 @@
   async function loadFinancialPrivileges(){
     const [treasury,relief]=await Promise.all([
       imaudClient.rpc('has_permission',{permission_code:'payments.validate'}),
-      imaudClient.rpc('has_permission',{permission_code:'debt_relief.request'})
+      imaudClient.rpc('has_permission',{permission_code:'debt_relief.apply'})
     ]);
     treasuryAllowed=!treasury.error&&treasury.data===true;
     reliefAllowed=!relief.error&&relief.data===true;
     const panel=document.getElementById('officialDebtReliefPanel');
-    if(panel){panel.hidden=!reliefAllowed;if(reliefAllowed)loadReliefHistory();}
+    if(panel)panel.hidden=!reliefAllowed;
     renderPaymentRows();
   }
   async function rejectPendingPayment(id,button){
@@ -249,62 +249,64 @@
     if(error){window.alert('No se pudo anular: '+error.message);button.disabled=false;return;}
     await Promise.all([loadPayments(),loadOverview()]);
   }
-  async function loadReliefHistory(){
-    const node=document.getElementById('officialDebtReliefHistory');if(!node||!reliefAllowed)return;
-    const {data,error}=await imaudClient.from('debt_relief_requests')
-      .select('id,assessment_id,category,status,created_at,legal_reference').order('created_at',{ascending:false}).limit(25);
-    if(!node.isConnected)return;
-    if(error){node.textContent='No se pudo consultar el historial de solicitudes: '+error.message;return;}
-    node.innerHTML='<h4>Solicitudes documentadas</h4>'+(data?.length?
-      '<div class="payment-debt-scroll"><table><thead><tr><th>Fecha</th><th>Obligación</th><th>Motivo</th><th>Estado</th><th>Referencia legal</th></tr></thead><tbody>'+
-      data.map(r=>'<tr><td>'+safe(fmtDate(r.created_at))+'</td><td>'+safe(r.assessment_id)+'</td><td>'+safe(r.category==='ordinance_article_31'?'Ordenanza 2024 · Art. 31':'Solicitud de ayuda social')+'</td><td>'+safe(r.status)+'</td><td>'+safe(r.legal_reference||'Pendiente')+'</td></tr>').join('')+'</tbody></table></div>':
-      '<p>No hay solicitudes registradas.</p>');
-  }
+
   async function findReliefObligations(form){
     const node=document.getElementById('officialReliefObligations');if(!node||!reliefAllowed)return;
-    node.textContent='Consultando obligaciones…';reliefCandidates=[];
+    node.textContent='Consultando deuda oficial…';reliefCandidates=[];
     const query=String(new FormData(form).get('identity')||'').trim().toUpperCase();
-    if(query.length<5){node.textContent='Indica un número de contrato o identificación completo.';return;}
+    if(query.length<5){node.textContent='Escribe la cédula, el RIF o el contrato completo.';return;}
     const id=query.replace(/[^0-9]/g,'');
-    const lookups=[imaudClient.from('contributors').select('id,contract_number,first_name,last_name,legal_name').eq('contract_number',query).limit(2)];
-    if(id.length>=6)lookups.push(imaudClient.from('contributors').select('id,contract_number,first_name,last_name,legal_name').eq('identification_number',id).limit(3));
+    const lookups=[imaudClient.from('contributors').select('id,contract_number,first_name,last_name,legal_name,kind').eq('contract_number',query).limit(2)];
+    if(id.length>=6)lookups.push(imaudClient.from('contributors').select('id,contract_number,first_name,last_name,legal_name,kind').eq('identification_number',id).limit(3));
     const found=await Promise.all(lookups);
-    const bad=found.find(x=>x.error);if(bad){node.textContent='No se pudo consultar contribuyentes: '+bad.error.message;return;}
-    const contributors=[...new Map(found.flatMap(x=>x.data||[]).map(c=>[c.id,c])).values()];
-    if(!contributors.length){node.textContent='No se encontró el contribuyente. Verifica el contrato o identificación.';return;}
-    const p=await imaudClient.from('properties').select('id,address,contributor_id').in('contributor_id',contributors.map(c=>c.id));
-    if(p.error){node.textContent='No se pudieron consultar inmuebles: '+p.error.message;return;}
-    if(!p.data?.length){node.textContent='No hay inmuebles registrados para ese contribuyente.';return;}
-    const assessments=await imaudClient.from('assessments')
-      .select('id,property_id,period_start,total_amount,status')
-      .in('property_id',p.data.map(x=>x.id))
-      .eq('is_demo',false).in('status',['pending','partially_paid'])
-      .order('period_start',{ascending:false}).limit(100);
-    if(assessments.error){node.textContent='No se pudieron consultar obligaciones: '+assessments.error.message;return;}
-    reliefCandidates=assessments.data||[];
-    const contributorById=new Map(contributors.map(x=>[x.id,x]));
-    const props=new Map(p.data.map(x=>[x.id,x]));
-    if(!reliefCandidates.length){node.textContent='No existen obligaciones oficiales pendientes para ese contribuyente.';return;}
-    node.innerHTML='<h4>Obligaciones pendientes encontradas</h4><div class="payment-debt-scroll"><table><thead><tr><th>Contribuyente</th><th>Período</th><th>Deuda original</th><th></th></tr></thead><tbody>'+
-      reliefCandidates.map(x=>{const prop=props.get(x.property_id)||{},c=contributorById.get(prop.contributor_id)||{};
-        return '<tr><td>'+safe(contributor(c))+'</td><td>'+safe(x.period_start)+'</td><td>'+safe(money(x.total_amount))+'</td><td><button class="btn btn-light btn-sm" data-relief-assessment="'+safe(x.id)+'">Solicitar beneficio</button></td></tr>';}).join('')+'</tbody></table></div><div id="officialReliefRequestForm"></div>'+
-      (reliefCandidates.length>=100?'<p class="notice">Se muestran máximo 100 obligaciones; consulta otros filtros si necesitas más períodos.</p>':'');
+    const failure=found.find(x=>x.error);
+    if(failure){node.textContent='Error de consulta: '+failure.error.message;return;}
+    const foundContributors=[...new Map(found.flatMap(x=>x.data||[]).map(c=>[c.id,c])).values()];
+    if(foundContributors.length!==1){node.textContent=foundContributors.length?'Se encontraron varias cuentas. Introduce el número de contrato exacto.':'No se encontró el contribuyente.';return;}
+    const c=foundContributors[0],properties=await imaudClient.from('properties').select('id,address,contributor_id').eq('contributor_id',c.id);
+    if(properties.error){node.textContent='No se pudieron consultar los inmuebles: '+properties.error.message;return;}
+    if(!properties.data?.length){node.textContent='No existen inmuebles asociados a este contribuyente.';return;}
+    const assessment=await imaudClient.from('assessments')
+       .select('id,property_id,period_start,period_end,total_amount,status')
+       .in('property_id',properties.data.map(x=>x.id))
+       .eq('is_demo',false).in('status',['pending','partially_paid'])
+       .order('period_start',{ascending:false}).limit(100);
+    if(assessment.error){node.textContent='Error al consultar deudas: '+assessment.error.message;return;}
+    const rows=assessment.data||[];
+    if(!rows.length){node.textContent='Este contribuyente no tiene obligaciones oficiales pendientes.';return;}
+    // Verify registered legal authorizations indirectly through an authorized server-side
+    // action. Do not show sensitive legal records in the client.
+    reliefCandidates=rows;
+    const addresses=new Map(properties.data.map(p=>[p.id,p.address]));
+    node.innerHTML='<div class="panel-head"><div><h3>Meses pendientes · '+safe(contributor(c))+'</h3><p>Contrato '+safe(c.contract_number||'—')+' · selecciona uno, varios o todos los períodos.</p></div></div>'+
+       '<div class="payment-debt-scroll"><table><thead><tr><th><input id="reliefSelectAll" type="checkbox" aria-label="Seleccionar todos los meses"></th><th>Mes</th><th>Inmueble</th><th>Saldo original</th><th>Estado</th></tr></thead><tbody>'+
+       rows.map(x=>'<tr><td><input class="relief-month-check" type="checkbox" value="'+safe(x.id)+'" aria-label="Exonerar '+safe(x.period_start)+'"></td><td><b>'+safe(x.period_start)+'</b></td><td>'+safe(addresses.get(x.property_id)||'Cuenta matriz')+'</td><td>'+safe(money(x.total_amount,'VES'))+'</td><td>'+safe(x.status)+'</td></tr>').join('')+
+       '</tbody></table></div><p class="panel-hint">Las exoneraciones requieren autorización legal institucional previa; no crean ingresos ni borran registros.</p>'+
+       '<div class="form-actions"><button type="button" class="btn btn-primary" id="applyReliefMonths" data-relief-apply disabled>Exonerar meses seleccionados</button></div>';
+    const all=document.getElementById('reliefSelectAll');
+    if(all)all.checked=false;
   }
-  // The button starts a documented legal request; it does not write off a fiscal obligation.
-  async function openReliefRequest(id,button){
-    if(!reliefAllowed||!reliefCandidates.some(a=>a.id===id))return;
-    if(!window.confirm('¿Registrar una solicitud de exoneración para revisión institucional? La obligación seguirá pendiente hasta que exista autorización legal.'))return;
-    if(button)button.disabled=true;
-    const {data,error}=await imaudClient.rpc('submit_debt_relief_request',{
-      p_assessment_id:id,
-      p_category:'social_assistance',
-      p_justification:'Solicitud de evaluación administrativa de beneficio social iniciada por funcionario autorizado desde SITMAUD; pendiente de verificación de fundamento legal.',
-      p_legal_reference:null
-    });
-    if(error){window.alert('No se pudo registrar: '+error.message);if(button)button.disabled=false;return;}
-    const node=document.getElementById('officialReliefRequestForm');
-    if(node)node.innerHTML='<div class="notice">Solicitud registrada: '+safe(data.id)+'. La deuda no ha sido eliminada ni exonerada hasta recibir el respaldo y autorización correspondientes.</div>';
-    await loadReliefHistory();
+  function updateReliefSelection(){
+    const all=[...document.querySelectorAll('.relief-month-check')];
+    const selected=all.filter(x=>x.checked);
+    const button=document.getElementById('applyReliefMonths'),select=document.getElementById('reliefSelectAll');
+    if(button){button.disabled=!selected.length;button.textContent='Exonerar '+selected.length+' mes'+(selected.length===1?'':'es');}
+    if(select){select.checked=all.length>0&&selected.length===all.length;select.indeterminate=selected.length>0&&selected.length<all.length;}
+  }
+  async function applySelectedRelief(button){
+    if(!reliefAllowed)return;
+    const ids=[...document.querySelectorAll('.relief-month-check:checked')].map(x=>x.value);
+    if(!ids.length||ids.length>100)return;
+    if(!window.confirm('¿Exonerar los '+ids.length+' mes(es) seleccionados? El sistema verificará las autorizaciones legales y registrará cada operación en la bitácora.'))return;
+    button.disabled=true;
+    const {data,error}=await imaudClient.rpc('apply_authorized_debt_exonerations',{p_assessment_ids:ids});
+    if(error){
+      window.alert('No se aplicó ninguna exoneración: '+error.message);
+      button.disabled=false;return;
+    }
+    const host=document.getElementById('officialReliefObligations');
+    if(host)host.innerHTML='<div class="notice">Se exoneraron '+safe(data.applied)+' períodos autorizados. Los movimientos quedaron en la bitácora del funcionario y no se sumaron a recaudación.</div>';
+    reliefCandidates=[];await loadOverview();
   }
   function exportCSV(){
     imaudClient.rpc('record_staff_activity',{p_action:'report_exported',p_module:'reportes',p_reference:null}).then(({error})=>{if(error)console.warn('Bitácora:',error.message)});
@@ -325,12 +327,12 @@
       return;
     }
     const reject=e.target.closest('[data-official-reject]');if(reject){rejectPendingPayment(reject.dataset.officialReject,reject);return;}
-    const relieve=e.target.closest('[data-relief-assessment]');if(relieve){openReliefRequest(relieve.dataset.reliefAssessment,relieve);return;}
+    const apply=e.target.closest('[data-relief-apply]');if(apply){applySelectedRelief(apply);return;}
     const invoice=e.target.closest('[data-official-invoice]');if(invoice){showDocument(invoice.dataset.officialInvoice);return;}
     const pay=e.target.closest('[data-official-liquidate]');if(pay){liquidate(pay.dataset.officialLiquidate,pay);return;}
   });
   document.addEventListener('input',e=>{if(e.target.id==='officialPaySearch')renderPaymentRows();});
-  document.addEventListener('change',e=>{if(e.target.id==='officialPayStatus')renderPaymentRows();if(e.target.id==='officialReportPeriod')changeReportPeriod(e.target.form);if(e.target.id==='officialReportGroup')changeReportGrouping(e.target.form);});
+  document.addEventListener('change',e=>{if(e.target.id==='reliefSelectAll'){document.querySelectorAll('.relief-month-check').forEach(x=>x.checked=e.target.checked);updateReliefSelection();}if(e.target.matches('.relief-month-check'))updateReliefSelection();if(e.target.id==='officialPayStatus')renderPaymentRows();if(e.target.id==='officialReportPeriod')changeReportPeriod(e.target.form);if(e.target.id==='officialReportGroup')changeReportGrouping(e.target.form);});
   document.addEventListener('submit',e=>{if(e.target.id==='officialFinancialFilter'){e.preventDefault();renderReportRows(e.target);}if(e.target.id==='officialDebtReliefLookup'){e.preventDefault();findReliefObligations(e.target);}});
   window.sitmaudOfficialFinance={
     overviewPlaceholder:()=>metrics,

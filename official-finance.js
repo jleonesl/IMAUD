@@ -168,7 +168,7 @@
     if(!container.isConnected)return;
     const host=container.querySelector('#billContent'),print=container.querySelector('#officialReceiptPrint');
     if(error){host.innerHTML='<div class="contributors-empty">No se pudo verificar el detalle del recibo: '+safe(error.message)+'</div>';return;}
-    if(!allocations?.length||allocations.some(a=>!a.assessment||a.assessment.is_demo)){
+    if(!allocations?.length||allocations.some(a=>!a.assessment||a.assessment.is_demo)||(!preview&&Math.abs(allocations.reduce((sum,a)=>sum+Number(a.amount||0),0)-Number(p.amount||0))>0.01)){
       host.innerHTML='<div class="contributors-empty"><b>No se puede emitir este recibo.</b><span>El pago no tiene aplicaciones a obligaciones oficiales verificables.</span></div>';
       return;
     }
@@ -209,7 +209,12 @@
       host.insertAdjacentHTML('beforeend','<div class="notice" style="margin-top:12px">No se puede imprimir un recibo con monto en bolívares: el registro está en '+safe(p.currency_code)+'. Debe existir una conversión institucional documentada.</div>');
       return;
     }
-    // The status is always visible; a pending operation does not claim treasury clearance.
+    // A reversed transaction or an unverified confirmation is never printable as proof of a settled payment.
+    if(p.status==='reversed'||(p.status==='confirmed'&&!p.liquidated_at)){
+      print.disabled=true;
+      host.insertAdjacentHTML('beforeend','<div class="notice">Documento no imprimible como pago: operación reversada o sin liquidación verificable.</div>');
+      return;
+    }
     print.disabled=false;
   }
   async function liquidate(id,btn){

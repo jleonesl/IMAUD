@@ -8,7 +8,7 @@ revoke all on table private.sitmaud_master_owner from public,anon,authenticated;
 do $$
 declare v_count int; v_owner uuid;
 begin
- select count(*),min(user_id) into v_count,v_owner
+ select count(*),(array_agg(user_id))[1] into v_count,v_owner
  from public.staff_profiles where role='intendente' and is_active=true;
  if not exists(select 1 from private.sitmaud_master_owner) then
    if v_count<>1 then raise exception 'No es posible identificar un superusuario maestro único; revisión administrativa requerida.';end if;

@@ -11,16 +11,11 @@ function dashboard(){
   {key:'condominiums_total',label:'Condominios registrados',icon:'▥',note:'Cuentas matrices'},
   {key:'payments_total',label:'Pagos registrados',icon:'▧',note:'Operaciones oficiales'},
   {key:'payments_today',label:'Pagos de hoy',icon:'◷',note:'Fecha local de Coro'},
-  {key:'revenue_today',label:'Recaudación del día',icon:'↗',note:'Pagos confirmados'},
-  {key:'revenue_total',label:'Recaudación acumulada',icon:'▤',note:'Pagos confirmados'},
   {key:'debts_pending',label:'Obligaciones pendientes',icon:'!',note:'Liquidaciones oficiales pendientes'},
-  {key:'payments_pending',label:'Por liquidar',icon:'◷',note:'Operaciones pendientes en Tesorería'},
-  {key:'revenue_month',label:'Recaudación del mes',icon:'↗',note:'Pagos liquidados en Coro'},
-  {key:'due_amount',label:'Dinero por cobrar',icon:'▥',note:'Saldo registrado, sujeto a tasa UCD al pago'},
   {key:'certificates_total',label:'Solvencias emitidas',icon:'▣',note:'Certificados oficiales emitidos'}
  ];
- return head('Indicadores generales','Datos administrativos y financieros procedentes del sistema oficial.')+
- '<div class="grid kpis home-indicators">'+metrics.map(m=>'<article class="card kpi home-kpi"><div class="kpi-top"><span>'+m.label+'</span><span class="kpi-icon">'+m.icon+'</span></div><div class="kpi-value" data-metric-value="'+m.key+'">—</div><div class="kpi-note" data-metric-note="'+m.key+'">'+m.note+'</div></article>').join('')+'</div>'+window.sitmaudOfficialFinance.overviewPlaceholder();
+ return head('Inicio','Resumen operativo y financiero del sistema institucional.')+
+ '<section class="dashboard-section"><div class="dashboard-section-head"><h2>Indicadores generales</h2><p>Actividad y registros del sistema · sin importes monetarios</p></div><div class="grid kpis home-indicators dashboard-kpi-grid">'+metrics.map(m=>'<article class="card kpi home-kpi"><div class="kpi-top"><span>'+m.label+'</span><span class="kpi-icon">'+m.icon+'</span></div><div class="kpi-value" data-metric-value="'+m.key+'">—</div><div class="kpi-note" data-metric-note="'+m.key+'">'+m.note+'</div></article>').join('')+'</div></section>'+window.sitmaudOfficialFinance.overviewPlaceholder();
 }
 function formatDashboardCount(value){
   return new Intl.NumberFormat('es-VE',{maximumFractionDigits:0}).format(Number(value||0));
@@ -54,15 +49,9 @@ async function loadDashboardMetrics(){
   const el=document.querySelector('[data-metric-value="'+key+'"]');
   if(el)el.textContent=values?formatDashboardCount(values[key]):'No disponible';
  }
- for(const key of ['revenue_total','revenue_today']){
-  const el=document.querySelector('[data-metric-value="'+key+'"]');
-  if(el)el.textContent=values?formatDashboardCurrencyMap(values[key]):'No disponible';
- }
+
  const set=(key,value)=>{const el=document.querySelector('[data-metric-value="'+key+'"]');if(el)el.textContent=value;};
  set('debts_pending',financial?formatDashboardCount(financial.pending_debts_count):'No disponible');
- set('payments_pending',financial?formatDashboardCount(financial.pending_count):'No disponible');
- set('revenue_month',financial?'Bs. '+formatDashboardMoney(financial.liquidated_month):'No disponible');
- set('due_amount',financial?'Bs. '+formatDashboardMoney(financial.amount_to_collect):'No disponible');
  set('condominiums_total',condos.error?'No disponible':formatDashboardCount(condos.count||0));
  set('certificates_total',issuedCertificates.error?'No disponible':formatDashboardCount(issuedCertificates.count||0));
 }

@@ -969,3 +969,37 @@ body.modal-open{overflow:hidden}
   object-position:center;
   margin:0 auto;
 }
+
+
+/* SITMAUD · Registro de condominio: diseño exclusivo del contenido.
+   No altera logo, menú lateral, cabecera ni paleta general del sistema. */
+.sit-condo-registration{--sit-condo-accent:#5734ce;--sit-condo-line:#dce4ef;--sit-condo-ink:#163a56;max-width:1480px;margin:0 auto 28px;color:var(--sit-condo-ink)}
+.sit-condo-registration .sit-condo-title{display:flex;align-items:center;gap:15px;margin:0 0 18px}
+.sit-condo-registration .sit-condo-title-symbol{width:62px;height:62px;flex:0 0 62px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(140deg,#7650f0,#5631ca);color:#fff;font-size:33px;box-shadow:0 8px 16px rgba(85,56,193,.15)}
+.sit-condo-registration .sit-condo-title h2{font:800 23px/1.17 Manrope,sans-serif;margin:0 0 4px;color:#122d47}
+.sit-condo-registration .sit-condo-title p{font-size:12px;color:#698092;margin:0}
+.sit-condo-registration .sit-condo-form{display:block;margin:0}
+.sit-condo-registration .sit-condo-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px;align-items:stretch}
+.sit-condo-registration .sit-condo-card{background:#fff;border:1px solid #dce4f1;border-radius:15px;padding:20px;box-shadow:0 5px 18px rgba(25,55,85,.045);min-width:0}
+.sit-condo-registration .sit-condo-card h3{display:flex;align-items:center;gap:10px;margin:0 0 17px;font:800 16px/1.35 Manrope,sans-serif;color:#253a78}
+.sit-condo-registration .sit-condo-card h3 span{font:800 24px/1 Arial,sans-serif;color:var(--sit-condo-accent);width:26px;display:inline-grid;place-items:center}
+.sit-condo-registration .sit-condo-fields{display:grid;gap:13px 18px}
+.sit-condo-registration .sit-condo-fields-two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.sit-condo-registration .field{min-width:0;margin:0}
+.sit-condo-registration .field label{display:block;color:#213c62;font-size:11px;font-weight:800;margin-bottom:6px}
+.sit-condo-registration .field input,.sit-condo-registration .field textarea,.sit-condo-registration .field select{display:block;width:100%;max-width:100%;box-sizing:border-box;border:1px solid #cbd5e6;border-radius:9px;background:#fff;color:#203952;min-height:41px;padding:9px 12px;font-size:12px;box-shadow:none}
+.sit-condo-registration .field textarea{resize:vertical;min-height:43px}
+.sit-condo-registration .field input:focus,.sit-condo-registration .field textarea:focus,.sit-condo-registration .field select:focus{outline:2px solid rgba(83,58,203,.16);border-color:#8064e6}
+.sit-condo-registration .field input:disabled,.sit-condo-registration .field select:disabled{color:#899ba9;background:#f3f6f8}
+.sit-condo-registration .field small{display:block;margin-top:6px;color:#73869b;font-size:10px;line-height:1.5}
+.sit-condo-registration .sit-condo-help{font-size:10.5px;color:#6f8597;line-height:1.5;margin:13px 0 0}
+.sit-condo-registration .sit-condo-type-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.07fr);gap:12px;margin-bottom:13px}
+.sit-condo-registration .sit-condo-type-note{border:1px solid #d9ccfe;background:#f4f0ff;border-radius:10px;padding:11px 12px;display:grid;gap:4px;font-size:10px;color:#393056}
+.sit-condo-registration .sit-condo-type-note strong{color:#5131be;font-size:10.5px;margin-bottom:3px}
+.sit-condo-registration .sit-condo-counter{display:flex;justify-content:space-between;gap:10px;margin-top:6px;color:#8a99a9;font-size:10px}
+.sit-condo-registration .sit-condo-counter output{font-variant-numeric:tabular-nums;white-space:nowrap}
+.sit-condo-registration .sit-condo-actions{display:flex;justify-content:flex-end;gap:10px;margin:20px 0 0}
+.sit-condo-registration .sit-condo-actions .btn{min-height:42px;padding:10px 20px}
+.sit-condo-registration .sit-condo-actions .btn-primary{background:#173f64;border-color:#173f64}
+@media(max-width:1080px){.sit-condo-registration .sit-condo-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.sit-condo-registration .sit-condo-title-symbol{width:48px;height:48px;flex-basis:48px}.sit-condo-registration .sit-condo-title h2{font-size:19px}.sit-condo-registration .sit-condo-fields-two,.sit-condo-registration .sit-condo-type-row{grid-template-columns:1fr}.sit-condo-registration .sit-condo-card{padding:16px}.sit-condo-registration .sit-condo-actions{flex-wrap:wrap}.sit-condo-registration .sit-condo-actions .btn{flex:1 1 140px}}

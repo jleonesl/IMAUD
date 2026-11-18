@@ -33,6 +33,9 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
    const banner=document.querySelector('.demo-banner');
    if(banner){banner.innerHTML='<b>PREPARACIÓN INSTITUCIONAL</b><span>Operaciones financieras y liquidaciones oficiales deshabilitadas hasta completar la verificación institucional.</span>'}
    window.imaudCurrentProfile=profile;
+   // Identity is derived from the authenticated session by the server; no user-supplied actor ID.
+   imaudClient.rpc('record_staff_activity',{p_action:'session_started',p_module:'authentication',p_reference:null})
+     .then(({error})=>{if(error)console.warn('No se pudo registrar acceso:',error.message)});
    window.dispatchEvent(new Event('imaud:authenticated'));
  }
  if(session) await enter(session.user);

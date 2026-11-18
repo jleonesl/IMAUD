@@ -288,32 +288,22 @@
         return '<tr><td>'+safe(contributor(c))+'</td><td>'+safe(x.period_start)+'</td><td>'+safe(money(x.total_amount))+'</td><td><button class="btn btn-light btn-sm" data-relief-assessment="'+safe(x.id)+'">Solicitar beneficio</button></td></tr>';}).join('')+'</tbody></table></div><div id="officialReliefRequestForm"></div>'+
       (reliefCandidates.length>=100?'<p class="notice">Se muestran máximo 100 obligaciones; consulta otros filtros si necesitas más períodos.</p>':'');
   }
-  function openReliefRequest(id){
+  // The button starts a documented legal request; it does not write off a fiscal obligation.
+  async function openReliefRequest(id,button){
     if(!reliefAllowed||!reliefCandidates.some(a=>a.id===id))return;
-    const node=document.getElementById('officialReliefRequestForm');if(!node)return;
-    node.innerHTML='<form id="officialReliefSubmit"><input type="hidden" name="assessment_id" value="'+safe(id)+'"><h4>Solicitar exoneración</h4>'+
-      '<div class="form-grid"><div class="field"><label>Fundamento de la solicitud</label><select name="category" required><option value="ordinance_article_31">Categoría prevista en artículo 31 de la Ordenanza 2024</option><option value="social_assistance">Ayuda social sujeta a autorización legal</option></select></div>'+
-      '<div class="field"><label>Documento / resolución de respaldo (si existe)</label><input name="legal_reference" maxlength="200" placeholder="Número o referencia del acto administrativo"></div>'+
-      '<div class="field full"><label>Justificación (mínimo 30 caracteres)</label><textarea name="justification" required minlength="30" maxlength="2000" rows="4" placeholder="Explica el caso, su fundamento y los documentos que deben revisarse"></textarea></div></div>'+
-      '<p class="notice">Enviar la solicitud no reduce la deuda ni reconoce una exoneración. Su aplicación requiere revisión y fundamento legal válido.</p>'+
-      '<div class="form-actions"><button type="submit" class="btn btn-primary">Enviar solicitud documentada</button></div></form>';
-    node.scrollIntoView({behavior:'smooth',block:'nearest'});
-  }
-  async function submitRelief(form){
-    if(!reliefAllowed)return;
-    const button=form.querySelector('[type=submit]'),f=new FormData(form);
-    button.disabled=true;
+    if(!window.confirm('¿Registrar una solicitud de exoneración para revisión institucional? La obligación seguirá pendiente hasta que exista autorización legal.'))return;
+    if(button)button.disabled=true;
     const {data,error}=await imaudClient.rpc('submit_debt_relief_request',{
-      p_assessment_id:String(f.get('assessment_id')),
-      p_category:String(f.get('category')),
-      p_justification:String(f.get('justification')||'').trim(),
-      p_legal_reference:String(f.get('legal_reference')||'').trim()||null
+      p_assessment_id:id,
+      p_category:'social_assistance',
+      p_justification:'Solicitud de evaluación administrativa de beneficio social iniciada por funcionario autorizado desde SITMAUD; pendiente de verificación de fundamento legal.',
+      p_legal_reference:null
     });
-    if(error){window.alert('No se pudo registrar la solicitud: '+error.message);button.disabled=false;return;}
-    form.innerHTML='<div class="notice">Solicitud '+safe(data.id)+' registrada correctamente. La deuda permanece intacta hasta una autorización legal aplicable.</div>';
+    if(error){window.alert('No se pudo registrar: '+error.message);if(button)button.disabled=false;return;}
+    const node=document.getElementById('officialReliefRequestForm');
+    if(node)node.innerHTML='<div class="notice">Solicitud registrada: '+safe(data.id)+'. La deuda no ha sido eliminada ni exonerada hasta recibir el respaldo y autorización correspondientes.</div>';
     await loadReliefHistory();
   }
-
   function exportCSV(){
     if(document.getElementById('officialFinancialFilter')?.elements.group.value!=='operations'){exportTerritorialReport();return;}
     if(limited){window.alert('La consulta alcanzó el máximo de 500 operaciones. No es seguro exportar un reporte incompleto.');return;}
@@ -332,13 +322,13 @@
       return;
     }
     const reject=e.target.closest('[data-official-reject]');if(reject){rejectPendingPayment(reject.dataset.officialReject,reject);return;}
-    const relieve=e.target.closest('[data-relief-assessment]');if(relieve){openReliefRequest(relieve.dataset.reliefAssessment);return;}
+    const relieve=e.target.closest('[data-relief-assessment]');if(relieve){openReliefRequest(relieve.dataset.reliefAssessment,relieve);return;}
     const invoice=e.target.closest('[data-official-invoice]');if(invoice){showDocument(invoice.dataset.officialInvoice);return;}
     const pay=e.target.closest('[data-official-liquidate]');if(pay){liquidate(pay.dataset.officialLiquidate,pay);return;}
   });
   document.addEventListener('input',e=>{if(e.target.id==='officialPaySearch')renderPaymentRows();});
   document.addEventListener('change',e=>{if(e.target.id==='officialPayStatus')renderPaymentRows();if(e.target.id==='officialReportPeriod')changeReportPeriod(e.target.form);if(e.target.id==='officialReportGroup')changeReportGrouping(e.target.form);});
-  document.addEventListener('submit',e=>{if(e.target.id==='officialFinancialFilter'){e.preventDefault();renderReportRows(e.target);}if(e.target.id==='officialDebtReliefLookup'){e.preventDefault();findReliefObligations(e.target);}if(e.target.id==='officialReliefSubmit'){e.preventDefault();submitRelief(e.target);}});
+  document.addEventListener('submit',e=>{if(e.target.id==='officialFinancialFilter'){e.preventDefault();renderReportRows(e.target);}if(e.target.id==='officialDebtReliefLookup'){e.preventDefault();findReliefObligations(e.target);}});
   window.sitmaudOfficialFinance={
     overviewPlaceholder:()=>metrics,
     loadOverview,

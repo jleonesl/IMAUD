@@ -905,11 +905,13 @@ function solvencyModule(){
  '<section class="card solvency-intro"><div><span class="solvency-kicker">CONSULTA ADMINISTRATIVA</span><h3>Verificación de cuenta</h3><p>Busca por nombre, cédula, RIF o número de contrato. Consulta las liquidaciones oficiales registradas en el sistema.</p></div><div class="solvency-intro-mark">▣</div></section>'+
  '<section class="card solvency-search"><label for="solvencySearch">Buscar contribuyente</label><input id="solvencySearch" class="search" type="search" placeholder="Nombre, cédula, RIF o número de contrato"><span id="solvencyCount" class="table-count">Consultando registros…</span></section>'+
  '<section id="solvencyResults" class="solvency-results"><div class="contributors-loading">Consultando obligaciones oficiales…</div></section>'+
- '<section class="card solvency-notice"><b>Emisión de certificado</b><p>La emisión de solvencias oficiales permanece bloqueada hasta configurar el consecutivo institucional, el registro de emisión, los permisos de firma y el sello autorizado. Esta pantalla es únicamente de consulta y no genera certificados.</p></section>';
+ '<section class="card solvency-notice"><b>Emisión de certificado</b><p>La emisión requiere autorización individual y una cuenta sin deudas exigibles. Un pago liquidado o una exoneración legalmente aprobada podrá respaldar la solvencia; una solicitud pendiente no.</p></section>';
 }
-let solvencyRows=[];
+let solvencyRows=[],solvencyCanIssue=false;
 async function loadSolvencyRecords(){
  const host=document.getElementById('solvencyResults');if(!host)return;
+ const perm=await imaudClient.rpc('has_permission',{permission_code:'solvencies.issue'});
+ solvencyCanIssue=!perm.error&&perm.data===true;
  host.innerHTML='<div class="contributors-loading">Consultando obligaciones oficiales…</div>';
  const {data,error}=await imaudClient.from('contributors').select('id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,properties(id,address,is_consolidated_master,assessments(id,status,is_demo,period_start,total_amount))').order('created_at',{ascending:false});
  if(state.view!=='solvencias')return;
@@ -934,9 +936,26 @@ function renderSolvencyRows(){
  host.innerHTML=rows.map(p=>{
   const st=solvencyStatus(p),props=p.properties||[],official=props.flatMap(x=>(x.assessments||[]).filter(a=>a.is_demo===false));
   const periods=official.length?official.length+' liquidación(es) oficial(es)':'Sin liquidaciones oficiales';
-  return '<article class="card solvency-row"><div class="solvency-person"><span class="solvency-avatar">▣</span><div><b>'+escapeHTML(solvencyName(p))+'</b><small>'+escapeHTML((p.identification_type||'')+(p.identification_number?'-'+p.identification_number:'')+' · Contrato '+(p.contract_number||'Sin asignar'))+'</small></div></div><div class="solvency-meta"><span class="solvency-state '+st.key+'">'+escapeHTML(st.label)+'</span><small>'+escapeHTML(periods)+'</small></div><p>'+escapeHTML(st.detail)+'</p><button type="button" class="btn btn-light" data-solvency-detail="'+escapeHTML(p.id)+'">Ver períodos y obligaciones</button></article>';
+  return '<article class="card solvency-row"><div class="solvency-person"><span class="solvency-avatar">▣</span><div><b>'+escapeHTML(solvencyName(p))+'</b><small>'+escapeHTML((p.identification_type||'')+(p.identification_number?'-'+p.identification_number:'')+' · Contrato '+(p.contract_number||'Sin asignar'))+'</small></div></div><div class="solvency-meta"><span class="solvency-state '+st.key+'">'+escapeHTML(st.label)+'</span><small>'+escapeHTML(periods)+'</small></div><p>'+escapeHTML(st.detail)+'</p><button type="button" class="btn btn-light" data-solvency-detail="'+escapeHTML(p.id)+'">Ver períodos y obligaciones</button>'+(solvencyCanIssue&&st.key==='paid'?'<button type="button" class="btn btn-primary" data-issue-solvency="'+escapeHTML(p.id)+'">Emitir solvencia</button>':'')+'</article>';
  }).join('');
 }
+async function issueOfficialSolvency(id,button){
+ if(!solvencyCanIssue)return;
+ const p=solvencyRows.find(x=>x.id===id);if(!p)return;
+ const status=solvencyStatus(p);
+ if(status.key!=='paid'){toast('Existen períodos pendientes de verificación.');return;}
+ const months=(p.properties||[]).flatMap(prop=>(prop.assessments||[]).filter(a=>a.is_demo===false&&a.status==='paid').map(a=>a.period_start)).filter(Boolean).sort();
+ if(!months.length){toast('No existen períodos oficialmente liquidados.');return;}
+ const first=months[0].slice(0,7)+'-01',last=months[months.length-1];
+ const [y,m]=last.split('-').map(Number),to=new Date(Date.UTC(y,m,0)).toISOString().slice(0,10);
+ if(!window.confirm('¿Emitir solvencia institucional para '+solvencyName(p)+' desde '+first+' hasta '+to+'? La emisión se registrará en la bitácora.'))return;
+ button.disabled=true;
+ const {data,error}=await imaudClient.rpc('issue_solvency_certificate',{p_contributor_id:id,p_period_start:first,p_period_end:to});
+ if(error){toast('No se pudo emitir la solvencia: '+error.message);button.disabled=false;return;}
+ button.textContent='Solvencia emitida';
+ toast('Certificado emitido: '+data.certificate_number);
+}
+
 function showSolvencyDetail(id){
  const p=solvencyRows.find(x=>x.id===id);if(!p)return;
  const assessments=(p.properties||[]).flatMap(prop=>(prop.assessments||[]).filter(a=>a.is_demo===false).map(a=>({...a,address:prop.address})));
@@ -1093,7 +1112,7 @@ function recordStaffAudit(action,module,reference=null){
  if(!window.imaudCurrentProfile)return;
  imaudClient.rpc('record_staff_activity',{p_action:action,p_module:module||null,p_reference:reference}).then(({error})=>{if(error)console.warn('Bitácora de navegación no disponible:',error.message);});
 }
-document.addEventListener('click',e=>{const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')go('condominio_registro');else if(act==='new-payment')openPaymentModal();else if(act==='refresh-invoices')loadInvoiceRecords();else if(act==='print-invoice')window.print();else if(act==='refresh-audit')loadAuditRecords(true);else if(act==='export-report')exportDemoReport();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-solvency-detail'){document.getElementById('solvencyDetailModal')?.remove();}else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-staff')openStaffRegistrationPreview();else if(act==='new-org')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
+document.addEventListener('click',e=>{const issuing=e.target.closest('[data-issue-solvency]');if(issuing){issueOfficialSolvency(issuing.dataset.issueSolvency,issuing);return;}const nav=e.target.closest('[data-view]');if(nav){go(nav.dataset.view);return}const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}const a=e.target.closest('[data-action]');if(a){const act=a.dataset.action;if(act==='new-person')openContributorModal();else if(act==='new-condo')go('condominio_registro');else if(act==='new-payment')openPaymentModal();else if(act==='refresh-invoices')loadInvoiceRecords();else if(act==='print-invoice')window.print();else if(act==='refresh-audit')loadAuditRecords(true);else if(act==='export-report')exportDemoReport();else if(act==='close-payment-modal')closePaymentModal();else if(act==='close-solvency-detail'){document.getElementById('solvencyDetailModal')?.remove();}else if(act==='close-demo-receipt'){document.getElementById('demoReceiptModal')?.remove();document.body.classList.remove('modal-open');}else if(act==='close-contributor-modal')closeContributorModal();else if(act==='new-property')openPropertyRegistrationModal();else if(act==='close-property-modal')closePropertyRegistrationModal();else if(act==='find-property-contributor')findPropertyContributor();else if(act==='close-property-detail')document.getElementById('propertyDetailModal')?.remove();else if(act==='close-property-edit'){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}else if(act==='new-staff')openStaffRegistrationPreview();else if(act==='new-org')toast('Formulario ampliado en la siguiente iteración.');else if(act==='sync-udc')syncUdcRate();else if(act==='print-sample')window.print();else if(act==='export')exportCSV();else toast('Acción disponible en el prototipo.');return}});
 document.addEventListener('input',e=>{if(e.target.id==='solvencySearch')renderSolvencyRows()});
 document.addEventListener('submit',e=>{if(e.target.id==='auditFilterForm'){e.preventDefault();loadAuditRecords(true);}});
 document.addEventListener('change',e=>{if(e.target.id==='auditPeriod'){auditSetPeriod(e.target.form);}});

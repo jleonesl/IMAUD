@@ -145,19 +145,65 @@
     if(!rates.count||!debt.count){node.innerHTML='<p><b>Registro de pagos no habilitado:</b> todavía no hay obligaciones oficiales exigibles con tabulador aprobado. No se emitirán cobros sin respaldo normativo.</p>';return;}
     node.innerHTML='<p>Existen obligaciones oficiales. El registro desde taquilla se habilitará una vez validados los controles de comprobantes bancarios y aplicación de pagos. Actualmente puedes consultar y dar seguimiento a operaciones registradas.</p>';
   }
-  function showDocument(id){
-    const p=payments.find(p=>p.id===id);if(!p)return;
+  const receiptMonth=(x)=>x?new Date(x+'T12:00:00Z').toLocaleDateString('es-VE',{timeZone:'UTC',month:'long',year:'numeric'}):'—';
+  const receiptDate=(x)=>x?new Date(x).toLocaleDateString('es-VE',{timeZone:'America/Caracas',day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+  const receiptMoney=(value)=>'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value||0));
+  // The receipt is generated from existing payment + officially allocated assessments.
+  // No fabricated UCD, invoice sequence, bank, verification QR or exchange-rate values.
+  async function showDocument(id){
+    const p=payments.find(row=>row.id===id);if(!p)return;
     document.getElementById('billModal')?.remove();
-    const c=p.contributor||{},verified=p.status==='confirmed';
-    const text=verified?'PAGO LIQUIDADO POR TESORERÍA':p.status==='pending'?'PAGO REGISTRADO · PENDIENTE DE LIQUIDACIÓN':'OPERACIÓN RECHAZADA / REVERSADA';
-    const doc='<div class="bill-paper"><div class="bill-watermark">IMAUD</div><div class="bill-header"><div class="bill-brand bill-miranda"><div class="bill-logo-window"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/2fb94317-165c-4058-ba6f-8d7b39165bc1.png" alt="Alcaldía Bolivariana del Municipio Miranda"></div></div><div class="bill-heading"><h1>IMAUD · SITMAUD</h1><h2>INSTITUTO MUNICIPAL DE ASEO URBANO Y DOMICILIARIO</h2><b>'+safe(text)+'</b></div><div class="bill-brand bill-imaud"><div class="bill-logo-window bill-logo-right"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/c48697a7-2c1f-4f88-aa38-2f8bb991ada2.png" alt="Instituto Municipal de Aseo Urbano y Domiciliario"></div></div></div>'+
-      '<div class="bill-ref"><div class="bill-field"><span>N.º de comprobante</span><b>'+safe(p.receipt_number)+'</b></div><div class="bill-field"><span>Contrato</span><b>'+safe(c.contract_number||'—')+'</b></div><div class="bill-field"><span>Registro</span><b>'+safe(fmtDate(p.created_at))+'</b></div><div class="bill-field"><span>Liquidación</span><b>'+safe(fmtDate(p.liquidated_at))+'</b></div></div>'+
-      '<div class="bill-parties"><div><h3>Contribuyente</h3><div class="bill-field"><span>Nombre / razón social</span><b>'+safe(contributor(c))+'</b></div><div class="bill-field"><span>Identificación</span><b>'+safe((c.identification_type||'')+'-'+(c.identification_number||''))+'</b></div></div><div><h3>Operación bancaria</h3><div class="bill-field"><span>Método</span><b>'+safe(p.payment_method||'—')+'</b></div><div class="bill-field"><span>Referencia</span><b>'+safe(p.external_reference||'—')+'</b></div></div></div>'+
-      '<div class="bill-items"><table><thead><tr><th>Concepto</th><th>Fecha del pago</th><th>Estado</th><th>Importe</th></tr></thead><tbody><tr><td>Servicio municipal de aseo urbano y domiciliario</td><td>'+safe(fmtDate(p.paid_at))+'</td><td>'+safe(label(p.status))+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td></tr></tbody></table></div>'+
-      '<div class="bill-bottom"><div><small>Documento generado desde el registro administrativo del sistema. La confirmación bancaria corresponde a Tesorería.</small></div><div class="bill-paid"><span>MONTO REGISTRADO</span><strong>'+safe(money(p.amount,p.currency_code))+'</strong></div></div>'+
-      '<div class="bill-foot">'+safe(verified?'Ingreso verificado y liquidado por Tesorería.':'No acredita recaudación efectiva mientras se encuentre sin liquidar.')+'</div></div>';
-    const wrap=document.createElement('div');wrap.id='billModal';wrap.className='bill-backdrop';wrap.innerHTML='<div class="bill-dialog"><div class="bill-toolbar"><div><b>Comprobante de operación institucional</b><small>'+safe(p.receipt_number)+'</small></div><div><button class="btn btn-light" data-official-action="close-document">Cerrar</button><button class="btn btn-primary" data-official-action="print">Imprimir</button></div></div><div id="billContent">'+doc+'</div></div>';
-    document.body.appendChild(wrap);
+    const container=document.createElement('div');
+    container.id='billModal';container.className='bill-backdrop';
+    container.innerHTML='<div class="bill-dialog"><div class="bill-toolbar"><div><b>Recibo de operación · SITMAUD</b><small>'+safe(p.receipt_number)+'</small></div><div><button class="btn btn-light" data-official-action="close-document">Cerrar</button><button class="btn btn-primary" id="officialReceiptPrint" data-official-action="print" disabled>Imprimir</button></div></div><div id="billContent" style="padding:16px;text-align:center">Cargando información del recibo institucional…</div></div>';
+    document.body.appendChild(container);
+    const {data:allocations,error}=await imaudClient.from('payment_allocations')
+      .select('amount,assessment:assessments!payment_allocations_assessment_id_fkey(period_start,period_end,is_demo,property:properties!assessments_property_id_fkey(address,parish_name,sector_name,typology_override,organization:residential_organizations!properties_organization_id_fkey(billing_typology,display_name),sector:sectors!properties_sector_id_fkey(default_typology)))')
+      .eq('payment_id',id);
+    if(!container.isConnected)return;
+    const host=container.querySelector('#billContent'),print=container.querySelector('#officialReceiptPrint');
+    if(error){host.innerHTML='<div class="contributors-empty">No se pudo verificar el detalle del recibo: '+safe(error.message)+'</div>';return;}
+    if(!allocations?.length||allocations.some(a=>!a.assessment||a.assessment.is_demo)){
+      host.innerHTML='<div class="contributors-empty"><b>No se puede emitir este recibo.</b><span>El pago no tiene aplicaciones a obligaciones oficiales verificables.</span></div>';
+      return;
+    }
+    const c=p.contributor||{},first=allocations[0].assessment,property=first.property||{};
+    const periodLabels=[...new Set(allocations.map(a=>a.assessment.period_start).filter(Boolean).map(receiptMonth))];
+    const billedPeriod=periodLabels.length<=3?periodLabels.join(' · '):periodLabels.slice(0,3).join(' · ')+' y '+(periodLabels.length-3)+' período(s) adicionales';
+    const typology=property.organization?.billing_typology||property.typology_override||property.sector?.default_typology||'Sin clasificación';
+    const address=property.address||'No registrada';
+    const parish=property.parish_name||'No registrada';
+    const sector=property.sector_name||'No registrado';
+    const isVES=p.currency_code==='VES',paid=p.status==='confirmed',pending=p.status==='pending';
+    const title=paid?'RECIBO DE PAGO':pending?'COMPROBANTE DE PAGO REPORTADO':'OPERACIÓN REVERSADA';
+    const status=paid?'LIQUIDADO POR TESORERÍA':pending?'PENDIENTE DE LIQUIDACIÓN':'SIN VALIDEZ COMO PAGO';
+    const doc='<article class="bill-paper sit-receipt" role="document">'+
+      '<header class="sit-receipt-header">'+
+        '<div class="sit-receipt-logo"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/2fb94317-165c-4058-ba6f-8d7b39165bc1.png" alt="Alcaldía Bolivariana del Municipio Miranda"></div>'+
+        '<div class="sit-receipt-heading"><h1>'+safe(title)+'</h1><p>SERVICIO MUNICIPAL DE ASEO URBANO Y DOMICILIARIO</p></div>'+
+        '<div class="sit-receipt-logo"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/c48697a7-2c1f-4f88-aa38-2f8bb991ada2.png" alt="Instituto Municipal de Aseo Urbano y Domiciliario"></div>'+
+      '</header>'+
+      '<div class="sit-receipt-state '+(paid?'is-liquidated':pending?'is-pending':'is-reversed')+'">'+safe(status)+'</div>'+
+      '<div class="sit-receipt-numbers"><div><span>N.º DE CONTRATO</span><b>'+safe(c.contract_number||'No registrado')+'</b></div><div><span>N.º DE COMPROBANTE</span><b>'+safe(p.receipt_number)+'</b></div><div><span>FECHA DE EMISIÓN</span><b>'+safe(receiptDate(p.invoice_issued_at||p.created_at))+'</b></div></div>'+
+      '<div class="sit-receipt-mid"><div class="sit-receipt-data">'+
+        '<div><span>Contribuyente:</span><b>'+safe(contributor(c))+'</b></div>'+
+        '<div><span>Cédula / RIF:</span><b>'+safe((c.identification_type||'')+'-'+(c.identification_number||''))+'</b></div>'+
+        '<div><span>Dirección:</span><b>'+safe(address)+'</b></div>'+
+        '<div><span>Sector / Parroquia:</span><b>'+safe(sector+' / '+parish)+'</b></div>'+
+        '<div><span>Tipología:</span><b>'+safe(typology)+'</b></div>'+
+      '</div><div class="sit-receipt-side"><div class="sit-receipt-period"><strong>PERÍODO FACTURADO</strong><span>'+safe(billedPeriod||'No definido')+'</span></div>'+
+        '<div class="sit-receipt-verification"><strong>Identificación del documento</strong><span>'+safe(p.receipt_number)+'</span><small>Consultar en SITMAUD. La verificación digital mediante QR todavía no está habilitada.</small></div></div></div>'+
+      '<div class="sit-receipt-charge"><div><strong>Concepto</strong><span>Servicio de aseo urbano y domiciliario</span></div><div><strong>'+(paid?'Monto pagado (Bs.)':'Monto registrado (Bs.)')+'</strong><b>'+safe(isVES?receiptMoney(p.amount):'Sin conversión a bolívares')+'</b></div></div>'+
+      '<div class="sit-receipt-payment"><div><span>MÉTODO DE PAGO</span><b>'+safe(p.payment_method||'No registrado')+'</b></div><div><span>BANCO</span><b>No consignado en este registro</b></div><div><span>REFERENCIA</span><b>'+safe(p.external_reference||'No registrada')+'</b></div></div>'+
+      '<footer class="sit-receipt-footer">Cuida la ciudad, cumple con tu servicio de aseo.</footer>'+
+      '</article>';
+    host.style.cssText='';host.innerHTML=doc;
+    if(!isVES){
+      host.insertAdjacentHTML('beforeend','<div class="notice" style="margin-top:12px">No se puede imprimir un recibo con monto en bolívares: el registro está en '+safe(p.currency_code)+'. Debe existir una conversión institucional documentada.</div>');
+      return;
+    }
+    // The status is always visible; a pending operation does not claim treasury clearance.
+    print.disabled=false;
   }
   async function liquidate(id,btn){
     const p=payments.find(p=>p.id===id);if(!p||p.status!=='pending')return;

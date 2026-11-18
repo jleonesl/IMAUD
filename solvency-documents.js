@@ -21,7 +21,7 @@ async function load(){
  if(!entries.length){host.innerHTML='<div class="contributors-empty"><b>Sin certificados emitidos.</b><span>Se mostrarán cuando existan pagos liquidados o exoneraciones autorizadas que respalden todos los meses correspondientes.</span></div>';return;}
  host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>N.º certificado</th><th>Contribuyente</th><th>Período</th><th>Estado</th><th></th></tr></thead><tbody>'+
  entries.map(x=>{const c=x.contributor_snapshot||{},name=c.legal_name||[c.first_name,c.last_name].filter(Boolean).join(' ');
- return '<tr><td><b>'+safe(x.certificate_number)+'</b></td><td>'+safe(name)+'</td><td>'+safe(fecha(x.period_start))+' – '+safe(fecha(x.period_end))+'</td><td>'+safe(x.status==='issued'?'Vigente':'Revocado')+'</td><td><button type="button" class="btn btn-light btn-sm" data-sit-solvency-print="'+safe(x.id)+'">Ver documento</button></td></tr>'}).join('')+'</tbody></table></div>';
+ return '<tr><td><b>'+safe(x.certificate_number)+'</b></td><td>'+safe(name)+'</td><td>'+safe(fecha(x.period_start))+' – '+safe(fecha(x.period_end))+'</td><td>'+safe(x.status==='issued'?'Vigente':'Revocado')+'</td><td><button type="button" class="btn btn-light btn-sm" data-sit-solvency-print="'+safe(x.id)+'">Ver documento</button> '+(canRevoke&&x.status==='issued'?'<button type="button" class="btn btn-light btn-sm" data-sit-solvency-revoke="'+safe(x.id)+'">Revocar</button>':'')+'</td></tr>'}).join('')+'</tbody></table></div>';
 }
 async function show(entry){
  const x=entry?.certificate_number?entry:entries.find(y=>y.id===entry);

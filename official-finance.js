@@ -9,7 +9,7 @@
   const byCurrency=(obj)=>{const x=Object.entries(obj||{});return x.length?x.map(([c,v])=>money(v,c)).join(' · '):'Bs. 0,00'};
   let payments=[],currentReport=[],limited=false,treasuryAllowed=false,reliefAllowed=false,reliefCandidates=[];
   function header(t,sub){return '<div class="page-head"><div><div class="eyebrow">SITMAUD · CONTROL ADMINISTRATIVO</div><h1>'+t+'</h1><p>'+sub+'</p></div></div>';}
-  const metrics='<section class="card panel" id="financialOverview"><div class="contributors-loading">Consultando indicadores institucionales…</div></section>';
+  const metrics='<section id="financialOverview"><div class="contributors-loading">Consultando indicadores institucionales…</div></section>';
   function financeKpis(){return metrics}
   function paymentView(){
     return header('Recaudación y Tesorería','Registro, verificación y liquidación de pagos institucionales.')+financeKpis()+
@@ -96,12 +96,17 @@
     if(!host.isConnected)return;
     if(error){host.innerHTML='<div class="contributors-empty">No se pudieron consultar los indicadores: '+safe(error.message)+'</div>';return;}
     const items=[
-      ['Por cobrar','Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.amount_to_collect||0)),'Obligaciones oficiales menos importes liquidados'],
-      ['Por liquidar',byCurrency(data.pending_by_currency),(data.pending_count||0)+' operaciones sin liquidar'],
-      ['Liquidado hoy',byCurrency(data.liquidated_today_by_currency),'Fecha de liquidación · Coro'],
-      ['Liquidado este mes',byCurrency(data.liquidated_month_by_currency),'Fecha de liquidación · Coro']
+      {label:'Por cobrar',icon:'▥',value:'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.amount_to_collect||0)),note:'Saldo registrado de obligaciones pendientes'},
+      {label:'Por liquidar',icon:'◷',value:'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.pending_amount||0)),note:(data.pending_count||0)+' operación(es) esperando a Tesorería'},
+      {label:'Liquidado hoy',icon:'↗',value:'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.liquidated_today||0)),note:'Ingreso confirmado hoy · hora de Coro'},
+      {label:'Liquidado este mes',icon:'▤',value:'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.liquidated_month||0)),note:'Ingreso confirmado durante el mes'}
     ];
-    host.innerHTML='<h3>Control financiero institucional</h3><div class="grid kpis">'+items.map(([t,v,n])=>'<article class="card kpi"><div class="kpi-top"><span>'+safe(t)+'</span></div><div class="kpi-value" style="font-size:20px;overflow-wrap:anywhere">'+safe(v)+'</div><div class="kpi-note">'+safe(n)+'</div></article>').join('')+'</div>';
+    host.classList.add('dashboard-section','financial-dashboard');
+    host.innerHTML='<div class="dashboard-section-head"><h2>Control financiero institucional</h2><p>Montos en bolívares · únicamente Tesorería confirma los ingresos</p></div>'+
+      '<div class="grid kpis dashboard-kpi-grid financial-kpi-grid">'+items.map(item=>
+        '<article class="card kpi home-kpi"><div class="kpi-top"><span>'+safe(item.label)+'</span><span class="kpi-icon">'+safe(item.icon)+'</span></div>'+
+        '<div class="kpi-value">'+safe(item.value)+'</div><div class="kpi-note">'+safe(item.note)+'</div></article>'
+      ).join('')+'</div>';
   }
   async function loadPayments(){
     if(!document.getElementById('officialPaymentRows')&&!document.getElementById('officialInvoiceRows')&&!document.getElementById('officialReportRows'))return;

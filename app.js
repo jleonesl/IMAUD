@@ -947,24 +947,43 @@ function showSolvencyDetail(id){
 function officialReports(){return productionModule('Reportes','La consulta de recaudación requiere integrar registros financieros definitivos y auditoría.');}
 function officialPayments(){return productionModule('Recaudación y pagos','Los cobros se mantienen bloqueados hasta disponer de tarifas aprobadas, liquidaciones oficiales y conciliación bancaria.');}
 function officialCondoRegistration(){
- return head('Registrar condominio','Registro institucional de persona jurídica, cuenta matriz consolidada y viviendas cubiertas.')+
- '<section class="card panel"><div class="notice">El condominio se registra como una cuenta matriz única. La tipología de cobro puede diferir de la del sector cuando exista autorización institucional y justificación registrada.</div><form id="officialCondoForm"><div class="form-grid">'+
- '<div class="field full"><label>Razón social registrada en el RIF *</label><input name="legal_name" required minlength="4" placeholder="Condominio Residencias…"></div>'+
- '<div class="field"><label>RIF jurídico *</label><input name="rif" required placeholder="J-12345678-9"></div>'+
- '<div class="field"><label>Correo del condominio</label><input name="email" type="email"></div>'+
- '<div class="field"><label>Teléfono</label><input name="phone"></div>'+
- '<div class="field"><label>Nombre del condominio / urbanización *</label><input name="display_name" required minlength="3"></div>'+
- '<div class="field"><label>Cantidad de viviendas cubiertas *</label><input name="unit_count" type="number" min="1" max="100000" required></div>'+
- '<div class="field full"><label>Dirección de la cuenta matriz *</label><textarea name="address" required minlength="5" rows="2"></textarea></div>'+
- '<div class="field"><label>Parroquia *</label><select name="parish_id" id="officialCondoParish" required><option value="">Cargando…</option></select></div>'+
- '<div class="field"><label>Sector donde se ubica *</label><select name="sector_id" id="officialCondoSector" required disabled><option value="">Seleccione parroquia</option></select></div>'+
- '<div class="field"><label>Tipología de cobro *</label><select name="billing_typology" id="officialCondoTypology" required><option value="">Seleccione sector primero</option><option value="TIPO I">TIPO I</option><option value="TIPO II">TIPO II</option><option value="TIPO III">TIPO III</option></select><small id="officialCondoSectorType">La tipología del sector se mostrará al seleccionarlo.</small></div>'+
- '<div class="field"><label>Justificación si la tipología es distinta</label><input name="typology_reason" minlength="15" placeholder="Justificación institucional (si aplica)"></div>'+
- '<div class="field"><label>Administrador / responsable *</label><input name="responsible_name" required minlength="3"></div>'+
- '<div class="field"><label>Cédula del responsable</label><input name="responsible_id"></div>'+
- '<div class="field"><label>Teléfono del responsable</label><input name="responsible_phone"></div>'+
- '<div class="field"><label>Correo del responsable</label><input name="responsible_email" type="email"></div>'+
- '</div><div class="form-actions"><button type="button" class="btn btn-light" data-go="organizaciones">Cancelar</button><button type="submit" class="btn btn-primary" id="saveOfficialCondo">Registrar condominio</button></div></form></section>';
+  return head('Registrar condominio','Incorporar un condominio o urbanización a la gestión tributaria.')+
+  '<div class="sit-condo-registration">'+
+  '<div class="sit-condo-title"><div class="sit-condo-title-symbol" aria-hidden="true">▦</div><div><h2>Registrar condominio</h2><p>Datos institucionales y cuenta matriz de facturación consolidada.</p></div></div>'+
+  '<form id="officialCondoForm" class="sit-condo-form">'+
+    '<section class="sit-condo-card sit-condo-identity" aria-labelledby="sitCondoIdentity"><h3 id="sitCondoIdentity"><span aria-hidden="true">▦</span> Datos del condominio</h3>'+
+      '<div class="sit-condo-fields sit-condo-fields-two">'+
+      '<div class="field"><label for="sitCondoName">Nombre del condominio / urbanización *</label><input id="sitCondoName" name="display_name" required minlength="3" placeholder="Ej. Residencias Los Mangos"></div>'+
+      '<div class="field"><label for="sitCondoRif">RIF jurídico *</label><input id="sitCondoRif" name="rif" required placeholder="J-12345678-9" autocomplete="off"></div>'+
+      '<div class="field"><label for="sitCondoLegal">Razón social registrada en el RIF *</label><input id="sitCondoLegal" name="legal_name" required minlength="4" placeholder="Denominación legal de la administración"></div>'+
+      '<div class="field"><label for="sitCondoEmail">Correo del condominio</label><input id="sitCondoEmail" name="email" type="email" placeholder="condominio@ejemplo.com"></div>'+
+      '<div class="field"><label for="sitCondoPhone">Teléfono</label><input id="sitCondoPhone" name="phone" type="tel" placeholder="0414-0000000"></div>'+
+      '</div></section>'+
+    '<div class="sit-condo-grid">'+
+    '<section class="sit-condo-card" aria-labelledby="sitCondoMatrix"><h3 id="sitCondoMatrix"><span aria-hidden="true">▤</span> Cuenta matriz y viviendas</h3>'+
+      '<div class="sit-condo-fields sit-condo-fields-two">'+
+      '<div class="field"><label for="sitCondoUnits">Cantidad de viviendas cubiertas *</label><input id="sitCondoUnits" name="unit_count" type="number" min="1" max="100000" required placeholder="Cantidad total"></div>'+
+      '<div class="field"><label for="sitCondoAddress">Dirección de la cuenta matriz *</label><textarea id="sitCondoAddress" name="address" required minlength="5" rows="2" placeholder="Dirección completa del condominio o urbanización"></textarea></div>'+
+      '</div><p class="sit-condo-help">Una sola cuenta matriz para la facturación consolidada; no se duplica el cobro por vivienda.</p></section>'+
+    '<section class="sit-condo-card" aria-labelledby="sitCondoLocation"><h3 id="sitCondoLocation"><span aria-hidden="true">⌖</span> Ubicación territorial</h3>'+
+      '<div class="sit-condo-fields sit-condo-fields-two">'+
+      '<div class="field"><label for="officialCondoParish">Parroquia *</label><select name="parish_id" id="officialCondoParish" required><option value="">Cargando parroquias…</option></select></div>'+
+      '<div class="field"><label for="officialCondoSector">Sector donde se ubica *</label><select name="sector_id" id="officialCondoSector" required disabled><option value="">Seleccione parroquia</option></select></div>'+
+      '</div><p class="sit-condo-help">La ubicación geográfica se conserva aunque el condominio tenga una tipología propia.</p></section>'+
+    '<section class="sit-condo-card" aria-labelledby="sitCondoType"><h3 id="sitCondoType"><span aria-hidden="true">≋</span> Tipología de cobro</h3>'+
+      '<div class="sit-condo-type-row"><div class="field"><label for="officialCondoTypology">Tipología de cobro *</label><select name="billing_typology" id="officialCondoTypology" required><option value="">Seleccione sector primero</option><option value="TIPO I">TIPO I</option><option value="TIPO II">TIPO II</option><option value="TIPO III">TIPO III</option></select><small id="officialCondoSectorType">La clasificación territorial se muestra al seleccionar el sector.</small></div>'+
+      '<div class="sit-condo-type-note"><strong>Clasificación residencial · Ordenanza 2024</strong><span>Tipo I · 3,00 UCD</span><span>Tipo II · 1,50 UCD</span><span>Tipo III · 0,50 UCD</span></div></div>'+
+      '<div class="field"><label for="sitCondoReason">Justificación si la tipología es distinta</label><textarea id="sitCondoReason" name="typology_reason" minlength="15" maxlength="300" rows="2" placeholder="Justificación institucional, cuando corresponda"></textarea><div class="sit-condo-counter"><span>Solo requerida para una excepción autorizada</span><output id="sitCondoReasonCount" for="sitCondoReason">0/300</output></div></div></section>'+
+    '<section class="sit-condo-card" aria-labelledby="sitCondoResponsible"><h3 id="sitCondoResponsible"><span aria-hidden="true">♙</span> Administrador / responsable</h3>'+
+      '<div class="sit-condo-fields sit-condo-fields-two">'+
+      '<div class="field"><label for="sitCondoManager">Nombre del administrador / responsable *</label><input id="sitCondoManager" name="responsible_name" required minlength="3" placeholder="Nombre y apellido"></div>'+
+      '<div class="field"><label for="sitCondoManagerId">Cédula del responsable</label><input id="sitCondoManagerId" name="responsible_id" placeholder="V-00000000"></div>'+
+      '<div class="field"><label for="sitCondoManagerPhone">Teléfono del responsable</label><input id="sitCondoManagerPhone" name="responsible_phone" type="tel" placeholder="0414-0000000"></div>'+
+      '<div class="field"><label for="sitCondoManagerEmail">Correo del responsable</label><input id="sitCondoManagerEmail" name="responsible_email" type="email" placeholder="responsable@ejemplo.com"></div>'+
+      '</div></section>'+
+    '</div>'+
+    '<div class="sit-condo-actions"><button type="button" class="btn btn-light" data-go="organizaciones">Cancelar</button><button type="submit" class="btn btn-primary" id="saveOfficialCondo">Registrar condominio</button></div>'+
+  '</form></div>';
 }
 async function loadOfficialCondoCatalogs(){
  const [p,s]=await Promise.all([imaudClient.from('parishes').select('id,name').eq('is_active',true).order('name'),imaudClient.from('sectors').select('id,name,parish_id,default_typology').eq('is_active',true).order('name')]);

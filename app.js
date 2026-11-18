@@ -722,6 +722,7 @@ async function loadResidentialEngineProperties(){
  if(error){select.innerHTML='<option value="">No se pudieron cargar inmuebles</option>';return;}
  select.disabled=!(data?.length);
  select.innerHTML='<option value="">Selecciona el inmueble</option>'+((data||[]).map(p=>'<option value="'+escapeHTML(p.id)+'">'+escapeHTML((p.contract_number||'Sin contrato')+' · '+p.address)+'</option>').join(''));
+ await loadResidentialEngineReadiness();
 }
 async function generateOfficialObligations(btn){
  if(!residentialEngineReady||!residentialEngineCanCreate)return;

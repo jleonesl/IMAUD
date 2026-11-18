@@ -870,7 +870,7 @@ const staffPermissionGroups=[
 let staffPermissionRole=null,staffPermissionUsers=[],staffPermissionGrants=[],staffPermissionSelected='',staffPermissionBusy=false;
 
 function openStaffRegistrationPreview(){
- if(staffPermissionRole!=='intendente'){toast('Solo el intendente puede registrar funcionarios.');return;}
+ if(staffPermissionRole!=='intendente'){toast('Solo el superusuario maestro puede registrar funcionarios.');return;}
  document.getElementById('staffRegistrationPreview')?.remove();
  const overlay=document.createElement('div');
  overlay.id='staffRegistrationPreview';
@@ -904,10 +904,10 @@ function staff(){
 }
 async function loadStaffPermissionMatrix(){
  const select=document.getElementById('staffPermissionUser'),note=document.getElementById('staffPermissionNotice'),status=document.getElementById('staffPermissionStatus');if(!select)return;
- const {data:role,error:roleError}=await imaudClient.rpc('current_staff_role');
+ const {data:isMaster,error:masterError}=await imaudClient.rpc('is_sitmaud_master');
  if(!document.getElementById('staffPermissionUser'))return;
- if(roleError||role!=='intendente'){
-  staffPermissionRole=role||null;status.textContent='Acceso restringido';note.textContent='La asignación de permisos está disponible exclusivamente para el intendente.';
+ if(masterError||isMaster!==true){
+  staffPermissionRole=null;status.textContent='Acceso restringido';note.textContent='La asignación de permisos está disponible exclusivamente para el intendente.';
   select.innerHTML='<option>Sin autorización</option>';return;
  }
  staffPermissionRole='intendente';

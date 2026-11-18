@@ -241,10 +241,13 @@
     const payment=payments.find(p=>p.id===id);
     if(!treasuryAllowed||!payment||payment.status!=='pending')return;
     if(!window.confirm('¿Anular el registro pendiente '+payment.receipt_number+'? La operación no será borrada y el sistema guardará el funcionario, la fecha y la acción en la bitácora.'))return;
+    const reason=window.prompt('Motivo concreto del rechazo o anulación (obligatorio, mínimo 8 caracteres):','');
+    if(reason===null)return;
+    if(reason.trim().length<8){window.alert('Escribe un motivo verificable de al menos 8 caracteres.');return;}
     button.disabled=true;
     const {error}=await imaudClient.rpc('reject_official_payment',{
       p_payment_id:id,
-      p_reason:'Anulación administrativa de registro pendiente ejecutada por funcionario autorizado mediante SITMAUD. Motivo operativo no especificado.'
+      p_reason:reason.trim()
     });
     if(error){window.alert('No se pudo anular: '+error.message);button.disabled=false;return;}
     await Promise.all([loadPayments(),loadOverview()]);

@@ -87,3 +87,57 @@
 .bill-imaud .bill-logo-window img{max-width:145px;max-height:76px}
 .bill-logo-window.bill-logo-right img{left:auto}
 .bill-brand.bill-miranda,.bill-brand.bill-imaud{background:none}
+
+/* SITMAUD approved payment receipt: full-width landscape document in upper half of a portrait letter sheet.
+   Scope to .sit-receipt so no other invoice, navigation or app components are changed. */
+.bill-paper.sit-receipt{width:8.5in;height:5.5in;min-height:5.5in;max-height:5.5in;padding:.12in .12in 0;display:flex;flex-direction:column;gap:.075in;box-sizing:border-box;box-shadow:0 7px 25px rgba(12,39,63,.15);overflow:hidden;color:#09294d;font-family:Arial,Helvetica,sans-serif;line-height:1.2}
+.bill-paper.sit-receipt .sit-receipt-header{display:grid;grid-template-columns:1fr 1.95fr 1fr;gap:.08in;align-items:center;min-height:.89in;border-bottom:5px solid #07579d;padding-bottom:.055in}
+.bill-paper.sit-receipt .sit-receipt-logo{height:.77in;display:flex;align-items:center;justify-content:center;overflow:visible}
+.bill-paper.sit-receipt .sit-receipt-logo img{display:block;width:100%;height:100%;max-width:100%;max-height:.77in;object-fit:contain;object-position:center}
+.bill-paper.sit-receipt .sit-receipt-heading{text-align:center;min-width:0}
+.bill-paper.sit-receipt .sit-receipt-heading h1{font-size:21px;line-height:1.04;letter-spacing:.3px;color:#073667;font-weight:900;margin:0 0 4px}
+.bill-paper.sit-receipt .sit-receipt-heading p{font-size:8px;line-height:1.2;color:#4d5764;font-weight:800;margin:0}
+.bill-paper.sit-receipt .sit-receipt-state{text-align:center;align-self:center;max-width:95%;border-radius:30px;padding:3px 13px;font-size:8px;font-weight:900;letter-spacing:.3px}
+.bill-paper.sit-receipt .sit-receipt-state.is-liquidated{background:#e5f5e7;color:#176b30}
+.bill-paper.sit-receipt .sit-receipt-state.is-pending{background:#fff0d4;color:#805413}
+.bill-paper.sit-receipt .sit-receipt-state.is-reversed{background:#ffeaeb;color:#9a2733}
+.bill-paper.sit-receipt .sit-receipt-numbers{display:grid;grid-template-columns:1.05fr 1.12fr .83fr;gap:.07in}
+.bill-paper.sit-receipt .sit-receipt-numbers>div{min-width:0;display:flex;justify-content:space-between;align-items:center;gap:5px;border-radius:6px;padding:7px 9px;background:#eaf1f9}
+.bill-paper.sit-receipt .sit-receipt-numbers span{font-weight:800;color:#0a3c70;font-size:8px}
+.bill-paper.sit-receipt .sit-receipt-numbers b{font-weight:900;font-size:10px;color:#102032;overflow-wrap:anywhere;text-align:right}
+.bill-paper.sit-receipt .sit-receipt-mid{display:grid;grid-template-columns:minmax(0,2.08fr) minmax(0,.97fr);gap:.085in;min-height:1.63in}
+.bill-paper.sit-receipt .sit-receipt-data{border:1px solid #c4d6ea;border-radius:7px;overflow:hidden;min-width:0;display:grid;grid-template-rows:repeat(5,1fr)}
+.bill-paper.sit-receipt .sit-receipt-data>div{display:grid;grid-template-columns:32% minmax(0,1fr);border-bottom:1px solid #cddbe9;align-items:center;min-width:0;line-height:1.13}
+.bill-paper.sit-receipt .sit-receipt-data>div:last-child{border-bottom:0}
+.bill-paper.sit-receipt .sit-receipt-data span{background:#eaf1f9;padding:5px 7px;align-self:stretch;display:flex;align-items:center;color:#113d71;font-size:9px;font-weight:800}
+.bill-paper.sit-receipt .sit-receipt-data b{font-size:9.5px;padding:4px 8px;overflow-wrap:anywhere;font-weight:700}
+.bill-paper.sit-receipt .sit-receipt-side{display:flex;flex-direction:column;gap:.075in;min-width:0}
+.bill-paper.sit-receipt .sit-receipt-period,.bill-paper.sit-receipt .sit-receipt-verification{border:1px solid #b6cce5;border-radius:7px;overflow:hidden;text-align:center;flex:1;min-height:0}
+.bill-paper.sit-receipt .sit-receipt-period strong{display:block;background:#064785;color:#fff;padding:5px;font-size:10px}
+.bill-paper.sit-receipt .sit-receipt-period span{display:block;font-size:10px;font-weight:800;padding:7px 5px;overflow-wrap:anywhere}
+.bill-paper.sit-receipt .sit-receipt-verification{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;background:#f1f6fb;padding:5px 9px}
+.bill-paper.sit-receipt .sit-receipt-verification strong{font-size:9px;color:#0b4276}
+.bill-paper.sit-receipt .sit-receipt-verification span{font-weight:800;font-size:9px;overflow-wrap:anywhere}
+.bill-paper.sit-receipt .sit-receipt-verification small{font-size:7px;color:#66788a}
+.bill-paper.sit-receipt .sit-receipt-charge{display:grid;grid-template-columns:1.55fr 1fr;border:1px solid #8daed0;border-radius:7px;overflow:hidden}
+.bill-paper.sit-receipt .sit-receipt-charge>div{display:grid;grid-template-rows:auto 1fr;min-width:0;text-align:center}
+.bill-paper.sit-receipt .sit-receipt-charge>div+div{border-left:1px solid #8daed0;background:#c2ddf9}
+.bill-paper.sit-receipt .sit-receipt-charge strong{display:block;background:linear-gradient(90deg,#063d78,#0662a4);color:#fff;font-size:11px;padding:6px}
+.bill-paper.sit-receipt .sit-receipt-charge span{font-size:11px;padding:10px 5px}
+.bill-paper.sit-receipt .sit-receipt-charge b{font-weight:900;font-size:17px;align-self:center;color:#091b30;padding:4px}
+.bill-paper.sit-receipt .sit-receipt-payment{display:grid;grid-template-columns:1fr 1fr 1.1fr;border:1px solid #c3d2e3;border-radius:6px;background:#f1f5fa;min-height:.43in}
+.bill-paper.sit-receipt .sit-receipt-payment>div{padding:6px 9px;display:flex;align-items:center;justify-content:space-around;gap:5px;min-width:0}
+.bill-paper.sit-receipt .sit-receipt-payment>div+div{border-left:1px solid #a5bace}
+.bill-paper.sit-receipt .sit-receipt-payment span{font-size:8px;font-weight:800;color:#0c3e70}
+.bill-paper.sit-receipt .sit-receipt-payment b{font-size:9px;font-weight:800;overflow-wrap:anywhere;text-align:right}
+.bill-paper.sit-receipt .sit-receipt-footer{flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(176deg,#07518e,#063473);color:#fff;text-align:center;font-style:italic;font-size:11px;font-weight:800;min-height:.36in;padding:5px;border-bottom:4px solid #72cb16;border-radius:40% 8% 0 0/20% 15% 0 0}
+@media screen and (max-width:920px){.bill-paper.sit-receipt{max-width:none}.bill-dialog:has(.sit-receipt){overflow-x:auto}}
+@media print{
+ @page{size:letter portrait;margin:0}
+ #billModal #billContent{display:block!important;height:5.5in!important;min-height:5.5in!important;max-height:5.5in!important;overflow:hidden!important}
+ #billModal .bill-paper.sit-receipt{display:flex!important;flex-direction:column!important;gap:.075in!important;width:8.5in!important;min-width:8.5in!important;max-width:8.5in!important;height:5.5in!important;min-height:5.5in!important;max-height:5.5in!important;margin:0!important;padding:.12in .12in 0!important;box-sizing:border-box!important;box-shadow:none!important;overflow:hidden!important}
+ #billModal .bill-paper.sit-receipt .sit-receipt-header{display:grid!important}
+ #billModal .bill-paper.sit-receipt .sit-receipt-mid{display:grid!important}
+ #billModal .bill-paper.sit-receipt .sit-receipt-data{display:grid!important}
+ #billModal .bill-paper.sit-receipt .sit-receipt-footer{display:flex!important}
+}

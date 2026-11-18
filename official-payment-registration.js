@@ -157,7 +157,8 @@
          p_payment_method:form.elements.method.value,
          p_external_reference:form.elements.reference.value.trim(),
          p_bank_code:form.elements.bank.value,
-         p_evidence_path:path,p_paid_at:new Date().toISOString()
+         p_evidence_path:path,p_paid_at:new Date().toISOString(),
+         p_expected_rate_id:quote.rate_id,p_expected_total_bs:Number(quote.total_bs)
        });
        if(rpc.error)throw rpc.error;
        saved=true;

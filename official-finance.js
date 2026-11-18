@@ -299,8 +299,14 @@
        .eq('is_demo',false).in('status',['pending','partially_paid'])
        .order('period_start',{ascending:false}).limit(100);
     if(assessment.error){node.textContent='Error al consultar deudas: '+assessment.error.message;return;}
-    const rows=assessment.data||[];
-    if(!rows.length){node.textContent='Este contribuyente no tiene obligaciones oficiales pendientes.';return;}
+    let rows=assessment.data||[];
+    if(rows.length){
+      const grants=await imaudClient.from('debt_relief_grants').select('assessment_id').in('assessment_id',rows.map(x=>x.id));
+      if(grants.error){node.textContent='No fue posible verificar exoneraciones anteriores: '+grants.error.message;return;}
+      const handled=new Set((grants.data||[]).map(x=>x.assessment_id));
+      rows=rows.filter(x=>!handled.has(x.id));
+    }
+    if(!rows.length){node.textContent='Este contribuyente no tiene meses disponibles para exonerar; los períodos ya tratados conservan su registro de auditoría.';return;}
     reliefCandidates=rows;
     const addresses=new Map(properties.data.map(p=>[p.id,p.address]));
     node.innerHTML='<div class="panel-head"><div><h3>Meses pendientes · '+safe(contributor(c))+'</h3><p>Contrato '+safe(c.contract_number||'—')+' · selecciona uno, varios o todos los períodos.</p></div></div>'+

@@ -10,7 +10,7 @@
 header b{font-size:21px}header small{display:block;font-size:11px;margin-top:3px;opacity:.8}button,.btn{border:0;border-radius:9px;padding:12px 18px;background:#0b6b97;color:white;font-weight:700;text-decoration:none;cursor:pointer}
 main{max-width:850px;margin:42px auto;padding:0 20px}.card{background:#fff;border:1px solid #e1e9ef;border-radius:14px;padding:28px;box-shadow:0 8px 25px #153b5310}
 h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14px;background:#f0f6fa;border-left:3px solid #1a7e9e;border-radius:6px}
-#sessionStatus{font-size:12px;color:#657b88;margin-bottom:18px}footer{margin-top:22px;color:#738793;font-size:12px}
+#sessionStatus{font-size:12px;color:#657b88;margin-bottom:18px}footer{margin-top:22px;color:#738793;font-size:12px}.payment-info{margin-top:20px}.bank-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:15px}.bank-card{border:1px solid #dbe8ef;border-radius:12px;padding:17px;background:#fff}.bank-card h3{font-size:15px;margin:0 0 12px}.bank-row{margin:8px 0}.bank-row small{display:block;color:#72889b;font-size:11px;margin-bottom:3px}.bank-row b{overflow-wrap:anywhere}.copy-bank{background:#e9f4f8;color:#075b7c;padding:6px 9px;border-radius:6px;margin-left:8px;font-size:11px}.bank-warning{background:#fff8e9;border:1px solid #ead39c;padding:12px;border-radius:8px;font-size:13px}
 </style>
 </head>
 <body>
@@ -22,6 +22,7 @@ h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14p
 <div class="info"><b>Servicios financieros temporalmente restringidos</b><p>Las obligaciones, pagos y comprobantes se mostrarán únicamente cuando su emisión y consulta oficial estén habilitadas y verificadas por el Instituto. No se mostrarán datos de prueba.</p></div>
 <p>Para solicitar información sobre tu expediente, comunícate con la oficina de recaudación del Instituto Municipal de Aseo Urbano y Domiciliario.</p>
 </section>
+<section class="card payment-info" id="paymentInformation" hidden><h2>Información de pago</h2><p>Consulta las cuentas oficiales publicadas por la Alcaldía del Municipio Miranda para transferencias y pago móvil.</p><div id="municipalBankList" role="status">Consultando cuentas bancarias oficiales…</div><p class="bank-warning"><b>Importante:</b> Nunca transfieras a cuentas que no estén publicadas oficialmente. Conserva la referencia y el comprobante. El dinero no se considera liquidado hasta la verificación de Tesorería.</p></section>
 <footer>Alcaldía del Municipio Miranda · Instituto Municipal de Aseo Urbano y Domiciliario</footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -38,6 +39,13 @@ const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase
   if(accessError||!portal?.activated){location.replace('./contribuyente-v2.html');return;}
   status.textContent='Acceso de contribuyente verificado';
   document.getElementById('account').hidden=false;
+  document.getElementById('paymentInformation').hidden=false;
+  const bankHost=document.getElementById('municipalBankList');
+  const {data:bankData,error:bankError}=await client.rpc('get_municipal_payment_instructions');
+  const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  if(bankError){bankHost.textContent='No se pudo consultar la información de pagos. Comprueba la conexión o consulta en la oficina de recaudación.';}
+  else if(!bankData?.accounts?.length){bankHost.innerHTML='<div class="info"><b>Cuentas bancarias pendientes de publicación.</b><p>La Alcaldía todavía no ha habilitado cuentas oficiales para consulta en línea. No realices transferencias basándote en datos no verificados.</p></div>';}
+  else bankHost.innerHTML='<div class="bank-list">'+bankData.accounts.map(b=>'<article class="bank-card"><h3>'+esc(b.method==='pago_movil'?'Pago móvil':'Transferencia bancaria')+'</h3><div class="bank-row"><small>Banco</small><b>'+esc(b.bank)+'</b></div><div class="bank-row"><small>Titular</small><b>'+esc(b.holder)+'</b></div><div class="bank-row"><small>RIF</small><b>'+esc(b.rif)+'</b></div><div class="bank-row"><small>'+(b.method==='pago_movil'?'Teléfono':'Número de cuenta')+'</small><b>'+esc(b.mobile_number||b.account_number)+'</b></div></article>').join('')+'</div>';
  }catch(err){console.error('Citizen account verification:',err);status.textContent='No fue posible verificar el acceso. Inicia sesión nuevamente.';}
 })();
 document.getElementById('exit').addEventListener('click',async()=>{

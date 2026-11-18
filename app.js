@@ -7,13 +7,16 @@ function table(headers,rows){return `<div class="card table-card"><table><thead>
 function dashboard(){
  const metrics=[
   {key:'contributors_total',label:'Total de contribuyentes',icon:'♙',note:'Registros del sistema'},
-  {key:'properties_total',label:'Total de inmuebles',icon:'⌂',note:'Inmuebles activos'},
+  {key:'properties_total',label:'Inmuebles individuales',icon:'⌂',note:'Activos, sin cuentas matrices'},
   {key:'condominiums_total',label:'Condominios registrados',icon:'▥',note:'Cuentas matrices'},
   {key:'payments_total',label:'Pagos registrados',icon:'▧',note:'Operaciones oficiales'},
   {key:'payments_today',label:'Pagos de hoy',icon:'◷',note:'Fecha local de Coro'},
   {key:'revenue_today',label:'Recaudación del día',icon:'↗',note:'Pagos confirmados'},
   {key:'revenue_total',label:'Recaudación acumulada',icon:'▤',note:'Pagos confirmados'},
   {key:'debts_pending',label:'Obligaciones pendientes',icon:'!',note:'Liquidaciones oficiales pendientes'},
+  {key:'payments_pending',label:'Por liquidar',icon:'◷',note:'Operaciones pendientes en Tesorería'},
+  {key:'revenue_month',label:'Recaudación del mes',icon:'↗',note:'Pagos liquidados en Coro'},
+  {key:'due_amount',label:'Dinero por cobrar',icon:'▥',note:'Saldo registrado, sujeto a tasa UCD al pago'},
   {key:'certificates_total',label:'Solvencias emitidas',icon:'▣',note:'Certificados oficiales emitidos'}
  ];
  return head('Indicadores generales','Datos administrativos y financieros procedentes del sistema oficial.')+
@@ -37,15 +40,16 @@ function formatDashboardCurrencyMap(map){
 async function loadDashboardMetrics(){
  if(state.view!=='inicio'||!document.body.classList.contains('sitmaud-authenticated'))return;
  document.querySelectorAll('[data-metric-value]').forEach(el=>el.textContent='…');
- const [base,condos,officialDebt,issuedCertificates]=await Promise.all([
+ const [base,finance,condos,issuedCertificates]=await Promise.all([
   imaudClient.rpc('get_dashboard_metrics'),
+  imaudClient.rpc('get_official_financial_overview'),
   imaudClient.from('residential_organizations').select('id',{count:'exact',head:true}).eq('consolidated_billing',true),
-  imaudClient.from('assessments').select('id',{count:'exact',head:true}).eq('is_demo',false).in('status',['pending','partially_paid']),
   imaudClient.from('solvency_certificates').select('id',{count:'exact',head:true}).eq('status','issued')
  ]);
  if(state.view!=='inicio')return;
- const values=base.error?null:base.data;
- if(base.error) console.error('SITMAUD official metrics:',base.error);
+ if(base.error)console.error('SITMAUD dashboard:',base.error);
+ if(finance.error)console.error('SITMAUD financial KPIs:',finance.error);
+ const values=base.error?null:base.data,financial=finance.error?null:finance.data;
  for(const key of ['contributors_total','properties_total','payments_total','payments_today']){
   const el=document.querySelector('[data-metric-value="'+key+'"]');
   if(el)el.textContent=values?formatDashboardCount(values[key]):'No disponible';
@@ -54,13 +58,13 @@ async function loadDashboardMetrics(){
   const el=document.querySelector('[data-metric-value="'+key+'"]');
   if(el)el.textContent=values?formatDashboardCurrencyMap(values[key]):'No disponible';
  }
- const debts=document.querySelector('[data-metric-value="debts_pending"]');
- if(debts)debts.textContent=officialDebt.error?'No disponible':formatDashboardCount(officialDebt.count||0);
- const condo=document.querySelector('[data-metric-value="condominiums_total"]');
- if(condo)condo.textContent=condos.error?'No disponible':formatDashboardCount(condos.count||0);
- const cert=document.querySelector('[data-metric-value="certificates_total"]');
- if(cert)cert.textContent=issuedCertificates.error?'No disponible':formatDashboardCount(issuedCertificates.count||0);
- if(issuedCertificates.error)console.error('SITMAUD solvency certificate metric:',issuedCertificates.error);
+ const set=(key,value)=>{const el=document.querySelector('[data-metric-value="'+key+'"]');if(el)el.textContent=value;};
+ set('debts_pending',financial?formatDashboardCount(financial.pending_debts_count):'No disponible');
+ set('payments_pending',financial?formatDashboardCount(financial.pending_count):'No disponible');
+ set('revenue_month',financial?'Bs. '+formatDashboardMoney(financial.liquidated_month):'No disponible');
+ set('due_amount',financial?'Bs. '+formatDashboardMoney(financial.amount_to_collect):'No disponible');
+ set('condominiums_total',condos.error?'No disponible':formatDashboardCount(condos.count||0));
+ set('certificates_total',issuedCertificates.error?'No disponible':formatDashboardCount(issuedCertificates.count||0));
 }
 function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function contributorName(p){return p.kind==='juridico'?(p.legal_name||'Sin razón social'):[p.first_name,p.last_name].filter(Boolean).join(' ')||p.legal_name||'Sin nombre';}

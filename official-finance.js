@@ -2,8 +2,7 @@
 (function(){
   'use strict';
   const money=(v,c='VES')=>new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(v||0))+' '+(c==='VES'?'Bs.':c);
-  const esc=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&gt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])).replace(/&lt;/g,'&lt;');
-  const safe=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safe=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmtDate=(v)=>v?new Date(v).toLocaleString('es-VE',{timeZone:'America/Caracas',dateStyle:'short',timeStyle:'short'}):'—';
   const label=(status)=>({pending:'Por liquidar',confirmed:'Liquidado',reversed:'Rechazado / reversado'})[status]||status||'—';
   const contributor=(p)=>p?.kind==='juridico'?(p?.legal_name||'Persona jurídica'):([p?.first_name,p?.last_name].filter(Boolean).join(' ')||'Contribuyente');
@@ -93,7 +92,7 @@
     document.getElementById('billModal')?.remove();
     const c=p.contributor||{},verified=p.status==='confirmed';
     const text=verified?'PAGO LIQUIDADO POR TESORERÍA':p.status==='pending'?'PAGO REGISTRADO · PENDIENTE DE LIQUIDACIÓN':'OPERACIÓN RECHAZADA / REVERSADA';
-    const doc='<div class="bill-paper"><div class="bill-watermark">IMAUD</div><div class="bill-header"><div class="bill-brand bill-miranda"><div class="bill-logo-window"><img src="assets/invoice-institutional-logos.svg" alt="Identificación institucional"></div></div><div class="bill-heading"><h1>IMAUD · SITMAUD</h1><h2>INSTITUTO MUNICIPAL DE ASEO URBANO Y DOMICILIARIO</h2><b>'+safe(text)+'</b></div><div class="bill-brand bill-imaud"><strong>IMAUD</strong><span>Santa Ana de Coro · Estado Falcón</span></div></div>'+
+    const doc='<div class="bill-paper"><div class="bill-watermark">IMAUD</div><div class="bill-header"><div class="bill-brand bill-miranda"><div class="bill-logo-window"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/2fb94317-165c-4058-ba6f-8d7b39165bc1.png" alt="Alcaldía Bolivariana del Municipio Miranda"></div></div><div class="bill-heading"><h1>IMAUD · SITMAUD</h1><h2>INSTITUTO MUNICIPAL DE ASEO URBANO Y DOMICILIARIO</h2><b>'+safe(text)+'</b></div><div class="bill-brand bill-imaud"><div class="bill-logo-window bill-logo-right"><img src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/c48697a7-2c1f-4f88-aa38-2f8bb991ada2.png" alt="Instituto Municipal de Aseo Urbano y Domiciliario"></div></div></div>'+
       '<div class="bill-ref"><div class="bill-field"><span>N.º de comprobante</span><b>'+safe(p.receipt_number)+'</b></div><div class="bill-field"><span>Contrato</span><b>'+safe(c.contract_number||'—')+'</b></div><div class="bill-field"><span>Registro</span><b>'+safe(fmtDate(p.created_at))+'</b></div><div class="bill-field"><span>Liquidación</span><b>'+safe(fmtDate(p.liquidated_at))+'</b></div></div>'+
       '<div class="bill-parties"><div><h3>Contribuyente</h3><div class="bill-field"><span>Nombre / razón social</span><b>'+safe(contributor(c))+'</b></div><div class="bill-field"><span>Identificación</span><b>'+safe((c.identification_type||'')+'-'+(c.identification_number||''))+'</b></div></div><div><h3>Operación bancaria</h3><div class="bill-field"><span>Método</span><b>'+safe(p.payment_method||'—')+'</b></div><div class="bill-field"><span>Referencia</span><b>'+safe(p.external_reference||'—')+'</b></div></div></div>'+
       '<div class="bill-items"><table><thead><tr><th>Concepto</th><th>Fecha del pago</th><th>Estado</th><th>Importe</th></tr></thead><tbody><tr><td>Servicio municipal de aseo urbano y domiciliario</td><td>'+safe(fmtDate(p.paid_at))+'</td><td>'+safe(label(p.status))+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td></tr></tbody></table></div>'+
@@ -138,6 +137,8 @@
   document.addEventListener('change',e=>{if(e.target.id==='officialPayStatus')renderPaymentRows();});
   document.addEventListener('submit',e=>{if(e.target.id==='officialFinancialFilter'){e.preventDefault();renderReportRows(e.target);}});
   window.sitmaudOfficialFinance={
+    overviewPlaceholder:()=>metrics,
+    loadOverview,
     view(v){return v==='pagos'?paymentView():v==='facturacion'?invoiceView():reportView();},
     async mount(v){
       if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){const d=new Date().toLocaleDateString('en-CA',{timeZone:'America/Caracas'});form.elements.from.value=d.slice(0,7)+'-01';form.elements.to.value=d;}}

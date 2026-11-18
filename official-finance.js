@@ -125,18 +125,31 @@
     node.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Número</th><th>Contribuyente</th><th>Fecha del registro</th><th>Estado</th><th>Monto</th><th></th></tr></thead><tbody>'+
     payments.map(p=>'<tr><td><b>'+safe(p.receipt_number)+'</b></td><td>'+safe(contributor(p.contributor))+'</td><td>'+safe(fmtDate(p.created_at))+'</td><td>'+safe(label(p.status))+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td><td><button class="btn btn-light" data-official-invoice="'+safe(p.id)+'">Consultar</button></td></tr>').join('')+'</tbody></table></div>';
   }
-  function renderReportRows(form){
-    const node=document.getElementById('officialReportRows');if(!node)return;
+  let reportPage=0,reportPageSize=100,reportData=null,reportQueryId=0;
+  async function renderReportRows(form,requestedPage=0){
+    const host=document.getElementById('officialReportRows');if(!host||!form)return;
     if(form.elements.group?.value!=='operations'){loadTerritorialReport(form);return;}
-    const f=new FormData(form),from=String(f.get('from')||''),to=String(f.get('to')||''),status=String(f.get('status')||'');
-    if(!from||!to){node.innerHTML='<div class="contributors-empty">Selecciona el rango de fechas.</div>';return;}
-    if(from>to){node.innerHTML='<div class="contributors-empty">La fecha de inicio debe ser anterior al final.</div>';return;}
-    currentReport=payments.filter(p=>{
-      const day=p.created_at?new Date(p.created_at).toLocaleDateString('en-CA',{timeZone:'America/Caracas'}):'';
-      return day>=from&&day<=to&&(!status||p.status===status);
+    const data=new FormData(form),from=String(data.get('from')||''),to=String(data.get('to')||''),status=String(data.get('status')||'');
+    if(!from||!to||from>to){host.innerHTML='<div class="contributors-empty">Selecciona un rango de fechas válido.</div>';return;}
+    reportPage=Math.max(0,requestedPage);const request=++reportQueryId;
+    host.innerHTML='<div class="contributors-loading">Consultando operaciones oficiales en Supabase…</div>';
+    const {data:result,error}=await imaudClient.rpc('get_official_operations_report',{
+      p_from:from,p_to:to,p_status:status||null,p_limit:reportPageSize,p_offset:reportPage*reportPageSize
     });
-    node.innerHTML='<p><b>'+currentReport.length+'</b> operaciones registradas en el rango seleccionado. Se filtra por fecha de registro de Coro.</p>'+(limited?'<p class="notice">La consulta alcanzó el límite de 500 operaciones. Este listado no es un reporte completo; exportación deshabilitada hasta incorporar paginación.</p>':'')+
-      (currentReport.length?'<div class="payment-debt-scroll"><table><thead><tr><th>Fecha</th><th>N.º</th><th>Contribuyente</th><th>Estado</th><th>Monto</th></tr></thead><tbody>'+currentReport.map(p=>'<tr><td>'+safe(fmtDate(p.created_at))+'</td><td>'+safe(p.receipt_number)+'</td><td>'+safe(contributor(p.contributor))+'</td><td>'+safe(label(p.status))+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td></tr>').join('')+'</tbody></table></div>':'<div class="contributors-empty">No se encontraron operaciones para el rango indicado.</div>');
+    if(request!==reportQueryId||!host.isConnected||form.elements.group.value!=='operations')return;
+    if(error){reportData=null;host.innerHTML='<div class="contributors-empty">No se pudo consultar el reporte: '+safe(error.message)+'</div>';return;}
+    reportData={from,to,status,...result};currentReport=result.rows||[];
+    const total=Number(result.total_count||0),maxPage=Math.max(1,Math.ceil(total/reportPageSize));
+    const stats=result.totals_by_status||{};
+    const statsLabels={confirmed:'Liquidados',pending:'Por liquidar',reversed:'Rechazados'};
+    const summary=Object.entries(stats).map(([key,x])=>'<span><b>'+safe(statsLabels[key]||key)+':</b> '+safe(x.count)+' · '+safe(money(x.amount_ves,'VES'))+'</span>').join(' · ');
+    host.innerHTML='<p><b>'+total.toLocaleString('es-VE')+'</b> operaciones registradas · '+safe(from)+' al '+safe(to)+
+      ' (fecha de registro en Coro). <small>Los importes no se suman como recaudación hasta su liquidación.</small></p>'+
+      '<p style="font-size:12px;color:#5a7386">'+(summary||'Sin operaciones registradas')+'</p>'+
+      (currentReport.length?'<div class="payment-debt-scroll"><table><thead><tr><th>Registro</th><th>N.º</th><th>Contribuyente</th><th>Banco / referencia</th><th>Liquidación</th><th>Estado</th><th>Monto</th></tr></thead><tbody>'+
+       currentReport.map(p=>'<tr><td>'+safe(fmtDate(p.created_at))+'</td><td>'+safe(p.receipt_number)+'</td><td>'+safe(p.contributor_name)+'</td><td>'+safe([p.bank_code,p.external_reference].filter(Boolean).join(' / ')||'—')+'</td><td>'+safe(fmtDate(p.liquidated_at))+'</td><td>'+safe(label(p.status))+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td></tr>').join('')+'</tbody></table></div>':
+       '<div class="contributors-empty">No existen operaciones oficiales para este período.</div>')+
+      '<div class="form-actions"><button class="btn btn-light btn-sm" type="button" data-report-page="prev" '+(reportPage===0?'disabled':'')+'>Anterior</button><span> Página '+(reportPage+1)+' de '+maxPage+' </span><button class="btn btn-light btn-sm" type="button" data-report-page="next" '+(reportPage+1>=maxPage?'disabled':'')+'>Siguiente</button></div>';
   }
   async function verifyReadiness(){
     const node=document.getElementById('officialPaymentReadiness');if(!node)return;
@@ -317,14 +330,35 @@
     if(host)host.innerHTML='<div class="notice">Se exoneraron '+safe(data.applied)+' períodos autorizados. Los movimientos quedaron en la bitácora del funcionario y no se sumaron a recaudación.</div>';
     reliefCandidates=[];await loadOverview();
   }
-  function exportCSV(){
-    imaudClient.rpc('record_staff_activity',{p_action:'report_exported',p_module:'reportes',p_reference:null}).then(({error})=>{if(error)console.warn('Bitácora:',error.message)});
-    if(document.getElementById('officialFinancialFilter')?.elements.group.value!=='operations'){exportTerritorialReport();return;}
-    if(limited){window.alert('La consulta alcanzó el máximo de 500 operaciones. No es seguro exportar un reporte incompleto.');return;}
-    const cols=['N.º comprobante','Contribuyente','Identificación','Contrato','Fecha registro','Fecha liquidación','Banco / referencia','Método','Estado','Moneda','Monto'];
-    const rows=currentReport.map(p=>[p.receipt_number,contributor(p.contributor),(p.contributor?.identification_type||'')+'-'+(p.contributor?.identification_number||''),p.contributor?.contract_number,fmtDate(p.created_at),fmtDate(p.liquidated_at),p.external_reference,p.payment_method,label(p.status),p.currency_code,p.amount]);
-    const csv=[cols,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
-    const a=document.createElement('a');const u=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download='SITMAUD-pagos-institucionales.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),2500);
+  async function exportCSV(){
+    const form=document.getElementById('officialFinancialFilter');if(!form)return;
+    if(form.elements.group.value!=='operations'){exportTerritorialReport();return;}
+    if(!reportData){window.alert('Consulta primero el reporte oficial.');return;}
+    const frozen={from:reportData.from,to:reportData.to,status:reportData.status||null,
+       total:Number(reportData.total_count||0)};
+    if(frozen.total>10000){window.alert('El reporte contiene más de 10.000 operaciones. Divide el rango de fechas antes de exportar para evitar archivos incompletos.');return;}
+    const fields=['N.º comprobante','Contribuyente','Identificación','Contrato','Fecha registro','Fecha liquidación','Banco','Referencia','Método','Estado','Moneda','Monto Bs.','Monto UCD','Fecha BCV','Fuente BCV'];
+    const rows=[];const button=document.querySelector('[data-official-action="export"]');if(button)button.disabled=true;
+    try{
+      for(let offset=0;offset<frozen.total;offset+=250){
+        const {data,error}=await imaudClient.rpc('get_official_operations_report',{
+          p_from:frozen.from,p_to:frozen.to,p_status:frozen.status,p_limit:250,p_offset:offset
+        });
+        if(error)throw error;
+        const items=data?.rows||[];
+        if(!items.length||Number(data.total_count)!==frozen.total)throw Error('El conjunto de registros cambió durante la exportación. Vuelve a consultar.');
+        for(const p of items)rows.push([p.receipt_number,p.contributor_name,p.identification,p.contract_number,
+          fmtDate(p.created_at),fmtDate(p.liquidated_at),p.bank_code,p.external_reference,p.payment_method,
+          label(p.status),p.currency_code,p.amount,p.udc_total,p.rate_effective_date,p.rate_source]);
+      }
+      if(rows.length!==frozen.total)throw Error('La exportación quedó incompleta. Se ha cancelado.');
+      const csv=[fields,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+      const a=document.createElement('a'),url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+      a.href=url;a.download='SITMAUD-operaciones-'+frozen.from+'-'+frozen.to+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),2500);
+      imaudClient.rpc('record_staff_activity',{p_action:'report_exported',p_module:'reportes',p_reference:frozen.from+'_'+frozen.to})
+        .then(({error})=>{if(error)console.warn('Bitácora:',error.message)});
+    }catch(error){window.alert('No se exportó el reporte: '+(error.message||'Error de consulta'));}
+    finally{if(button?.isConnected)button.disabled=false;}
   }
   document.addEventListener('click',e=>{
     const action=e.target.closest('[data-official-action]');
@@ -335,6 +369,8 @@
       if(action.dataset.officialAction==='export')exportCSV();
       return;
     }
+    const reportPageBtn=e.target.closest('[data-report-page]');
+    if(reportPageBtn){const form=document.getElementById('officialFinancialFilter');if(form)renderReportRows(form,reportPage+(reportPageBtn.dataset.reportPage==='next'?1:-1));return;}
     const reject=e.target.closest('[data-official-reject]');if(reject){rejectPendingPayment(reject.dataset.officialReject,reject);return;}
     const apply=e.target.closest('[data-relief-apply]');if(apply){applySelectedRelief(apply);return;}
     const invoice=e.target.closest('[data-official-invoice]');if(invoice){showDocument(invoice.dataset.officialInvoice);return;}
@@ -348,7 +384,7 @@
     loadOverview,
     view(v){return v==='pagos'?paymentView():v==='facturacion'?invoiceView():reportView();},
     async mount(v){
-      if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){changeReportPeriod(form);changeReportGrouping(form);}}
+      if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){changeReportPeriod(form);changeReportGrouping(form);renderReportRows(form);}}
       if(v==='pagos'||v==='reportes')loadOverview();
       if(v==='pagos'){verifyReadiness();loadFinancialPrivileges();}
       await loadPayments();

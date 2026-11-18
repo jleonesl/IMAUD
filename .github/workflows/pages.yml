@@ -28,9 +28,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/assets
-          for file in index.html funcionario.html contribuyente-v2.html contribuyente-cuenta.html \
+          for file in index.html funcionario.html contribuyente-v2.html contribuyente-cuenta.html verificar-solvencia.html \
             styles.css auth.css billing.css territorial-map.css \
-            auth.js official-finance.js app.js territorial-map.js contributor-documents.js; do
+            auth.js official-finance.js official-payment-registration.js solvency-documents.js \
+            condominium-assessments.js app.js territorial-map.js contributor-documents.js; do
             test -f "$file"
             cp "$file" dist/"$file"
           done
@@ -57,6 +58,9 @@ jobs:
           print("All local assets and map dependencies are present.")
           PY
           node --check dist/official-finance.js
+          node --check dist/official-payment-registration.js
+          node --check dist/solvency-documents.js
+          node --check dist/condominium-assessments.js
           node --check dist/app.js
           node --check dist/territorial-map.js
           node --check dist/auth.js

@@ -5,6 +5,7 @@
 <title>SITMAUD | Portal del Contribuyente</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="stylesheet" href="billing.css?v=20261119-identical-invoice1">
+<link rel="stylesheet" href="citizen-dashboard.css?v=20261119-ui1">
 <style>
 :root{font-family:Arial,sans-serif;color:#173e59;background:#f5f8fb}
 *{box-sizing:border-box}body{margin:0}body>header{background:#103c61;color:white;padding:20px 5%;display:flex;justify-content:space-between;align-items:center;gap:12px}
@@ -17,17 +18,50 @@ h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14p
 .citizen-pay-month{display:grid;grid-template-columns:20px 1fr;gap:5px 10px;padding:12px;border:1px solid #d8e6ef;border-radius:8px;margin:9px 0;cursor:pointer}.citizen-pay-month input{grid-row:span 2;align-self:center;accent-color:#0b6b97}.citizen-pay-month small{grid-column:2;color:#5d788c}.citizen-payment-form{margin-top:16px}.citizen-payment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:15px 0}.citizen-payment-grid label{font-size:13px;font-weight:700}.citizen-payment-grid input,.citizen-payment-grid select{display:block;margin-top:7px;width:100%;padding:12px;font:inherit;border:1px solid #cbdce6;border-radius:8px}.citizen-payment-actions{display:flex;flex-wrap:wrap;gap:10px}.citizen-payment-note{background:#f5fafc;padding:12px;border-radius:8px;color:#315d77;font-size:13px;margin:14px 0}.citizen-payment-status{font-size:13px;color:#215c7b;margin:12px 0}</style>
 </head>
 <body>
-<header><div><b>SITMAUD</b><small>Portal del Contribuyente · Municipio Miranda, Coro</small></div><button id="exit">Cerrar sesión</button></header>
-<main><div id="sessionStatus" role="status">Verificando acceso institucional…</div>
-<section class="card" id="account" hidden>
-<h1 id="citizenGreeting">Mi cuenta SITMAUD</h1>
-<p id="citizenAccountIdentifier">Expediente institucional</p>
-<section class="citizen-summary"><div class="info"><b>Mis inmuebles y cuentas matrices</b><div id="citizenProperties">Consultando…</div></div>
-<div class="info"><b>Mis obligaciones</b><div id="citizenAssessments">Consultando…</div></div>
-<div class="info"><b>Mis pagos</b><div id="citizenPayments">Consultando…</div></div></section>
-</section>
-<section class="card" id="citizenSecurity" hidden style="margin-top:20px"><h2>Seguridad de mi cuenta</h2><p>Si deseas cambiar tu contraseña, puedes hacerlo aquí. No es obligatorio modificarla después de iniciar sesión.</p><button type="button" id="citizenChangePasswordToggle">Cambiar mi contraseña</button><form id="citizenChangePasswordForm" hidden><label for="citizenCurrentPassword" class="security-label">Contraseña actual</label><input id="citizenCurrentPassword" type="password" autocomplete="current-password" required minlength="1"><label for="citizenNewPassword" class="security-label">Nueva contraseña (mínimo 12 caracteres)</label><input id="citizenNewPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><label for="citizenNewPasswordRepeat" class="security-label">Confirmar nueva contraseña</label><input id="citizenNewPasswordRepeat" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><button type="submit" id="citizenChangePasswordSubmit">Guardar nueva contraseña</button><div id="citizenPasswordFeedback" role="status" aria-live="polite"></div></form></section>
-<section class="card payment-info" id="citizenPaymentRegistration" hidden>
+<div class="citizen-shell">
+<aside class="citizen-sidebar" id="citizenSidebar" aria-label="Menú del contribuyente">
+<div class="citizen-brand"><img src="./assets/logo-sitmaud-sidebar.jpg?v=2" alt="Logo institucional SITMAUD"><span>Alcaldía del Municipio Miranda<br>Coro · Estado Falcón</span></div>
+<nav class="citizen-nav" aria-label="Secciones del portal">
+<button type="button" data-citizen-view="inicio" aria-current="page"><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">⌂</span>Inicio</button>
+<button type="button" data-citizen-view="obligaciones" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">▱</span>Mis obligaciones</button>
+<button type="button" data-citizen-view="cargar-pago" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">▣</span>Cargar pago</button>
+<button type="button" data-citizen-view="facturas" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">▤</span>Mis facturas</button>
+<button type="button" data-citizen-view="cuentas" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">▥</span>Cuentas oficiales</button>
+<button type="button" data-citizen-view="informacion" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">♙</span>Mi información</button>
+<button type="button" data-citizen-view="ayuda" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">ⓘ</span>Ayuda y soporte</button>
+</nav><div class="citizen-sidebar-foot">Instituto Municipal de Aseo Urbano y Domiciliario<br>Portal de contribuyentes · SITMAUD</div>
+</aside>
+<main class="citizen-workspace">
+<div class="citizen-topbar">
+<div style="display:flex;align-items:center;gap:13px"><button class="citizen-mobile-toggle" id="citizenMenuToggle" aria-expanded="false" aria-controls="citizenSidebar" type="button">☰</button><div><h1 id="citizenSectionTitle">Portal del Contribuyente</h1><p>Sistema Integral Tributario Municipal de Aseo Urbano y Domiciliario</p></div></div>
+<div class="citizen-userbar"><span class="citizen-avatar" aria-hidden="true">●</span><span class="citizen-userbar-name" id="citizenTopName">Contribuyente</span><button id="exit" type="button">Cerrar sesión</button></div>
+</div>
+<div id="sessionStatus" role="status">Verificando acceso institucional…</div>
+<section id="account" class="citizen-view" data-citizen-view-panel="inicio" hidden>
+<div class="citizen-welcome"><div class="citizen-coro-visual" role="img" aria-label="Iglesia de San Francisco en Santa Ana de Coro, Estado Falcón"></div><div class="citizen-welcome-copy">
+<h2 id="citizenHeroGreeting">Bienvenido, contribuyente</h2>
+<p id="citizenHeroIdentity">Consultando contrato y cédula / RIF…</p></div>
+<a class="citizen-photo-credit" target="_blank" rel="noopener noreferrer" href="https://commons.wikimedia.org/wiki/File:Iglesia_de_San_Francisco,_Coro.jpg">Foto: Janethrodri / Wikimedia Commons · CC BY-SA</a>
+</div>
+<div class="citizen-quick">
+<button class="citizen-action" type="button" data-citizen-view="obligaciones"><span aria-hidden="true">▱</span> Ver mis obligaciones</button>
+<button class="citizen-action primary" type="button" data-citizen-view="cargar-pago"><span aria-hidden="true">▣</span> Cargar pago</button>
+<button class="citizen-action" type="button" data-citizen-view="facturas"><span aria-hidden="true">▤</span> Mis facturas</button>
+<button class="citizen-action" type="button" data-citizen-view="cuentas"><span aria-hidden="true">▥</span> Cuentas oficiales</button>
+</div>
+<div class="citizen-grid"><div class="citizen-main-column">
+<div class="citizen-kpis">
+<div class="citizen-kpi"><small>Deuda pendiente registrada</small><strong id="citizenDebtValue">—</strong><span id="citizenDebtNote">Consultando…</span></div>
+<div class="citizen-kpi"><small>Total de pagos liquidados</small><strong id="citizenPaidValue">—</strong><span id="citizenPaidNote">Consultando…</span></div>
+<div class="citizen-kpi"><small>Estado de cuenta</small><strong id="citizenStatusValue">Por determinar</strong><span id="citizenStatusNote">Pendiente de verificación</span></div>
+</div>
+<div class="citizen-card"><div class="citizen-section-head"><h2>Mis últimas operaciones</h2><button type="button" data-citizen-view="facturas">Ver todas</button></div><div id="citizenRecentTransactions" aria-live="polite">Consultando…</div></div>
+</div><div class="citizen-aside-column">
+<div class="citizen-card"><h2>Mi inmueble</h2><div id="citizenHomeProperty">Consultando…</div><button type="button" data-citizen-view="informacion" style="margin-top:12px;background:#eaf3fc;color:#0c5799">Ver información</button></div>
+<div class="citizen-card"><h2>Cuentas bancarias oficiales</h2><p>Realiza tus pagos exclusivamente a cuentas publicadas por la Alcaldía.</p><div id="citizenHomeBanks">Consultando…</div><button type="button" data-citizen-view="cuentas" style="margin-top:12px;background:#eaf3fc;color:#0c5799">Ver cuentas oficiales</button></div>
+</div></div></section>
+<section class="citizen-view" data-citizen-view-panel="obligaciones" hidden><div class="citizen-section-head"><div><h2>Mis obligaciones</h2><p>Consulta los períodos registrados por el sistema tributario municipal.</p></div><button type="button" data-citizen-view="cargar-pago">Cargar pago</button></div><div class="citizen-card"><div id="citizenAssessments">Consultando obligaciones…</div></div></section>
+<section class="citizen-view" data-citizen-view-panel="cargar-pago" hidden><div class="citizen-section-head"><div><h2>Cargar pago</h2><p>Registra el comprobante para la revisión de Tesorería.</p></div></div><section class="card payment-info" id="citizenPaymentRegistration" hidden>
 <h2>Registrar un pago</h2><p>Selecciona los meses pendientes y verifica el importe oficial calculado con la UCD y la tasa BCV. Solo los pagos a cuentas publicadas por la Alcaldía pueden registrarse.</p>
 <div class="citizen-payment-note">Enviar un comprobante <strong>no liquida la deuda</strong>. Tesorería debe verificar que los fondos ingresaron a la cuenta oficial.</div>
 <div id="citizenPaymentMessage" class="citizen-payment-status" role="status">Verificando obligaciones y cuentas oficiales…</div>
@@ -44,13 +78,21 @@ h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14p
 </div>
 <button type="submit" id="citizenPaymentSubmit" disabled>Enviar pago a validación de Tesorería</button>
 </form></section>
-<section class="card payment-info" id="paymentInformation" hidden><h2>Cuentas bancarias oficiales de la Alcaldía</h2><div id="municipalBankList" role="status">Cargando cuentas bancarias…</div></section>
+</section>
+<section class="citizen-view" data-citizen-view-panel="facturas" hidden><div class="citizen-section-head"><div><h2>Mis facturas y pagos</h2><p>El recibo definitivo mantiene el diseño institucional y solo se imprime tras la liquidación de Tesorería.</p></div></div><div class="citizen-card"><div id="citizenPayments">Consultando pagos…</div></div></section>
+<section class="citizen-view" data-citizen-view-panel="cuentas" hidden><div class="citizen-section-head"><div><h2>Cuentas oficiales</h2><p>Información publicada por la Alcaldía para transferencias y pagos móviles.</p></div></div><section class="card payment-info" id="paymentInformation" hidden><h2>Cuentas bancarias oficiales de la Alcaldía</h2><div id="municipalBankList" role="status">Cargando cuentas bancarias…</div></section>
+</section>
+<section class="citizen-view" data-citizen-view-panel="informacion" hidden><div class="citizen-section-head"><div><h2>Mi información</h2><p>Datos oficiales asociados con tu expediente.</p></div></div><div class="citizen-card"><h2 id="citizenGreeting">Mi cuenta SITMAUD</h2><p id="citizenAccountIdentifier">Contrato y documento de identidad</p><h3>Mis inmuebles y cuentas matrices</h3><div id="citizenProperties">Consultando…</div></div><section class="card" id="citizenSecurity" hidden style="margin-top:20px"><h2>Seguridad de mi cuenta</h2><p>Si deseas cambiar tu contraseña, puedes hacerlo aquí. No es obligatorio modificarla después de iniciar sesión.</p><button type="button" id="citizenChangePasswordToggle">Cambiar mi contraseña</button><form id="citizenChangePasswordForm" hidden><label for="citizenCurrentPassword" class="security-label">Contraseña actual</label><input id="citizenCurrentPassword" type="password" autocomplete="current-password" required minlength="1"><label for="citizenNewPassword" class="security-label">Nueva contraseña (mínimo 12 caracteres)</label><input id="citizenNewPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><label for="citizenNewPasswordRepeat" class="security-label">Confirmar nueva contraseña</label><input id="citizenNewPasswordRepeat" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><button type="submit" id="citizenChangePasswordSubmit">Guardar nueva contraseña</button><div id="citizenPasswordFeedback" role="status" aria-live="polite"></div></form></section>
+</section>
+<section class="citizen-view" data-citizen-view-panel="ayuda" hidden><div class="citizen-section-head"><div><h2>Ayuda y soporte</h2><p>Asistencia sobre tu expediente y tus trámites.</p></div></div><div class="citizen-card"><h2>Atención institucional</h2><p>Para consultas sobre obligaciones, pagos no identificados o actualización de datos, comunícate con el Instituto Municipal de Aseo Urbano y Domiciliario del Municipio Miranda, Coro.</p><p>Si un pago está pendiente, Tesorería deberá verificarlo antes de que puedas descargar la factura definitiva.</p><p>No compartas tu contraseña, códigos de recuperación ni comprobantes mediante canales no oficiales.</p></div></section>
 <footer>Alcaldía del Municipio Miranda · Instituto Municipal de Aseo Urbano y Domiciliario</footer>
 </main>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="official-receipt-template.js?v=20261119-identical-invoice1"></script>
 <script src="citizen-receipts.js?v=20261119-identical-invoice1"></script>
 <script src="citizen-payment-registration.js?v=20261119-citizen-payment1"></script>
+<script src="citizen-dashboard.js?v=20261119-ui1"></script>
 <script>
 const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase.co","sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm",{auth:{storageKey:"sitmaud-citizen-auth"}});
 (async function(){
@@ -76,6 +118,7 @@ const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase
   document.getElementById('account').hidden=false;
   document.getElementById('citizenSecurity').hidden=false;
   document.getElementById('paymentInformation').hidden=false;
+  window.sitmaudCitizenDashboard?.init(portal);
   if(window.sitmaudCitizenPayment)await window.sitmaudCitizenPayment.init(client,portal);
   const bankHost=document.getElementById('municipalBankList');
   const {data:bankData,error:bankError}=await client.rpc('get_municipal_payment_instructions');
@@ -83,6 +126,7 @@ const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase
   if(bankError){bankHost.textContent='No se pudieron cargar las cuentas bancarias.';}
   else if(!bankData?.accounts?.length){bankHost.innerHTML='<p>No hay cuentas bancarias publicadas.</p>';}
   else bankHost.innerHTML='<div class="bank-list">'+bankData.accounts.map(b=>'<article class="bank-card"><h3>'+esc(b.method==='pago_movil'?'Pago móvil':'Transferencia bancaria')+'</h3><div class="bank-row"><small>Banco</small><b>'+esc(b.bank)+'</b></div><div class="bank-row"><small>Titular</small><b>'+esc(b.holder)+'</b></div><div class="bank-row"><small>RIF</small><b>'+esc(b.rif)+'</b></div><div class="bank-row"><small>'+(b.method==='pago_movil'?'Teléfono':'Número de cuenta')+'</small><b>'+esc(b.mobile_number||b.account_number)+'</b></div></article>').join('')+'</div>';
+  window.sitmaudCitizenDashboard?.updateBanks(bankData);
  }catch(err){console.error('Citizen account verification:',err);status.textContent='No fue posible verificar el acceso. Inicia sesión nuevamente.';}
 })();
 document.addEventListener('click',event=>{

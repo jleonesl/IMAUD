@@ -5,7 +5,7 @@ const headers={"Content-Type":"application/json","Cache-Control":"no-store",
  "Access-Control-Allow-Headers":"content-type,apikey,authorization,x-client-info",
  "Access-Control-Allow-Methods":"POST, OPTIONS"};
 const respond=(data:unknown,status=200)=>new Response(JSON.stringify(data),{status,headers});
-const denial=()=>respond({error:"Cédula/RIF o contraseña incorrectos, o acceso ciudadano no activado."},401);
+const denial=()=>respond({error:"No se pudo iniciar sesión con esos datos. Verifica tu cédula/RIF y la contraseña que hayas creado mediante el correo. La cédula no está configurada como contraseña inicial."},401);
 Deno.serve(async req=>{
  if(req.method==="OPTIONS")return respond({});
  if(req.method!=="POST"||(req.headers.get("origin")&&req.headers.get("origin")!==ORIGIN))return respond({error:"Operación no permitida"},403);

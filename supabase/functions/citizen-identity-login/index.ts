@@ -23,23 +23,15 @@ Deno.serve(async req=>{
  const {data:permitted,error:limitError}=await admin.rpc("check_citizen_login_limit",{p_hash:hash});
  if(limitError)return respond({error:"Servicio temporalmente no disponible"},503);
  if(permitted!==true)return respond({error:"Demasiados intentos. Intenta nuevamente más tarde."},429);
- const idType=type==="C"?"J":type;
- // Solo se consulta un expediente activo y vinculado; ninguna respuesta revela datos de identidad.
- const digits=identity.replace(/^[VEJ]/,"");
- const {data:matches,error:findError}=await admin.from("contributors")
-  .select("id,email,identification_type,identification_number,service_account_type,status")
-  .eq("status","active").eq("identification_type",idType)
-  .ilike("identification_number","%"+digits+"%").limit(10);
+ const normalizedIdentity=(type==="V"||type==="E")?identity.replace(/^[VE]/,""):identity;
+ const {data:matches,error:findError}=await admin.rpc("resolve_citizen_login_identity",{
+  p_type:type,p_identity:normalizedIdentity
+ });
  if(findError)return respond({error:"No se pudo consultar el acceso"},503);
- const normalized=(v:unknown)=>String(v||"").replace(/[^A-Za-z0-9]/g,"").toUpperCase().replace(/^[VEJ]/,"");
- const candidates=(matches||[]).filter(c=>
-  normalized(c.identification_number)===digits &&
-  (type==="C"?c.service_account_type==="condominio":c.service_account_type!=="condominio"));
- if(candidates.length!==1)return denial();
- const c=candidates[0];
- const {data:link,error:linkError}=await admin.from("citizen_accounts")
- .select("auth_user_id,identity_type,is_active").eq("contributor_id",c.id).maybeSingle();
- if(linkError||!link||!link.is_active||link.identity_type!==type)return denial();
+ if(!matches||matches.length!==1)return denial();
+ const c={id:matches[0].contributor_id,email:matches[0].registered_email};
+ const link={auth_user_id:matches[0].linked_user_id};
+ if(!link.auth_user_id)return denial();
  const {data:authUser,error:authError}=await admin.auth.admin.getUserById(link.auth_user_id);
  if(authError||!authUser.user||!authUser.user.email_confirmed_at||
   String(authUser.user.email||"").toLowerCase()!==String(c.email||"").toLowerCase())return denial();

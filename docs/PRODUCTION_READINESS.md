@@ -161,3 +161,14 @@ SITMAUD es un sistema tributario municipal de uso real. No se autoriza desarroll
 ### Estado de los módulos
 
 El código actual de varios módulos aún depende de funciones y tablas de prueba. Por lo tanto, esta directiva no se considera satisfecha por la auditoría ni por cambios de texto. Cada módulo requiere implementación, revisión, pruebas y aprobación antes de habilitarlo.
+
+
+## Adenda — 19/11/2026: pruebas autorizadas en entorno aislado
+
+El propietario solicita ahora pruebas con personas reales autorizadas y operaciones de pago **simuladas** antes de desplegar en hosting e importar la base histórica. Esto **no modifica** la prohibición de presentar pagos simulados como ingresos reales ni permite ensuciar el Supabase principal.
+
+Las pruebas se realizarán exclusivamente en una base Supabase independiente y una web QA identificada inequívocamente como **ENTORNO DE PRUEBAS · SIN VALIDEZ FISCAL**. No deben insertarse pagos no acreditados en las tablas oficiales de producción, emitirse facturas oficiales ficticias ni migrarse estos datos a la versión definitiva.
+
+La limpieza de pruebas afectará solo al entorno aislado y se ejecutará tras revisar conservación de auditoría, autorizaciones y respaldos; nunca como un `TRUNCATE` general contra el principal. La importación heredada será posterior a la comprobación del hosting definitivo.
+
+Estado: se preparó la rama `qa-pre-hosting-2026` y el paquete de hosting. La creación de base QA requiere aprobación de su costo. Plan operativo: [PLAN_QA_HOSTING_MIGRACION_2026.md](PLAN_QA_HOSTING_MIGRACION_2026.md).

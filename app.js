@@ -170,7 +170,20 @@ async function saveContributor(form){
  document.getElementById('propertyLock').hidden=true;document.getElementById('propertyFormWrap').hidden=false;
  document.getElementById('linkedContributor').textContent='Contribuyente vinculado: '+contributorName(data)+' · '+data.identification_type+'-'+data.identification_number;
  document.getElementById('contractPreview').innerHTML='<small>N.º de contrato del contribuyente</small><strong>'+escapeHTML(data.contract_number)+'</strong>';
- toast('Contribuyente guardado. Continúa con el inmueble.');
+ if(payload.email){
+   // Crear el expediente es independiente del envío de correo: un fallo de SMTP
+   // no elimina ni duplica al contribuyente.
+   const invited=await imaudClient.functions.invoke('invite-sitmaud-citizen',{body:{contributor_id:data.id}});
+   if(invited.error||!invited.data?.ok){
+     document.getElementById('savedContributorNote').textContent+=' No se pudo enviar todavía la activación por correo. Puedes reenviarla desde el expediente.';
+     toast('Contribuyente guardado. Activación por correo pendiente.');
+   }else{
+     document.getElementById('savedContributorNote').textContent+=' Se envió la invitación para crear su contraseña.';
+     toast('Contribuyente guardado. Correo de activación enviado.');
+   }
+ }else{
+   toast('Contribuyente guardado sin correo. Añade un correo verificado para activar el portal.');
+ }
 }
 async function loadGeographyCatalogs(){
  const [p,s]=await Promise.all([

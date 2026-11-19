@@ -951,6 +951,25 @@ function openStaffRegistrationPreview(){
      if(submit.isConnected){submit.disabled=false;submit.textContent='Enviar invitación';}
    }
  });
+ const credentialInfo=overlay.querySelector('#sitStaffInviteNotice');
+ const invitationButton=overlay.querySelector('#sitStaffInviteSubmit');
+ if(credentialInfo)credentialInfo.textContent='Verificando modalidad de entrega de credenciales…';
+ imaudClient.functions.invoke('invite-sitmaud-staff',{body:{action:'delivery_status'}}).then(({data,error})=>{
+   if(!overlay.isConnected)return;
+   if(error||!data?.ok){
+     if(credentialInfo)credentialInfo.textContent='No se pudo verificar el servicio de correo. Antes de registrar, comprueba que la función de invitaciones esté disponible.';
+     if(invitationButton)invitationButton.disabled=true;
+     return;
+   }
+   const institutional=data.institutional_credentials_enabled===true;
+   if(credentialInfo)credentialInfo.textContent=institutional
+    ?'Correo institucional configurado. Se enviarán el usuario (correo electrónico) y una clave provisional al funcionario.'
+    :'El servicio de correo para claves provisionales aún no está configurado. Se enviará un enlace de invitación para que el funcionario cree su contraseña.';
+   if(invitationButton)invitationButton.textContent=institutional?'Registrar y enviar credenciales':'Enviar enlace de invitación';
+ }).catch(()=>{
+   if(credentialInfo)credentialInfo.textContent='No se pudo verificar el servicio de correo.';
+   if(invitationButton)invitationButton.disabled=true;
+ });
  overlay.querySelector('[name="first_name"]')?.focus();
 }
 function staff(){

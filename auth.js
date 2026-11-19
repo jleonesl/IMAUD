@@ -31,7 +31,7 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
    if(role) role.textContent=profile.role.replaceAll('_',' ');
    document.querySelector('.demo-pill')?.remove();
    const banner=document.querySelector('.demo-banner');
-   if(banner){banner.innerHTML='<b>PREPARACIÓN INSTITUCIONAL</b><span>Operaciones financieras y liquidaciones oficiales deshabilitadas hasta completar la verificación institucional.</span>'}
+   if(banner){banner.innerHTML='<b>PREPARACIÓN INSTITUCIONAL</b><span>Fase de pruebas 2026: para generar deudas debe habilitarse el tabulador; para registrar cobros oficiales se requiere tasa BCV verificada. Tesorería valida los pagos posteriormente.</span>'}
    window.imaudCurrentProfile=profile;
    // Identity is derived from the authenticated session by the server; no user-supplied actor ID.
    imaudClient.rpc('record_staff_activity',{p_action:'session_started',p_module:'authentication',p_reference:null})

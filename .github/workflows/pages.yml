@@ -27,7 +27,7 @@ jobs:
           mkdir -p dist/assets
           for file in index.html funcionario.html contribuyente-v2.html contribuyente-cuenta.html activar-contribuyente.html verificar-solvencia.html \
             styles.css auth.css billing.css territorial-map.css citizen-dashboard.css \
-            auth.js official-finance.js official-payment-registration.js pos-terminals.js solvency-documents.js \
+            auth.js staff-password-setup.js official-finance.js official-payment-registration.js pos-terminals.js solvency-documents.js \
             condominium-assessments.js municipal-bank-admin.js official-receipt-template.js citizen-receipts.js citizen-payment-registration.js citizen-dashboard.js app.js territorial-map.js contributor-documents.js; do
             test -f "$file"
             cp "$file" dist/"$file"
@@ -57,6 +57,7 @@ jobs:
           node --test tests/citizen-portal.test.mjs
           node --test tests/release-safety.test.mjs
           node --test tests/staff-profiles.test.mjs
+          node --test tests/staff-invitation-password.test.mjs
           node --test tests/payments-layout.test.mjs
           node --test tests/billing-engine-regression.test.mjs
           node --check dist/official-finance.js
@@ -72,6 +73,7 @@ jobs:
           node --check dist/app.js
           node --check dist/territorial-map.js
           node --check dist/auth.js
+          node --check dist/staff-password-setup.js
           echo "Public site contains only approved website assets; no migrations, archives or demo pages."
       - name: Check public package for server secrets
         shell: bash

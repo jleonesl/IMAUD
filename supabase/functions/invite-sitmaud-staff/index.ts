@@ -64,7 +64,7 @@ Deno.serve(async (request) => {
   // El envío de la invitación se realiza en Supabase Auth, nunca desde el navegador.
   const { data: invitation, error: invitationError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: first+" "+last, staff_pending_activation: true },
-    redirectTo: "https://jleonesl.github.io/IMAUD/funcionario.html"
+    redirectTo: "https://jleonesl.github.io/IMAUD/funcionario.html?setup=invite"
   });
   if (invitationError || !invitation.user) {
     return response({ error: "No se pudo enviar la invitación. Verifica el correo y la configuración de Auth." }, 409, origin);

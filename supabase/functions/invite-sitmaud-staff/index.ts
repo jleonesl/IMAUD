@@ -33,6 +33,11 @@ Deno.serve(async (request) => {
   if (permissionError || allowed !== true) return response({ error: "Solo el superusuario maestro puede registrar funcionarios." }, 403, origin);
   let payload: Record<string, unknown>;
   try { payload = await request.json(); } catch { return response({ error: "Datos inválidos." }, 400, origin); }
+  if (payload.action === "delivery_status") {
+    const ready = Boolean(Deno.env.get("RESEND_API_KEY") && Deno.env.get("SITMAUD_MAIL_FROM"));
+    return response({ok:true, institutional_credentials_enabled:ready,
+      delivery_mode:ready?"temporary_password_email":"activation_link"},200,origin);
+  }
   const first = String(payload.first_name || "").trim().replace(/\s+/g," ");
   const last = String(payload.last_name || "").trim().replace(/\s+/g," ");
   const email = String(payload.email || "").trim().toLowerCase();

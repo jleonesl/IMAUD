@@ -31,12 +31,43 @@ Deno.serve(async request=>{
  if(cError||!c||c.status!=="active"||!c.email||!c.identification_number)return respond({error:"El expediente activo necesita cédula/RIF y correo registrado"},400,origin);
  const email=String(c.email).trim().toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return respond({error:"Correo del expediente inválido"},400,origin);
+ // Acción automática en nuevos registros; el funcionario solo reenvía el acceso.
+ const action=payload.action==="resend"?"resend":"automatic";
  const {data:linked,error:linkedError}=await admin.from("citizen_accounts")
  .select("auth_user_id,is_active").eq("contributor_id",id).maybeSingle();
  if(linkedError)return respond({error:"No se pudo verificar la cuenta ciudadana"},503,origin);
- if(linked?.is_active)return respond({error:"Este contribuyente ya tiene acceso ciudadano vinculado"},409,origin);
+ const redirectTo=ORIGIN+"/IMAUD/activar-contribuyente.html";
+ if(linked){
+   const {data:authRecord,error:authRecordError}=await admin.auth.admin.getUserById(linked.auth_user_id);
+   if(authRecordError||!authRecord?.user
+     ||String(authRecord.user.email||"").trim().toLowerCase()!==email) {
+     return respond({error:"La cuenta y el correo no coinciden; requiere verificación institucional"},409,origin);
+   }
+   const {data:staffAccount,error:staffAccountError}=await admin.from("staff_profiles")
+     .select("user_id").eq("user_id",linked.auth_user_id).limit(1);
+   if(staffAccountError||staffAccount?.length)
+     return respond({error:"No es posible usar un acceso de funcionario como contribuyente"},409,origin);
+   if(action!=="resend")
+     return respond({ok:true,status:"already_registered",email_requested:false,contract_number:c.contract_number},200,origin);
+   const {data:permitted,error:limitError}=await admin.rpc("allow_citizen_access_email",{p_contributor_id:id});
+   if(limitError)return respond({error:"No se pudo verificar el límite de reenvíos"},503,origin);
+   if(!permitted)return respond({error:"Ya se solicitó un correo recientemente. Vuelve a intentarlo más tarde."},429,origin);
+   const {error:recoveryError}=await admin.auth.resetPasswordForEmail(email,{redirectTo});
+   if(recoveryError) {
+     console.error("citizen resend failed:",recoveryError.message);
+     return respond({error:"El servicio de correo rechazó el reenvío. Revisa la configuración de Auth y SMTP."},503,origin);
+   }
+   await admin.from("audit_log").insert({actor_user_id:user.user.id,action:"citizen_access_resent",
+     entity_table:"citizen_accounts",entity_id:id,
+     after_data:{auth_user_id:linked.auth_user_id,contract_number:c.contract_number,channel:"recovery_email"}});
+   return respond({ok:true,status:"resend_accepted",email_requested:true,contract_number:c.contract_number},200,origin);
+ }
+ if(action==="resend")return respond({error:"Este contribuyente todavía no tiene acceso vinculado. Completa la activación institucional."},409,origin);
+ const {data:permitted,error:limitError}=await admin.rpc("allow_citizen_access_email",{p_contributor_id:id});
+ if(limitError)return respond({error:"No se pudo verificar la autorización de correo"},503,origin);
+ if(!permitted)return respond({error:"Se intentó enviar este acceso recientemente. Evita registrar el expediente nuevamente."},429,origin);
  const {data:invitation,error:invitationError}=await admin.auth.admin.inviteUserByEmail(email,{
-  data:{citizen_portal:true},redirectTo:ORIGIN+"/IMAUD/activar-contribuyente.html"
+  data:{citizen_portal:true},redirectTo
  });
  if(invitationError||!invitation.user)return respond({error:"No se pudo emitir la invitación. Si el correo ya tiene una cuenta de acceso, verifica su titularidad y utiliza la activación institucional existente."},409,origin);
  const newId=invitation.user.id;
@@ -53,5 +84,5 @@ Deno.serve(async request=>{
  await admin.from("audit_log").insert({actor_user_id:user.user.id,action:"citizen_invited",
   entity_table:"citizen_accounts",entity_id:id,
   after_data:{auth_user_id:newId,contract_number:c.contract_number,channel:"email_activation"}});
- return respond({ok:true,invited:true,contract_number:c.contract_number},200,origin);
+ return respond({ok:true,invited:true,status:"invitation_accepted",email_requested:true,contract_number:c.contract_number},200,origin);
 });

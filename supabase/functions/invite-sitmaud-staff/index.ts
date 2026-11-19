@@ -44,7 +44,7 @@ Deno.serve(async (request) => {
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 180 ||
     !/^[VE]-?\d{6,10}$/.test(identity) ||
     phone.length > 30 || title.length < 3 || title.length > 120 ||
-    !["recaudador","administrador_analista"].includes(role)) {
+    !["intendente","recaudador","administrador_analista"].includes(role)) {
     return response({ error: "Verifica nombre, apellido, correo, cédula, cargo y rol de funcionario." }, 400, origin);
   }
   const admin = createClient(url, service, { auth: { autoRefreshToken:false, persistSession:false } });
@@ -52,6 +52,15 @@ Deno.serve(async (request) => {
     .select("user_id").eq("identification_number", identity).limit(1);
   if (existingError) return response({ error: "No se pudo verificar la cédula del funcionario." }, 503, origin);
   if (existing?.length) return response({ error: "Ya existe un funcionario con esa cédula." }, 409, origin);
+  if (role === "intendente") {
+    // Máximo cinco intendentes activos, incluido el superusuario maestro.
+    // El rol por sí solo NO añade el usuario a private.sitmaud_master_owner.
+    const {count, error: countError} = await admin.from("staff_profiles")
+      .select("user_id", {head:true, count:"exact"})
+      .eq("role","intendente").eq("is_active",true);
+    if(countError) return response({error:"No se pudo verificar el límite de intendentes."},503,origin);
+    if((count ?? 0) >= 5) return response({error:"Se alcanzó el máximo de cinco intendentes activos."},409,origin);
+  }
   // El envío de la invitación se realiza en Supabase Auth, nunca desde el navegador.
   const { data: invitation, error: invitationError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: first+" "+last, staff_pending_activation: true },

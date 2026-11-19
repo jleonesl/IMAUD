@@ -47,6 +47,11 @@ Deno.serve(async (req: Request) => {
   const { error: mailError } = await admin.auth.resetPasswordForEmail(
     String(record.registered_email), { redirectTo: originAllowed + "/IMAUD/activar-contribuyente.html" }
   );
-  if (mailError) console.warn("Citizen password recovery email failed:", mailError.message);
+  if(mailError){
+    console.warn("Citizen password recovery email failed:",mailError.message);
+    if(mailError.status===429||/rate limit|rate_limit|too many/i.test(mailError.message))
+      return reply({error:"Supabase ha limitado temporalmente los correos. No se envió un nuevo mensaje. Prueba más tarde y utiliza solo el correo nuevo."},429);
+    return reply({error:"El servidor de correo no aceptó la solicitud. No se ha enviado un nuevo mensaje; inténtalo más tarde."},503);
+  }
   return reply(general);
 });

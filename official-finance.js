@@ -122,7 +122,7 @@
     const records=payments.filter(p=>(!status||p.status===status)&&(!term||[p.receipt_number,p.external_reference,contributor(p.contributor),p.contributor?.contract_number].join(' ').toLowerCase().includes(term)));
     if(!records.length){node.innerHTML='<div class="contributors-empty"><b>No hay operaciones registradas para este filtro.</b></div>';return;}
     node.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Fecha</th><th>Comprobante</th><th>Contribuyente</th><th>Referencia</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>'+
-      records.map(p=>'<tr><td>'+safe(fmtDate(p.created_at))+'</td><td><b>'+safe(p.receipt_number)+'</b></td><td>'+safe(contributor(p.contributor))+'</td><td>'+safe(p.external_reference||'—')+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td><td>'+safe(label(p.status))+'</td><td><button class="btn btn-light btn-sm" data-official-invoice="'+safe(p.id)+'">Ver documento</button> '+(p.status==='pending'&&treasuryAllowed?'<button class="btn btn-primary btn-sm" data-official-liquidate="'+safe(p.id)+'">Liquidar (Tesorería)</button> <button class="btn btn-light btn-sm" data-official-reject="'+safe(p.id)+'">Anular registro</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';
+      records.map(p=>'<tr><td>'+safe(fmtDate(p.created_at))+'</td><td><b>'+safe(p.receipt_number)+'</b></td><td>'+safe(contributor(p.contributor))+'</td><td>'+safe(p.external_reference||'—')+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td><td>'+safe(label(p.status))+'</td><td><button class="btn btn-light btn-sm" data-official-invoice="'+safe(p.id)+'">Ver documento</button> '+(p.evidence_path?'<button class="btn btn-light btn-sm" data-treasury-evidence="'+safe(p.id)+'">Ver comprobante</button> ':'')+(p.status==='pending'&&treasuryAllowed?'<button class="btn btn-primary btn-sm" data-official-liquidate="'+safe(p.id)+'">Liquidar (Tesorería)</button> <button class="btn btn-light btn-sm" data-official-reject="'+safe(p.id)+'">Anular registro</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';
   }
   function renderInvoiceRows(){
     const node=document.getElementById('officialInvoiceRows');if(!node)return;
@@ -205,6 +205,20 @@
       return;
     }
     print.disabled=false;
+  }
+  // Un comprobante privado se consulta por enlace temporal; no se publica una URL permanente.
+  async function openTreasuryEvidence(id,button){
+    const p=payments.find(x=>x.id===id);
+    if(!p?.evidence_path)return;
+    button.disabled=true;
+    try{
+      const {data,error}=await imaudClient.storage.from('imaud-payment-proofs').createSignedUrl(p.evidence_path,60);
+      if(error||!data?.signedUrl)throw error||new Error('Comprobante no disponible');
+      window.open(data.signedUrl,'_blank','noopener,noreferrer');
+      imaudClient.rpc('record_staff_activity',{p_action:'payment_proof_viewed',p_module:'tesoreria',p_reference:id})
+        .then(({error})=>{if(error)console.warn('Bitácora:',error.message)});
+    }catch(e){window.alert('No se pudo abrir el comprobante privado: '+(e.message||'Permiso insuficiente'))}
+    finally{button.disabled=false}
   }
   async function liquidate(id,btn){
     const p=payments.find(p=>p.id===id);if(!p||p.status!=='pending')return;
@@ -354,6 +368,7 @@
     }
     const reportPageBtn=e.target.closest('[data-report-page]');
     if(reportPageBtn){const form=document.getElementById('officialFinancialFilter');if(form)renderReportRows(form,reportPage+(reportPageBtn.dataset.reportPage==='next'?1:-1));return;}
+    const evidence=e.target.closest('[data-treasury-evidence]');if(evidence){openTreasuryEvidence(evidence.dataset.treasuryEvidence,evidence);return;}
     const reject=e.target.closest('[data-official-reject]');if(reject){rejectPendingPayment(reject.dataset.officialReject,reject);return;}
     const apply=e.target.closest('[data-relief-apply]');if(apply){applySelectedRelief(apply);return;}
     const invoice=e.target.closest('[data-official-invoice]');if(invoice){showDocument(invoice.dataset.officialInvoice);return;}

@@ -1,0 +1,33 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Activar acceso · SITMAUD</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#f1f6f9;font:15px/1.5 Arial,sans-serif;color:#123a55;min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(100%,440px);background:#fff;padding:30px;border:1px solid #e0eaf0;border-radius:16px;box-shadow:0 10px 30px #17354c10}h1{font-size:23px;margin:0 0 10px}p{color:#617d90}.field{display:block;margin:18px 0 7px;font-weight:700}input{width:100%;padding:13px;border:1px solid #cddce4;border-radius:9px;font:inherit}button{border:0;border-radius:9px;background:#115777;color:#fff;padding:13px 20px;font-weight:700;cursor:pointer;margin-top:20px}button:disabled{opacity:.6}#status{margin-top:15px;color:#245d73}a{color:#146e8c}</style></head>
+<body><main class="card"><small>SITMAUD · Portal del Contribuyente</small><h1>Activar mi cuenta</h1>
+<p>Establece una contraseña personal para acceder a tu expediente utilizando tu cédula o RIF.</p>
+<form id="activate" hidden><label class="field" for="password">Nueva contraseña</label><input id="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Mínimo 12 caracteres"><label class="field" for="repeat">Confirmar contraseña</label><input id="repeat" type="password" autocomplete="new-password" minlength="12" maxlength="128" required><button type="submit">Activar mi acceso</button></form>
+<div id="status" role="status">Verificando el enlace de activación…</div><p><a href="./contribuyente-v2.html">Ir al inicio de sesión</a></p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase.co","sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm",{auth:{detectSessionInUrl:true}});
+(async()=>{
+const status=document.getElementById("status"),form=document.getElementById("activate");
+try{
+ const parsed=new URLSearchParams(location.search);
+ if(parsed.get("error")||parsed.get("error_description"))throw new Error("El enlace expiró o no es válido. Solicita uno nuevo a IMAUD.");
+ const {data:{session},error}=await client.auth.getSession();
+ if(error||!session)throw new Error("No se reconoció el enlace de activación. Abre el enlace original recibido en el correo.");
+ const {data,error:accessError}=await client.rpc("get_my_citizen_portal");
+ if(accessError||!data?.activated)throw new Error("El acceso no está vinculado a un expediente de contribuyente activo. Solicita revisión a IMAUD.");
+ form.hidden=false;status.textContent="Enlace verificado. Crea tu contraseña personal.";
+ form.addEventListener("submit",async ev=>{
+ ev.preventDefault();const p=document.getElementById("password").value,q=document.getElementById("repeat").value;
+ if(p.length<12||p!==q){status.textContent="Las contraseñas deben coincidir y tener al menos 12 caracteres.";return;}
+ const b=form.querySelector("button");b.disabled=true;
+ const {error:e}=await client.auth.updateUser({password:p});
+ if(e){status.textContent="No fue posible guardar la contraseña: "+e.message;b.disabled=false;return;}
+ sessionStorage.removeItem("sitmaud_citizen_view");
+ await client.auth.signOut();
+ form.hidden=true;status.textContent="Tu cuenta está activada. Ingresa con tu cédula o RIF y la contraseña que acabas de crear.";
+ });
+}catch(e){status.textContent=e.message||"No se pudo activar la cuenta."}
+})();
+</script></body></html>

@@ -61,14 +61,14 @@ html,body{min-height:100%;margin:0}
  .staff-panel{min-height:auto;padding:24px 18px}
  .back{margin-bottom:14px}.brand{margin-bottom:18px}.brand-logo{width:min(100%,215px)}
 }
-.citizen-activation-note{margin:11px 0 0;color:#516c7f;font-size:12px;line-height:1.5;text-align:center}.first-access-panel{background:#edf5fa;border:1px solid #cfe2ed;border-radius:10px;padding:14px;margin-top:16px;text-align:center}.first-access-panel strong{display:block;font-size:13px;color:#173e59}.first-access-panel p{font-size:12px;color:#57798c;line-height:1.5;margin:6px 0 10px}.first-access-panel button{background:#fff;color:#075679;border:1px solid #7cb1cd;font-weight:700;border-radius:8px;padding:10px 14px;cursor:pointer;width:100%}.first-access-panel button:hover{background:#e5f2f8}</style></head>
+</style></head>
 <body>
 <main class="staff-page">
 <section class="staff-visual"><div class="visual-copy"><span>SISTEMA INTEGRAL TRIBUTARIO MUNICIPAL</span><h2>Portal del<br>Contribuyente</h2><p>Consulta tu estado de cuenta, realiza pagos y gestiona tus comprobantes y certificados de solvencia de forma sencilla y segura.</p></div></section>
 <section class="staff-panel"><div class="staff-card">
 <a class="back" href="./index.html">← Volver a la página principal</a>
 <div class="brand"><img class="brand-logo" src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/9e7fac92-e1b9-456f-9a6e-c204e66bae59.png" alt="SITMAUD — Alcaldía del Municipio Miranda, Coro, Estado Falcón"></div>
-<div class="eyebrow">PORTAL DEL CONTRIBUYENTE</div><h1>Acceso a mi cuenta</h1><p class="sub">Ingresa con la identidad registrada por IMAUD. Tu acceso debe estar vinculado a un expediente institucional autorizado.</p>
+<div class="eyebrow">PORTAL DEL CONTRIBUYENTE</div><h1>Acceso a mi cuenta</h1><p class="sub">Ingresa con tu cédula o RIF y contraseña para consultar tu cuenta.</p>
 <form id="citizenLogin">
 <label class="field" for="citizenType">Tipo de contribuyente</label>
 <select id="citizenType" required>
@@ -82,9 +82,9 @@ html,body{min-height:100%;margin:0}
 <label class="field" for="citizenPassword">Contraseña</label>
 <input id="citizenPassword" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required>
 <button class="submit" id="citizenSubmit" type="submit">Ingresar al portal</button>
-<p class="citizen-activation-note">Tu usuario es la cédula/RIF. Para entrar por primera vez necesitas establecer la contraseña desde el enlace recibido en tu correo; la cédula todavía no es tu contraseña.</p>
+
 </form>
-<div class="first-access-panel"><strong>¿Es tu primera vez en SITMAUD?</strong><p>Tu usuario es tu cédula o RIF. Recibe en el correo registrado un enlace para establecer tu contraseña, sin registrar otra cuenta.</p><button type="button" id="citizenFirstAccess">Recibir enlace para crear mi contraseña</button></div><a class="forgot" href="#" id="citizenForgot">¿Ya tienes cuenta y olvidaste tu contraseña?</a><div class="message" id="citizenMessage" role="status"></div>
+<a class="forgot" href="#" id="citizenForgot">¿Olvidaste tu contraseña?</a><div class="message" id="citizenMessage" role="status"></div>
 <div class="foot">Acceso personal para contribuyentes registrados.<br>Si aún no tienes cuenta, solicita orientación en la oficina de recaudación.</div>
 </div></section></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -138,7 +138,6 @@ form.addEventListener('submit',async e=>{
   button.disabled=false;button.textContent='Ingresar al portal';
  }
 });
-document.getElementById('citizenFirstAccess').addEventListener('click',()=>document.getElementById('citizenForgot').click());
 document.getElementById('citizenForgot').addEventListener('click',async e=>{
  e.preventDefault();
  const raw=identity.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();

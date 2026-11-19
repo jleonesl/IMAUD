@@ -52,8 +52,8 @@ async function show(client,id){
  try{
   const {data,error}=await client.rpc('get_my_citizen_receipt',{p_payment_id:id});
   if(error)throw error;
-  if(!data||data.status!=='confirmed'||!data.liquidated_at)throw Error('La factura todavía no está disponible porque el pago está pendiente de confirmación');
-  if(!Array.isArray(data.periods)||!data.periods.length)throw Error('La factura no contiene meses oficialmente verificados');
+  if(!data||!['pending','confirmed'].includes(data.status))throw Error('La factura no está disponible: el pago fue anulado o no pertenece a tu expediente');
+  if(!Array.isArray(data.periods)||!data.periods.length)throw Error('La factura no contiene meses registrados');
   const {payment,allocations}=normalize(data);
   const sum=allocations.reduce((t,v)=>t+Number(v.amount||0),0);
   if(Math.abs(sum-Number(payment.amount))>0.01)throw Error('El importe del documento no coincide con los meses pagados');

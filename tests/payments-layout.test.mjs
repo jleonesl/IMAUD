@@ -21,13 +21,19 @@ test('payments home is a debtor directory, not duplicated financial dashboard',(
  assert.doesNotMatch(view,/section class="card panel" id="officialDebtReliefPanel"/);
 
 });
-test('debtors come only from official pending obligations and respect partial amounts',()=>{
- assert.match(fin,/a\.is_demo===false/);
- assert.match(fin,/\['pending','partially_paid'\]/);
- assert.match(fin,/x\.payments\?\.status==='confirmed'/);
+test('debtors use secure server pagination, not a 500-person snapshot',()=>{
+ const sql=readFileSync('supabase/migrations/20261119212000_official_debtors_server_side_pagination.sql','utf8');
+ const latest=readFileSync('supabase/migrations/20261119213000_normalize_debtor_search_and_identity.sql','utf8');
+ assert.match(fin,/list_official_debtors/);
+ assert.match(fin,/p_offset:debtorPage\*50/);
+ assert.match(fin,/data-official-debtor-page/);
  assert.match(fin,/data-official-register-person/);
- assert.match(fin,/c\.service_account_type==='condominio'/);
- assert.doesNotMatch(fin.slice(fin.indexOf('async function loadDebtors()'),fin.indexOf('async function loadPayments()')),/insert\(|\.rpc\('register_/);
+ assert.match(fin,/reliefAllowed/);
+ assert.match(sql,/a\.is_demo=false/);
+ assert.match(sql,/a\.status in \('pending','partially_paid'\)/);
+ assert.match(sql,/py\.status='confirmed'/);
+ assert.match(latest,/translate\(lower\(name\)/);
+ assert.doesNotMatch(fin.slice(fin.indexOf('async function loadDebtors('),fin.indexOf('async function loadPayments()')),/\.limit\(500\)|insert\(/);
 });
 test('registration opens existing server-backed official cashier instead of legacy demo',()=>{
  assert.match(cashier,/id="officialCashierBackdrop"/);

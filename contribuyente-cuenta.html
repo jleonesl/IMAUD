@@ -272,9 +272,9 @@ body{background:#f4f7f9;color:#243747;font-family:'DM Sans',Arial,sans-serif}
 
 </div></div></section>
 <section class="citizen-view" data-citizen-view-panel="obligaciones" hidden><div class="citizen-section-head"><div><h2>Mis obligaciones</h2><p>Consulta los períodos registrados por el sistema tributario municipal.</p></div><button type="button" data-citizen-view="cargar-pago">Cargar pago</button></div><div class="citizen-card"><div id="citizenAssessments">Consultando obligaciones…</div></div></section>
-<section class="citizen-view" data-citizen-view-panel="cargar-pago" hidden><div class="citizen-section-head"><div><h2>Cargar pago</h2><p>Registra el comprobante para la revisión de Tesorería.</p></div></div><section class="card payment-info" id="citizenPaymentRegistration" hidden>
+<section class="citizen-view" data-citizen-view-panel="cargar-pago" hidden><div class="citizen-section-head"><div><h2>Cargar pago</h2><p>Registra el comprobante para su verificación.</p></div></div><section class="card payment-info" id="citizenPaymentRegistration" hidden>
 <h2>Registrar un pago</h2><p>Selecciona los meses pendientes y verifica el importe oficial calculado con la UCD y la tasa BCV. Solo los pagos a cuentas publicadas por la Alcaldía pueden registrarse.</p>
-<div class="citizen-payment-note">Enviar un comprobante <strong>no liquida la deuda</strong>. Tesorería debe verificar que los fondos ingresaron a la cuenta oficial.</div>
+<div class="citizen-payment-note">Enviar un comprobante <strong>no liquida la deuda</strong>. El pago quedará pendiente hasta su confirmación.</div>
 <div id="citizenPaymentMessage" class="citizen-payment-status" role="status">Verificando obligaciones y cuentas oficiales…</div>
 <form id="citizenPaymentForm" class="citizen-payment-form" hidden>
 <div id="citizenPaymentMonths"></div>
@@ -287,15 +287,15 @@ body{background:#f4f7f9;color:#243747;font-family:'DM Sans',Arial,sans-serif}
 <label>Referencia bancaria<input name="reference" type="text" minlength="3" maxlength="110" autocomplete="off" required placeholder="Número de referencia"></label>
 <label>Comprobante (PDF o imagen, máximo 10 MB)<input name="proof" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required></label>
 </div>
-<button type="submit" id="citizenPaymentSubmit" disabled>Enviar pago a validación de Tesorería</button>
+<button type="submit" id="citizenPaymentSubmit" disabled>Enviar pago para verificación</button>
 </form></section>
 </section>
-<section class="citizen-view" data-citizen-view-panel="facturas" hidden><div class="citizen-section-head"><div><h2>Mis facturas y pagos</h2><p>El recibo definitivo mantiene el diseño institucional y solo se imprime tras la liquidación de Tesorería.</p></div></div><div class="citizen-card"><div id="citizenPayments">Consultando pagos…</div></div></section>
+<section class="citizen-view" data-citizen-view-panel="facturas" hidden><div class="citizen-section-head"><div><h2>Mis facturas y pagos</h2><p>El recibo definitivo mantiene el diseño institucional y solo se imprime cuando el pago esté confirmado.</p></div></div><div class="citizen-card"><div id="citizenPayments">Consultando pagos…</div></div></section>
 <section class="citizen-view" data-citizen-view-panel="cuentas" hidden><div class="citizen-section-head"><div><h2>Cuentas oficiales</h2><p>Información publicada por la Alcaldía para transferencias y pagos móviles.</p></div></div><section class="card payment-info" id="paymentInformation" hidden><h2>Cuentas bancarias oficiales de la Alcaldía</h2><div id="municipalBankList" role="status">Cargando cuentas bancarias…</div></section>
 </section>
 <section class="citizen-view" data-citizen-view-panel="informacion" hidden><div class="citizen-section-head"><div><h2>Mi información</h2><p>Datos oficiales asociados con tu expediente.</p></div></div><div class="citizen-card"><h2 id="citizenGreeting">Mi cuenta SITMAUD</h2><p id="citizenAccountIdentifier">Contrato y documento de identidad</p><h3>Mis inmuebles y cuentas matrices</h3><div id="citizenProperties">Consultando…</div></div><section class="card" id="citizenSecurity" hidden style="margin-top:20px"><h2>Seguridad de mi cuenta</h2><p>Si deseas cambiar tu contraseña, puedes hacerlo aquí. No es obligatorio modificarla después de iniciar sesión.</p><button type="button" id="citizenChangePasswordToggle">Cambiar mi contraseña</button><form id="citizenChangePasswordForm" hidden><label for="citizenCurrentPassword" class="security-label">Contraseña actual</label><input id="citizenCurrentPassword" type="password" autocomplete="current-password" required minlength="1"><label for="citizenNewPassword" class="security-label">Nueva contraseña (mínimo 12 caracteres)</label><input id="citizenNewPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><label for="citizenNewPasswordRepeat" class="security-label">Confirmar nueva contraseña</label><input id="citizenNewPasswordRepeat" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><button type="submit" id="citizenChangePasswordSubmit">Guardar nueva contraseña</button><div id="citizenPasswordFeedback" role="status" aria-live="polite"></div></form></section>
 </section>
-<section class="citizen-view" data-citizen-view-panel="ayuda" hidden><div class="citizen-section-head"><div><h2>Ayuda y soporte</h2><p>Asistencia sobre tu expediente y tus trámites.</p></div></div><div class="citizen-card"><h2>Atención institucional</h2><p>Para consultas sobre obligaciones, pagos no identificados o actualización de datos, comunícate con el Instituto Municipal de Aseo Urbano y Domiciliario del Municipio Miranda, Coro.</p><p>Si un pago está pendiente, Tesorería deberá verificarlo antes de que puedas descargar la factura definitiva.</p><p>No compartas tu contraseña, códigos de recuperación ni comprobantes mediante canales no oficiales.</p></div></section>
+<section class="citizen-view" data-citizen-view-panel="ayuda" hidden><div class="citizen-section-head"><div><h2>Ayuda y soporte</h2><p>Asistencia sobre tu expediente y tus trámites.</p></div></div><div class="citizen-card"><h2>Atención institucional</h2><p>Para consultas sobre obligaciones, pagos no identificados o actualización de datos, comunícate con el Instituto Municipal de Aseo Urbano y Domiciliario del Municipio Miranda, Coro.</p><p>Si un pago está pendiente, deberá confirmarse antes de que puedas descargar la factura definitiva.</p><p>No compartas tu contraseña, códigos de recuperación ni comprobantes mediante canales no oficiales.</p></div></section>
 <footer>Alcaldía del Municipio Miranda · Instituto Municipal de Aseo Urbano y Domiciliario</footer>
 </main>
 </div>
@@ -353,7 +353,7 @@ function init(portal){
  if($('citizenDebtValue'))$('citizenDebtValue').textContent=obligations.length?fmt(owed):'—';
  if($('citizenDebtNote'))$('citizenDebtNote').textContent=obligations.length?pending.length+' obligación(es) con saldo registrado':'No hay obligaciones oficiales registradas';
  if($('citizenPaidValue'))$('citizenPaidValue').textContent=fmt(paid);
- if($('citizenPaidNote'))$('citizenPaidNote').textContent=confirmed.length+' pago(s) liquidados por Tesorería';
+ if($('citizenPaidNote'))$('citizenPaidNote').textContent=confirmed.length+' pago(s) confirmados';
  if($('citizenStatusValue'))$('citizenStatusValue').textContent=obligations.length?(pending.length?'Con obligaciones pendientes':'Sin deuda registrada'):'Por determinar';
  if($('citizenStatusNote'))$('citizenStatusNote').textContent='No equivale a una solvencia oficial';
  if($('citizenHomeProperty')){
@@ -364,7 +364,7 @@ function init(portal){
  if($('citizenRecentTransactions')){
   $('citizenRecentTransactions').innerHTML=payments.length?payments.slice(0,4).map(p=>
    '<div class="citizen-info-row"><div><b>'+esc(p.receipt)+'</b><br><small>'+
-   esc(p.status==='confirmed'&&p.liquidated_at?'Liquidado por Tesorería':p.status==='reversed'?'Rechazado':'Pendiente de validación')+'</small></div><b>'+fmt(p.amount_bs)+'</b></div>').join(''):
+   esc(p.status==='confirmed'&&p.liquidated_at?'Pago confirmado':p.status==='reversed'?'Rechazado':'Pendiente de validación')+'</small></div><b>'+fmt(p.amount_bs)+'</b></div>').join(''):
    '<div class="citizen-empty-state"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 5h17l9 9v27H12z M29 5v10h9 M19 25h15 M19 31h12"/><circle cx="36" cy="36" r="9" fill="#fff"/><path d="m32 36 3 3 6-7"/></svg><strong>Aún no tienes operaciones registradas</strong><p>Cuando realices un pago, podrás ver aquí su estado.</p></div>';
  }
  // Los datos reales se consultan en la RPC. No asumir estado Solvente, tipología o cuentas.
@@ -400,7 +400,7 @@ const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase
   const debts=Array.isArray(portal.obligations)?portal.obligations:[];
   document.getElementById('citizenAssessments').innerHTML=debts.length?debts.map(a=>'<div class="citizen-item"><div><b>'+escCitizen(a.period_start)+'</b><small>'+escCitizen(a.status==='paid'?'Pagado':a.status==='partially_paid'?'Pago parcial':'Pendiente')+'</small></div><b>'+bsCitizen(a.amount_bs)+'</b></div>').join(''):'<p class="citizen-empty">No existen obligaciones oficiales registradas.</p>';
   const payments=Array.isArray(portal.payments)?portal.payments:[];
-  document.getElementById('citizenPayments').innerHTML=payments.length?payments.map(p=>'<div class="citizen-item"><div><b>'+escCitizen(p.receipt)+'</b><small>'+escCitizen(p.status==='confirmed'?'Liquidado por Tesorería':p.status==='reversed'?'Reversado':'Pendiente de validación')+'</small></div><div><b>'+bsCitizen(p.amount_bs)+'</b> '+(p.status==='confirmed'&&p.liquidated_at?'<button type="button" class="citizen-receipt-open" data-citizen-receipt="'+escCitizen(p.id)+'">Ver recibo</button>':'')+'</div></div>').join(''):'<p class="citizen-empty">No existen pagos oficiales registrados.</p>';
+  document.getElementById('citizenPayments').innerHTML=payments.length?payments.map(p=>'<div class="citizen-item"><div><b>'+escCitizen(p.receipt)+'</b><small>'+escCitizen(p.status==='confirmed'?'Pago confirmado':p.status==='reversed'?'Reversado':'Pendiente de validación')+'</small></div><div><b>'+bsCitizen(p.amount_bs)+'</b> '+(p.status==='confirmed'&&p.liquidated_at?'<button type="button" class="citizen-receipt-open" data-citizen-receipt="'+escCitizen(p.id)+'">Ver recibo</button>':'')+'</div></div>').join(''):'<p class="citizen-empty">No existen pagos oficiales registrados.</p>';
   document.getElementById('account').hidden=false;
   document.getElementById('citizenSecurity').hidden=false;
   document.getElementById('paymentInformation').hidden=false;

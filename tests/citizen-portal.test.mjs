@@ -8,6 +8,7 @@ const account = read('contribuyente-cuenta.html');
 const activate = read('activar-contribuyente.html');
 const citizenDocs = read('contributor-documents.js');
 const citizenRegistration = read('app.js');
+const registrationServer = read('supabase/functions/register-sitmaud-contributor/index.ts');
 const invitationService = read('supabase/functions/invite-sitmaud-citizen/index.ts');
 const receipt = read('citizen-receipts.js');
 const workflow = read('.github/workflows/pages.yml');
@@ -47,7 +48,9 @@ test('normalize existing national IDs exactly once and publish all portal files'
   }
 });
 test('automatic email request after contributor creation; employee only resends', () => {
-  assert.match(citizenRegistration, /action:'automatic'/);
+  assert.match(citizenRegistration, /register-sitmaud-contributor/);
+  assert.match(registrationServer, /action:\"automatic\"/);
+  assert.match(registrationServer, /invite-sitmaud-citizen/);
   assert.match(citizenDocs, /action:'resend'/);
   assert.match(citizenDocs, /Reenviar acceso al correo/);
   assert.match(invitationService, /action==="resend"/);

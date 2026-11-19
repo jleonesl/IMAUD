@@ -28,8 +28,8 @@
   const total=(key)=>terminals.reduce((sum,t)=>sum+Number(t[key]||0),0);
   const kpis=[['Terminales registrados',terminals.length],['Cobros registrados',total('registered_count')],['Por validar','Bs. '+fmt(total('pending_bs'))],['Validado','Bs. '+fmt(total('validated_bs'))]];
   document.getElementById('posKpis').innerHTML=kpis.map(([k,v])=>'<article class="card kpi"><div class="kpi-top"><span>'+esc(k)+'</span></div><div class="kpi-value">'+esc(v)+'</div></article>').join('');
-  document.getElementById('posTerminalRows').innerHTML='<table><thead><tr><th>Código</th><th>Terminal</th><th>Banco</th><th>Ubicación</th><th>Estado</th><th>Operaciones</th><th>Registrado (Bs.)</th><th>Pendiente (Bs.)</th><th>Validado (Bs.)</th><th>Rechazado (Bs.)</th></tr></thead><tbody>'+
-  (terminals.length?terminals.map(t=>'<tr><td>'+esc(t.code)+'</td><td>'+esc(t.name)+'</td><td>'+esc(t.bank_code)+'</td><td>'+esc(t.location)+'</td><td>'+(t.active?'Activo':'Inactivo')+'</td><td>'+esc(t.registered_count)+'</td><td>'+fmt(t.registered_bs)+'</td><td>'+fmt(t.pending_bs)+'</td><td>'+fmt(t.validated_bs)+'</td><td>'+fmt(t.rejected_bs)+'</td></tr>').join(''):'<tr><td colspan="10">Aún no hay terminales registrados.</td></tr>')+'</tbody></table>';
+  document.getElementById('posTerminalRows').innerHTML='<table><thead><tr><th>Código</th><th>Terminal</th><th>Banco</th><th>Ubicación</th><th>Estado</th><th>Operaciones</th><th>Registrado (Bs.)</th><th>Pendiente (Bs.)</th><th>Validado (Bs.)</th><th>Rechazado (Bs.)</th><th>Acciones</th></tr></thead><tbody>'+
+  (terminals.length?terminals.map(t=>'<tr><td>'+esc(t.code)+'</td><td>'+esc(t.name)+'</td><td>'+esc(t.bank_code)+'</td><td>'+esc(t.location)+'</td><td>'+(t.active?'Activo':'Inactivo')+'</td><td>'+esc(t.registered_count)+'</td><td>'+fmt(t.registered_bs)+'</td><td>'+fmt(t.pending_bs)+'</td><td>'+fmt(t.validated_bs)+'</td><td>'+fmt(t.rejected_bs)+'</td><td>'+(manage?'<button type="button" class="btn btn-light btn-sm" data-pos-toggle="'+esc(t.id)+'" data-pos-active="'+String(t.active)+'">'+(t.active?'Desactivar':'Activar')+'</button>':'—')+'</td></tr>').join(''):'<tr><td colspan="11">Aún no hay terminales registrados.</td></tr>')+'</tbody></table>';
   document.getElementById('posMovementRows').innerHTML='<table><thead><tr><th>Fecha</th><th>Punto</th><th>Factura</th><th>Recaudador</th><th>Referencia</th><th>Monto (Bs.)</th><th>Tesorería</th></tr></thead><tbody>'+
   (transactions.length?transactions.map(t=>'<tr><td>'+esc(new Date(t.paid_at).toLocaleString('es-VE',{timeZone:'America/Caracas'}))+'</td><td>'+esc(t.terminal_code)+'</td><td>'+esc(t.receipt_number)+'</td><td>'+esc(t.cashier)+'</td><td>'+esc(t.reference)+'</td><td>'+fmt(t.amount_bs)+'</td><td>'+esc(statusLabel(t.status))+'</td></tr>').join(''):'<tr><td colspan="7">No hay movimientos para las fechas seleccionadas.</td></tr>')+'</tbody></table>';
   document.getElementById('posExport').disabled=!canReport;
@@ -89,6 +89,15 @@
    f.reset();await report();window.alert('Punto de venta registrado correctamente.');
   }
  });
- document.addEventListener('click',e=>{if(e.target.id==='posExport')exportCsv();});
+ document.addEventListener('click',async e=>{
+  if(e.target.id==='posExport')exportCsv();
+  const button=e.target.closest('[data-pos-toggle]');if(!button||!manage)return;
+  const active=button.dataset.posActive!=='true';
+  if(!window.confirm((active?'¿Activar':'¿Desactivar')+' este punto de venta? Los cobros históricos permanecerán asociados.'))return;
+  button.disabled=true;
+  const result=await imaudClient.from('pos_terminals').update({is_active:active,updated_at:new Date().toISOString()}).eq('id',button.dataset.posToggle);
+  if(result.error){window.alert('No se pudo cambiar el estado: '+result.error.message);button.disabled=false;return;}
+  await report();
+ });
  window.sitmaudPosTerminals={view,mount};
 })();

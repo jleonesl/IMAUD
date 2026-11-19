@@ -96,6 +96,18 @@ Deno.serve(async request=>{
   emailIssue="Falló la comunicación con el servicio de activación por correo.";
   console.error("Citizen automatic mail invocation failed:",err);
  }
+ const {error:auditError}=await admin.from("audit_log").insert({
+  actor_user_id:userResult.user.id,
+  action:emailAccepted?"citizen_registered_email_requested":"citizen_registered_email_pending",
+  entity_table:"contributors",
+  entity_id:contributor.id,
+  after_data:{
+    contract_number:contributor.contract_number,
+    email_status:emailAccepted?"accepted":"not_confirmed",
+    message:emailIssue
+  }
+ });
+ if(auditError)console.warn("Citizen registration audit failed:",auditError.message);
  return respond({
   ok:true,contributor,
   email_requested:emailAccepted,email_status:emailAccepted?"accepted":"not_confirmed",

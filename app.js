@@ -163,9 +163,15 @@ async function saveContributor(form){
    toast('Es obligatorio registrar un correo válido para enviar automáticamente el acceso ciudadano.');return;
  }
  const button=document.getElementById('saveContributorButton');button.disabled=true;button.textContent='Guardando…';
- const {data,error}=await imaudClient.from('contributors').insert(payload).select('id,contract_number,kind,service_account_type,identification_type,identification_number,legal_name,first_name,last_name,is_property_owner').single();
+ const {data:registration,error}=await imaudClient.functions.invoke('register-sitmaud-contributor',{body:payload});
+ const data=registration?.contributor;
  button.disabled=false;button.textContent='Guardar contribuyente';
- if(error){console.error(error);toast('No se pudo guardar el contribuyente: '+error.message);return;}
+ if(error||!data){
+   let reason=registration?.error||error?.message||'No se pudo confirmar el registro.';
+   try{if(error?.context){const body=await error.context.json();reason=body.error||reason}}catch(_){}
+   console.error('Registro de contribuyente:',reason);
+   toast('No se pudo completar: '+reason);return;
+ }
  state.currentContributor=data;
  document.getElementById('stepContributor').classList.add('complete');document.getElementById('stepProperty').classList.add('active');
  document.getElementById('personForm').querySelectorAll('input,select,textarea,button').forEach(el=>el.disabled=true);
@@ -173,21 +179,12 @@ async function saveContributor(form){
  document.getElementById('propertyLock').hidden=true;document.getElementById('propertyFormWrap').hidden=false;
  document.getElementById('linkedContributor').textContent='Contribuyente vinculado: '+contributorName(data)+' · '+data.identification_type+'-'+data.identification_number;
  document.getElementById('contractPreview').innerHTML='<small>N.º de contrato del contribuyente</small><strong>'+escapeHTML(data.contract_number)+'</strong>';
- if(payload.email){
-   // Crear el expediente es independiente del envío de correo: un fallo de SMTP
-   // no elimina ni duplica al contribuyente.
-   const invited=await imaudClient.functions.invoke('invite-sitmaud-citizen',{body:{contributor_id:data.id,action:'automatic'}});
-   if(invited.error||!invited.data?.ok){
-     let reason=invited.data?.error||invited.error?.message||'El servidor no confirmó la solicitud.';
-     try{if(invited.error?.context){const response=await invited.error.context.json();reason=response.error||reason;}}catch(_){}
-     document.getElementById('savedContributorNote').textContent+=' Activación por correo NO CONFIRMADA: '+reason+'. Verifica el correo del expediente y usa Reenviar acceso cuando esté vinculado.';
-     toast('Contribuyente guardado; revisa el error de correo en el formulario.');
-   }else{
-     document.getElementById('savedContributorNote').textContent+=invited.data?.email_requested?' Solicitud de correo de activación aceptada por Supabase; entrega pendiente de confirmación.':' La cuenta ciudadana ya está vinculada; desde el expediente puedes reenviar el acceso.';
-     toast(invited.data?.email_requested?'Contribuyente registrado. Supabase aceptó la solicitud de correo.':'Contribuyente registrado. Acceso ciudadano existente.');
-   }
+ if(registration.email_requested===true){
+   document.getElementById('savedContributorNote').textContent+=' Supabase aceptó el envío automático de acceso al correo registrado. La entrega aún no está verificada.';
+   toast('Contribuyente registrado; solicitud automática de correo aceptada.');
  }else{
-   toast('Contribuyente guardado sin correo. Añade un correo verificado para activar el portal.');
+   document.getElementById('savedContributorNote').textContent+=' CORREO DE ACCESO PENDIENTE: '+(registration.email_error||'El servidor no confirmó el envío.')+' Puedes solicitar un reenvío desde el expediente, sin duplicar el contribuyente.';
+   toast('Contribuyente registrado; activación por correo pendiente.');
  }
 }
 async function loadGeographyCatalogs(){

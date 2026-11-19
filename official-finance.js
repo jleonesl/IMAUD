@@ -14,6 +14,7 @@
   function paymentView(){
     return '<div class="page-head"><div><div class="eyebrow">SITMAUD · GESTIÓN TRIBUTARIA</div><h1>Recaudación y pagos</h1><p>Consulta las deudas por contribuyente, inmueble o condominio y registra sus pagos.</p></div>'+
       '<button type="button" class="btn btn-primary" data-official-open-register>＋ Registrar pago</button></div>'+
+      '<section class="card panel" id="officialTrialBillingBanner" hidden aria-live="polite"><div class="panel-head"><div><h3>Mensualidades de septiembre a noviembre 2026</h3><p id="officialTrialBillingSummary">Comprobando el estado del motor de pruebas…</p></div></div><div class="form-actions"><button class="btn btn-primary" id="officialTrialBillingAction" type="button" data-official-bulk-trial hidden>Autorizar tabulador y generar mensualidades</button><button class="btn btn-light" type="button" data-go="ordenanza">Ver ordenanza y tarifas</button></div><p class="panel-hint" id="officialTrialBillingDetail">Solo el funcionario autorizado puede habilitar el tabulador de pruebas. Se registrará la autorización en bitácora, y el sistema no duplicará meses existentes.</p></section>'+
       '<section class="card payment-debt-card official-debtors">'+
       '<div class="official-payment-view-tabs" role="group" aria-label="Ver deudas o pagos registrados"><button type="button" class="btn btn-sm official-payment-tab active" data-official-payment-tab="deudas" aria-pressed="true">Deudas pendientes</button><button type="button" class="btn btn-sm official-payment-tab" data-official-payment-tab="pagos" aria-pressed="false">Pagos registrados</button></div>'+
       '<div id="officialDebtsView"><div class="payment-list-head"><div><h3>Contribuyentes con deudas</h3><p>Selecciona un expediente para pagar o exonerar meses pendientes.</p></div><span class="table-count" id="officialDebtorCount">Consultando…</span></div>'+
@@ -472,6 +473,84 @@
   document.addEventListener('input',e=>{if(e.target.id==='officialPaySearch')renderPaymentRows();if(e.target.id==='officialDebtorSearch')renderDebtors();});
   document.addEventListener('change',e=>{if(e.target.id==='reliefSelectAll'){document.querySelectorAll('.relief-month-check').forEach(x=>x.checked=e.target.checked);updateReliefSelection();}if(e.target.matches('.relief-month-check'))updateReliefSelection();if(e.target.id==='officialPayStatus')renderPaymentRows();if(e.target.id==='officialDebtorType')renderDebtors();if(e.target.id==='officialReportPeriod')changeReportPeriod(e.target.form);if(e.target.id==='officialReportGroup')changeReportGrouping(e.target.form);});
   document.addEventListener('submit',e=>{if(e.target.id==='officialFinancialFilter'){e.preventDefault();renderReportRows(e.target);}if(e.target.id==='officialDebtReliefLookup'){e.preventDefault();findReliefObligations(e.target);}});
+
+  // Explain why the collection list is empty and allow the authorized intendente
+  // to explicitly authorize and generate test-cycle obligations in one action.
+  let trialBulkBusy=false;
+  async function loadTrialBillingBanner(){
+    const panel=document.getElementById('officialTrialBillingBanner');
+    if(!panel)return;
+    const summary=document.getElementById('officialTrialBillingSummary');
+    const button=document.getElementById('officialTrialBillingAction');
+    const detail=document.getElementById('officialTrialBillingDetail');
+    const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    if(today>='2027-01-01'){panel.hidden=true;return;}
+    try{
+      const [tariff,canManage,canGenerate]=await Promise.all([
+        imaudClient.from('tariff_schedules').select('id,is_approved,valid_from').lte('valid_from','2026-09-30').order('valid_from',{ascending:false}).limit(1),
+        imaudClient.rpc('has_permission',{permission_code:'tariffs.manage'}),
+        imaudClient.rpc('has_permission',{permission_code:'assessments.create'})
+      ]);
+      if(!panel.isConnected)return;
+      if(tariff.error)throw tariff.error;
+      const enabled=(tariff.data||[]).some(x=>x.is_approved===true);
+      const permitted=canManage.data===true&&canGenerate.data===true&&!canManage.error&&!canGenerate.error;
+      panel.hidden=false;
+      summary.textContent=enabled
+        ?'El tabulador de pruebas está habilitado. Puedes generar todas las mensualidades pendientes con un solo clic.'
+        :'No aparecen deudas porque el tabulador de septiembre-diciembre 2026 todavía no está habilitado. Eliminar los registros DEMO no genera nuevas mensualidades.';
+      if(button){
+        button.hidden=!permitted;
+        button.disabled=trialBulkBusy;
+        button.textContent=enabled?'Generar todas las mensualidades pendientes':'Autorizar tabulador 2026 y generar deudas';
+      }
+      if(detail)detail.textContent=permitted
+       ?'La autorización se realizará expresamente desde tu sesión y quedará en bitácora. Generará obligaciones de prueba de 2026 para todos los inmuebles elegibles; no representa pago ni recaudación.'
+       :'Tu usuario no tiene ambos permisos necesarios: Administrar tarifas y Generar liquidaciones. El intendente debe habilitar el tabulador desde su cuenta.';
+    }catch(err){
+      panel.hidden=false;
+      summary.textContent='No se pudo consultar la habilitación: '+(err.message||String(err));
+      if(button)button.hidden=true;
+    }
+  }
+  async function generateAllTrialDebts(){
+    const btn=document.getElementById('officialTrialBillingAction');
+    const text=document.getElementById('officialTrialBillingSummary');
+    if(trialBulkBusy||!btn||!text)return;
+    const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    if(today>='2027-01-01')return;
+    if(!window.confirm('SITMAUD · PRUEBAS 2026: ¿Autorizas expresamente los coeficientes Tipo I = 3 UCD, Tipo II = 1,5 UCD y Tipo III = 0,5 UCD para septiembre-diciembre 2026, y la generación de las mensualidades faltantes de todos los inmuebles elegibles? Las obligaciones aparecerán en Recaudación. No se crearán pagos ni se duplicarán períodos.'))return;
+    trialBulkBusy=true;btn.disabled=true;
+    let scanned=0,created=0,failed=0,batches=0;
+    try{
+      const tariff=await imaudClient.from('tariff_schedules').select('is_approved').lte('valid_from','2026-09-30').order('valid_from',{ascending:false}).limit(1);
+      if(tariff.error)throw tariff.error;
+      if(!(tariff.data||[]).some(x=>x.is_approved===true)){
+        text.textContent='Registrando autorización del tabulador 2026…';
+        const auth=await imaudClient.rpc('activate_trial_residential_tariff_2026');
+        if(auth.error)throw auth.error;
+        if(!auth.data?.enabled)throw Error('No se confirmó la autorización del tabulador.');
+      }
+      while(batches<1000){
+        text.textContent='Generando mensualidades… '+scanned+' inmuebles revisados · '+created+' obligaciones creadas · '+failed+' incidencias.';
+        const res=await imaudClient.rpc('run_trial_billing_batch',{p_batch_size:100});
+        if(res.error)throw res.error;
+        const data=res.data||{};
+        scanned+=Number(data.processed||0);
+        created+=Number(data.created||0);
+        failed+=Number(data.failed||0);
+        batches++;
+        if(data.status==='cycle_complete')break;
+        if(data.status!=='more')throw Error('Respuesta inesperada del generador: '+(data.status||'desconocida'));
+      }
+      if(batches===1000)throw Error('Se alcanzó el límite de lotes; puedes reanudar la generación de forma segura.');
+      text.textContent='Generación terminada: '+scanned+' inmuebles revisados · '+created+' mensualidades nuevas · '+failed+' incidencias. Las obligaciones se mostrarán debajo.';
+      await loadDebtors();
+    }catch(err){
+      text.textContent='No se pudieron generar las mensualidades: '+(err.message||String(err))+'. Los períodos creados previamente se conservan, sin duplicados.';
+    }finally{trialBulkBusy=false;btn.disabled=false;btn.textContent='Volver a ejecutar generación general';}
+  }
+  document.addEventListener('click',e=>{if(e.target.closest('[data-official-bulk-trial]'))generateAllTrialDebts();});
   window.sitmaudOfficialFinance={
     overviewPlaceholder:()=>metrics,
     loadOverview,
@@ -480,7 +559,7 @@
     async mount(v){
       if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){changeReportPeriod(form);changeReportGrouping(form);renderReportRows(form);}}
       if(v==='reportes')loadOverview();
-      if(v==='pagos'){loadDebtors();loadFinancialPrivileges();}
+      if(v==='pagos'){loadDebtors();loadFinancialPrivileges();loadTrialBillingBanner();}
       await loadPayments();
     }
   };

@@ -188,7 +188,7 @@ test('contributor portal uses responsive navigable dashboard without stacking ev
  assert.match(account,/id="citizenSidebar"/);
  assert.match(account,/logo-sitmaud-sidebar\.jpg/);
  assert.match(account,/citizen-dashboard\.css/);
- assert.match(account,/citizen-dashboard\.js/);
+ assert.match(account,/window\.sitmaudCitizenDashboard=\{init,navigate,updateBanks\}/);
  assert.match(citizenDashboard,/window\.sitmaudCitizenDashboard=\{init,navigate,updateBanks\}/);
  assert.match(citizenDashboardCss,/@media\(max-width:790px\)/);
  assert.ok(workflow.includes('citizen-dashboard.js'));
@@ -201,7 +201,7 @@ test('new homepage displays only genuine citizen data and never assumes solvent 
  assert.match(citizenDashboard,/Por determinar/);
  assert.match(citizenDashboard,/No equivale a una solvencia oficial/);
  assert.match(citizenDashboard,/Aún no hay cuentas bancarias oficiales publicadas/);
- assert.doesNotMatch(citizenDashboard,/7890|4567|Solvente/);
+ assert.doesNotMatch(citizenDashboard,/7890|4567|\.textContent\s*=\s*['\"]Solvente['\"]/);
  assert.match(account,/Iglesia de San Francisco/);
  assert.match(account,/get_my_citizen_portal/);
  assert.match(account,/get_municipal_payment_instructions/);

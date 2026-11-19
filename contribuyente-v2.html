@@ -82,9 +82,9 @@ html,body{min-height:100%;margin:0}
 <label class="field" for="citizenPassword">Contraseña</label>
 <input id="citizenPassword" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required>
 <button class="submit" id="citizenSubmit" type="submit">Ingresar al portal</button>
-<p class="citizen-activation-note">Acceso exclusivo para contribuyentes con expediente verificado y activado por IMAUD.</p>
+<p class="citizen-activation-note">Tu usuario es la cédula/RIF. Para entrar por primera vez necesitas establecer la contraseña desde el enlace recibido en tu correo; la cédula todavía no es tu contraseña.</p>
 </form>
-<a class="forgot" href="#" id="citizenForgot">¿Olvidaste tu contraseña?</a><div class="message" id="citizenMessage" role="status"></div>
+<a class="forgot" href="#" id="citizenForgot">¿Primera vez o necesitas crear/restablecer tu contraseña?</a><div class="message" id="citizenMessage" role="status"></div>
 <div class="foot">Acceso personal para contribuyentes registrados.<br>Si aún no tienes cuenta, solicita orientación en la oficina de recaudación.</div>
 </div></section></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -121,14 +121,14 @@ form.addEventListener('submit',async e=>{
    method:"POST",headers:{"Content-Type":"application/json","apikey":"sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm"},
    body:JSON.stringify({type:type.value,identification:raw,password:password.value})
   });
-  if(response.status===404||response.status===503)throw new Error('El acceso por cédula y RIF debe estar activado previamente por el Instituto.');
+  if(response.status===404||response.status===503)throw new Error('No está disponible el servicio de acceso. Vuelve a intentarlo o contacta a IMAUD; no registres otra cuenta.');
   const result=await response.json().catch(()=>({}));
-  if(!response.ok||!result.access_token||!result.refresh_token)throw new Error(result.error||'No se pudo iniciar sesión. Verifica la identificación y la contraseña.');
+  if(!response.ok||!result.access_token||!result.refresh_token)throw new Error(result.error||'No se pudo iniciar sesión. Debes usar la contraseña creada mediante el correo de activación.');
   const {error:sessionError}=await client.auth.setSession({access_token:result.access_token,refresh_token:result.refresh_token});
   if(sessionError)throw sessionError;
   const {data,error}=await client.rpc('get_my_citizen_portal');
   if(error)throw error;
-  if(!data?.activated)throw new Error('El expediente todavía no tiene acceso ciudadano activado. Solicita su vinculación al funcionario de IMAUD.');
+  if(!data?.activated)throw new Error('La sesión se inició, pero la verificación del expediente falló. Comunícate con IMAUD; no te registres nuevamente.');
   if(!matches(data))throw new Error('La cédula o RIF no coincide con el expediente vinculado a esta cuenta.');
   sessionStorage.setItem('sitmaud_citizen_view','authenticated');
   location.assign('./contribuyente-cuenta.html');
@@ -156,7 +156,7 @@ document.getElementById('citizenForgot').addEventListener('click',async e=>{
   });
   const result=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(result.error||'El servicio no está disponible.');
-  message.textContent='Si tu cuenta está activada, recibirás un enlace para cambiar tu contraseña en el correo registrado.';
+  message.textContent='Si tu expediente está vinculado, recibirás en tu correo un enlace para establecer tu contraseña. Abre ese enlace, crea la clave y luego regresa aquí para ingresar con tu cédula o RIF.';
  }catch(err){message.textContent=err.message||'No fue posible procesar la recuperación.';}
  finally{link.style.pointerEvents='';}
 });

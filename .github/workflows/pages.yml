@@ -30,7 +30,7 @@ jobs:
           mkdir -p dist/assets
           for file in index.html funcionario.html contribuyente-v2.html contribuyente-cuenta.html activar-contribuyente.html verificar-solvencia.html \
             styles.css auth.css billing.css territorial-map.css citizen-dashboard.css \
-            auth.js official-finance.js official-payment-registration.js solvency-documents.js \
+            auth.js official-finance.js official-payment-registration.js pos-terminals.js solvency-documents.js \
             condominium-assessments.js municipal-bank-admin.js official-receipt-template.js citizen-receipts.js citizen-payment-registration.js citizen-dashboard.js app.js territorial-map.js contributor-documents.js; do
             test -f "$file"
             cp "$file" dist/"$file"
@@ -63,6 +63,7 @@ jobs:
           node --test tests/payments-layout.test.mjs
           node --check dist/official-finance.js
           node --check dist/official-payment-registration.js
+          node --check dist/pos-terminals.js
           node --check dist/solvency-documents.js
           node --check dist/condominium-assessments.js
           node --check dist/municipal-bank-admin.js

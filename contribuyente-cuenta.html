@@ -38,7 +38,7 @@ h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14p
  .sit-citizen-receipt-toolbar{display:none!important}
  .sit-citizen-receipt-paper{width:5.5in;height:8.5in;margin:0;padding:.26in;break-inside:avoid}
 }
-</style>
+.citizen-pay-month{display:grid;grid-template-columns:20px 1fr;gap:5px 10px;padding:12px;border:1px solid #d8e6ef;border-radius:8px;margin:9px 0;cursor:pointer}.citizen-pay-month input{grid-row:span 2;align-self:center;accent-color:#0b6b97}.citizen-pay-month small{grid-column:2;color:#5d788c}.citizen-payment-form{margin-top:16px}.citizen-payment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:15px 0}.citizen-payment-grid label{font-size:13px;font-weight:700}.citizen-payment-grid input,.citizen-payment-grid select{display:block;margin-top:7px;width:100%;padding:12px;font:inherit;border:1px solid #cbdce6;border-radius:8px}.citizen-payment-actions{display:flex;flex-wrap:wrap;gap:10px}.citizen-payment-note{background:#f5fafc;padding:12px;border-radius:8px;color:#315d77;font-size:13px;margin:14px 0}.citizen-payment-status{font-size:13px;color:#215c7b;margin:12px 0}</style>
 </head>
 <body>
 <header><div><b>SITMAUD</b><small>Portal del Contribuyente · Municipio Miranda, Coro</small></div><button id="exit">Cerrar sesión</button></header>
@@ -51,11 +51,29 @@ h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14p
 <div class="info"><b>Mis pagos</b><div id="citizenPayments">Consultando…</div></div></section>
 </section>
 <section class="card" id="citizenSecurity" hidden style="margin-top:20px"><h2>Seguridad de mi cuenta</h2><p>Si deseas cambiar tu contraseña, puedes hacerlo aquí. No es obligatorio modificarla después de iniciar sesión.</p><button type="button" id="citizenChangePasswordToggle">Cambiar mi contraseña</button><form id="citizenChangePasswordForm" hidden><label for="citizenCurrentPassword" class="security-label">Contraseña actual</label><input id="citizenCurrentPassword" type="password" autocomplete="current-password" required minlength="1"><label for="citizenNewPassword" class="security-label">Nueva contraseña (mínimo 12 caracteres)</label><input id="citizenNewPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><label for="citizenNewPasswordRepeat" class="security-label">Confirmar nueva contraseña</label><input id="citizenNewPasswordRepeat" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><button type="submit" id="citizenChangePasswordSubmit">Guardar nueva contraseña</button><div id="citizenPasswordFeedback" role="status" aria-live="polite"></div></form></section>
+<section class="card payment-info" id="citizenPaymentRegistration" hidden>
+<h2>Registrar un pago</h2><p>Selecciona los meses pendientes y verifica el importe oficial calculado con la UCD y la tasa BCV. Solo los pagos a cuentas publicadas por la Alcaldía pueden registrarse.</p>
+<div class="citizen-payment-note">Enviar un comprobante <strong>no liquida la deuda</strong>. Tesorería debe verificar que los fondos ingresaron a la cuenta oficial.</div>
+<div id="citizenPaymentMessage" class="citizen-payment-status" role="status">Verificando obligaciones y cuentas oficiales…</div>
+<form id="citizenPaymentForm" class="citizen-payment-form" hidden>
+<div id="citizenPaymentMonths"></div>
+<div class="citizen-payment-actions"><button type="button" id="citizenPaymentQuoteButton">Calcular importe oficial</button></div>
+<div id="citizenPaymentQuote" class="citizen-payment-note">Selecciona uno o varios meses para calcular.</div>
+<div class="citizen-payment-grid">
+<label>Método de pago<select id="citizenPaymentMethod" name="method" required><option value="transferencia">Transferencia</option><option value="pago_movil">Pago móvil</option></select></label>
+<label>Cuenta oficial receptora<select id="citizenPaymentDestination" name="receiving" required></select></label>
+<label>Banco desde donde pagaste<select id="citizenPaymentBank" name="bank" required></select></label>
+<label>Referencia bancaria<input name="reference" type="text" minlength="3" maxlength="110" autocomplete="off" required placeholder="Número de referencia"></label>
+<label>Comprobante (PDF o imagen, máximo 10 MB)<input name="proof" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required></label>
+</div>
+<button type="submit" id="citizenPaymentSubmit" disabled>Enviar pago a validación de Tesorería</button>
+</form></section>
 <section class="card payment-info" id="paymentInformation" hidden><h2>Cuentas bancarias oficiales de la Alcaldía</h2><div id="municipalBankList" role="status">Cargando cuentas bancarias…</div></section>
 <footer>Alcaldía del Municipio Miranda · Instituto Municipal de Aseo Urbano y Domiciliario</footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="citizen-receipts.js?v=20261118-verified-receipt2"></script>
+<script src="citizen-payment-registration.js?v=20261119-citizen-payment1"></script>
 <script>
 const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase.co","sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm",{auth:{storageKey:"sitmaud-citizen-auth"}});
 (async function(){
@@ -81,6 +99,7 @@ const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase
   document.getElementById('account').hidden=false;
   document.getElementById('citizenSecurity').hidden=false;
   document.getElementById('paymentInformation').hidden=false;
+  if(window.sitmaudCitizenPayment)await window.sitmaudCitizenPayment.init(client,portal);
   const bankHost=document.getElementById('municipalBankList');
   const {data:bankData,error:bankError}=await client.rpc('get_municipal_payment_instructions');
   const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));

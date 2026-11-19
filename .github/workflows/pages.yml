@@ -31,7 +31,7 @@ jobs:
           for file in index.html funcionario.html contribuyente-v2.html contribuyente-cuenta.html activar-contribuyente.html verificar-solvencia.html \
             styles.css auth.css billing.css territorial-map.css \
             auth.js official-finance.js official-payment-registration.js solvency-documents.js \
-            condominium-assessments.js municipal-bank-admin.js app.js territorial-map.js contributor-documents.js; do
+            condominium-assessments.js municipal-bank-admin.js citizen-receipts.js app.js territorial-map.js contributor-documents.js; do
             test -f "$file"
             cp "$file" dist/"$file"
           done
@@ -62,6 +62,7 @@ jobs:
           node --check dist/solvency-documents.js
           node --check dist/condominium-assessments.js
           node --check dist/municipal-bank-admin.js
+          node --check dist/citizen-receipts.js
           node --check dist/app.js
           node --check dist/territorial-map.js
           node --check dist/auth.js

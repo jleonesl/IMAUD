@@ -18,7 +18,7 @@
     '<div id="udcPaymentQuote"></div>'+
     '<div class="form-grid">'+
     '<div class="field"><label>Método bancario *</label><select name="method" required><option value="transferencia">Transferencia</option><option value="pago_movil">Pago móvil</option><option value="punto_venta">Punto de venta</option></select></div>'+
-    '<div class="field"><label>Banco *</label><select id="udcPayBank" name="bank" required><option value="">Cargando bancos…</option></select></div>'+
+    '<div class="field" id="udcPosTerminalField" hidden><label>Punto de venta municipal *</label><select name="pos_terminal_id" id="udcPosTerminal"><option value="">Seleccione el terminal</option></select><small>El código del terminal quedará registrado en el reporte.</small></div><div class="field"><label>Banco *</label><select id="udcPayBank" name="bank" required><option value="">Cargando bancos…</option></select></div>'+
     '<div class="field"><label>Referencia de la operación *</label><input name="reference" required minlength="3" maxlength="110" autocomplete="off" placeholder="Referencia bancaria"></div>'+
     '<div class="field"><label id="udcProofLabel">Comprobante (PDF o imagen) *</label><input id="udcProofFile" name="proof" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required><small id="udcProofHelp">Obligatorio para transferencias y pago móvil. Opcional para punto de venta.</small></div>'+
     '</div><div class="form-actions"><button class="btn btn-primary" id="udcPaySubmit" type="submit" disabled>Registrar pago y emitir factura</button></div>'+
@@ -66,6 +66,9 @@
    if(can.error||can.data!==true){tell('Solo funcionarios con permiso de registrar pagos pueden utilizar este formulario.');return;}
    tell('Consulta el expediente por contrato, cédula o RIF. Ninguna operación se contabilizará antes de la validación de Tesorería.');
    document.getElementById('udcPaymentLookup').hidden=false;
+   const devices=await imaudClient.from('pos_terminals').select('id,terminal_code,name,bank_code').eq('is_active',true).order('terminal_code');
+   const terminalSelect=document.getElementById('udcPosTerminal');
+   if(terminalSelect)terminalSelect.innerHTML='<option value="">Selecciona el punto de venta</option>'+((devices.data||[]).map(t=>'<option value="'+esc(t.id)+'" data-bank="'+esc(t.bank_code)+'">'+esc(t.terminal_code+' · '+t.name)+'</option>').join(''));
    const b=await imaudClient.from('payment_banks').select('code,name').eq('is_active',true).order('name');
    const sel=document.getElementById('udcPayBank');if(!sel)return;
    if(b.error){sel.innerHTML='<option value="">Catálogo bancario no disponible</option>';tell('Error al consultar bancos: '+b.error.message);return;}
@@ -152,8 +155,11 @@
    const form=document.getElementById('udcPaymentRegister');
    if(!form)return;
    const proof=form.elements.proof;
-   const required=form.elements.method.value!=='punto_venta';
+   const isPos=form.elements.method.value==='punto_venta';
+   const required=!isPos;
    proof.required=required;
+   const field=document.getElementById('udcPosTerminalField');if(field)field.hidden=!isPos;
+   const terminal=form.elements.pos_terminal_id;if(terminal)terminal.required=isPos;
    const lbl=document.getElementById('udcProofLabel');
    if(lbl)lbl.textContent=required?'Comprobante (PDF o imagen) *':'Comprobante (opcional para punto de venta)';
  }
@@ -188,13 +194,16 @@
          });
          if(up.error)throw up.error;
        }
-       const rpc=await imaudClient.rpc('register_official_udc_payment',{
+       const isPos=form.elements.method.value==='punto_venta';
+        if(isPos&&!form.elements.pos_terminal_id.value)throw Error('Selecciona el terminal que está utilizando el recaudador.');
+        const rpc=await imaudClient.rpc(isPos?'register_official_pos_payment':'register_official_udc_payment',{
          p_contributor_id:contributor.id,p_assessment_ids:selected,
          p_payment_method:form.elements.method.value,
          p_external_reference:form.elements.reference.value.trim(),
          p_bank_code:form.elements.bank.value,
          p_evidence_path:path||null,p_paid_at:new Date().toISOString(),
-         p_expected_rate_id:quote.rate_id,p_expected_total_bs:Number(quote.total_bs)
+         p_expected_rate_id:quote.rate_id,p_expected_total_bs:Number(quote.total_bs),
+          ...(isPos?{p_pos_terminal_id:form.elements.pos_terminal_id.value}:{})
        });
        if(rpc.error)throw rpc.error;
        saved=true;
@@ -224,5 +233,6 @@
  document.addEventListener('change',e=>{
    if(e.target.matches('#udcPaymentRegister .udc-month'))updateQuote();
    if(e.target.matches('#udcPaymentRegister [name="method"]'))adjustProofRequirement();
+    if(e.target.id==='udcPosTerminal'){const code=e.target.selectedOptions[0]?.dataset.bank;if(code){const bank=document.getElementById('udcPayBank');if(bank)bank.value=code;}}
  });
 })();

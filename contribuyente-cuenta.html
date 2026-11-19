@@ -176,6 +176,17 @@ body{background:#f4f7f9;color:#243747;font-family:'DM Sans',Arial,sans-serif}
 .citizen-brand:before{content:"";pointer-events:none;position:absolute;inset:2px 0 9px;background:radial-gradient(ellipse at center,rgba(219,244,255,.20) 0%,rgba(219,244,255,.08) 42%,transparent 78%);z-index:0}
 .citizen-brand img{position:relative;z-index:1;display:block;width:225px;max-width:100%;height:auto;max-height:155px;object-fit:contain;filter:drop-shadow(0 0 1px rgba(255,255,255,.65));border:0;background:transparent}
 @media(max-width:790px){.citizen-brand{min-height:145px!important}.citizen-brand img{max-height:145px}}
+
+/* Contraste del logo y barra izquierda — azul institucional claro */
+.citizen-sidebar{background:#83bfda!important;background-image:none!important;color:#173f5d!important}
+.citizen-brand:before{content:none!important;display:none!important;background:none!important}
+.citizen-brand img{filter:none!important;box-shadow:none!important;opacity:1!important}
+.citizen-nav button{color:#173f5d!important;font-weight:700}
+.citizen-nav button svg{stroke:#1d5877!important}
+.citizen-nav button:hover{background:#ffffff63!important;color:#102d46!important}
+.citizen-nav button[aria-current="page"]{background:linear-gradient(90deg,#247da0,#218f9b)!important;color:#fff!important;box-shadow:0 4px 10px #173f5d22}
+.citizen-nav button[aria-current="page"] svg{stroke:#fff!important}
+.citizen-sidebar-foot{border-top-color:#173f5d30!important;color:#234d66!important}
 </style>
 </head>
 <body>

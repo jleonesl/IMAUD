@@ -86,13 +86,13 @@ document.addEventListener("submit",async e=>{
   });
   if(error)throw error;
   uploaded=null;
-  message("Solicitud registrada: "+(data?.receipt_number||"")+" · "+bs(data?.amount_bs)+". Estado: PENDIENTE DE TESORERÍA. Este registro no es un recibo liquidado.");
+  message("Solicitud registrada: "+(data?.receipt_number||"")+" · "+bs(data?.amount_bs)+". Estado: PENDIENTE DE VERIFICACIÓN. Este registro no es un recibo liquidado.");
   form.hidden=true;$("citizenPaymentQuote").textContent="";
   // Actualiza los movimientos desde el servidor sin volver a crear otra operación.
   const fresh=await client.rpc("get_my_citizen_portal");
   if(!fresh.error&&fresh.data?.activated){
    const rows=fresh.data.payments||[];
-   $("citizenPayments").innerHTML=rows.length?rows.map(p=>'<div class="citizen-item"><div><b>'+escape(p.receipt)+'</b><small>'+escape(p.status==="confirmed"?"Liquidado por Tesorería":p.status==="reversed"?"Reversado":"Pendiente de validación")+'</small></div><b>'+bs(p.amount_bs)+'</b></div>').join(""):"<p>No existen pagos oficiales registrados.</p>";
+   $("citizenPayments").innerHTML=rows.length?rows.map(p=>'<div class="citizen-item"><div><b>'+escape(p.receipt)+'</b><small>'+escape(p.status==="confirmed"?"Pago confirmado":p.status==="reversed"?"Reversado":"Pendiente de validación")+'</small></div><b>'+bs(p.amount_bs)+'</b></div>').join(""):"<p>No existen pagos oficiales registrados.</p>";
   }
  }catch(err){
   if(uploaded){await client.storage.from("imaud-payment-proofs").remove([uploaded]).catch(()=>{});}

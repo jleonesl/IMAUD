@@ -710,8 +710,8 @@ function mapView(){return typeof window.renderTerritorialMap==='function'?window
 function ordinance(){
  return head('Ordenanza y tarifas','Unidad de Cambio Dinámico, vigencias y criterios tarifarios.')+
  '<section class="card udc-panel"><div class="udc-panel-head"><div><div class="eyebrow">UNIDAD DE CUENTA DINÁMICA · UCD</div><h2 id="udcCurrencyName">Consultando tasa BCV…</h2><p>Moneda de mayor valor entre las tasas oficiales publicadas por el Banco Central de Venezuela.</p></div><button class="btn btn-primary" data-action="sync-udc" id="syncUdcButton">↻ Actualizar tasa</button></div><div id="udcRateContent" class="udc-rate-content"><div class="udc-rate-loading">Consultando el valor vigente…</div></div><div class="udc-source-note">Fuente de datos: BCV · Sincronización automática diaria a las 6:30 p. m. (hora de Venezuela). La consulta conserva la última tasa oficial cuando el BCV no publica una nueva.</div></section>'+
- '<section class="card panel" id="officialBillingEnginePanel"><div class="panel-head"><div><h3>Motor de obligaciones · pruebas 2026 y ciclo 2027</h3><p>Ordenanza 2024 · prueba desde septiembre 2026; operación oficial desde enero 2027</p></div><span id="officialEngineStatus" class="status pending">Verificando…</span></div><div id="officialEngineReadiness">Comprobando coeficientes, sectorización, vigencia y tasa BCV…</div><div class="form-actions"><button class="btn btn-primary" type="button" id="officialEngineApprove" data-action="approve-residential-tariff" hidden>Aprobar tabulador residencial 2027</button><button class="btn btn-light" type="button" data-action="refresh-residential-engine">Actualizar diagnóstico</button></div><p class="panel-hint">La aprobación debe identificar al funcionario autorizado. No genera cobros en 2026 y no habilita por sí sola la facturación ni la liquidación bancaria.</p><div class="field" style="margin-top:15px"><label for="officialEngineProperty">Inmueble residencial</label><select id="officialEngineProperty" disabled><option value="">Cargando inmuebles…</option></select></div><div class="form-actions"><button type="button" class="btn btn-primary" id="officialEngineGenerate" data-action="generate-official-obligations" disabled>Generar mensualidades desde septiembre 2026</button></div><p class="panel-hint">Para generar deudas de prueba, el tabulador aplicable a septiembre de 2026 debe estar aprobado. El sistema no duplicará períodos. El ciclo definitivo inicia en enero de 2027.</p></section>'+
- '<section class="card udc-tariffs"><div class="panel-head"><h3>Coeficientes de la ordenanza</h3><span class="status">Cálculo en UCD</span></div><p class="udc-formula">Monto mensual = coeficiente × valor vigente de la UCD</p><div class="udc-tariff-grid"><article><span>Tipo I</span><strong>3 UCD</strong><small id="udcType1">—</small></article><article><span>Tipo II</span><strong>1,5 UCD</strong><small id="udcType2">—</small></article><article><span>Tipo III</span><strong>0,5 UCD</strong><small id="udcType3">—</small></article></div><p class="udc-source-note">Cada liquidación debe guardar la tasa, moneda, fecha de vigencia y coeficiente utilizados. Los cambios diarios de la UCD no modificarán liquidaciones ya emitidas.</p></section>'+
+ '<section class="card panel" id="officialBillingEnginePanel"><div class="panel-head"><div><h3>Motor de obligaciones · pruebas 2026 y ciclo 2027</h3><p>Ordenanza 2024 · prueba desde septiembre 2026; operación oficial desde enero 2027</p></div><span id="officialEngineStatus" class="status pending">Verificando…</span></div><div id="officialEngineReadiness">Comprobando coeficientes, sectorización, vigencia y tasa BCV…</div><div class="form-actions"><button class="btn btn-primary" type="button" id="officialEngineApprove" data-action="approve-residential-tariff" hidden>Aprobar tabulador residencial 2027</button><button class="btn btn-light" type="button" data-action="refresh-residential-engine">Actualizar diagnóstico</button></div><p class="panel-hint">La aprobación debe identificar al funcionario autorizado. No genera cobros en 2026 y no habilita por sí sola la facturación ni la liquidación bancaria.</p><div id="trialBillingBulk" class="form-actions"><button type="button" class="btn btn-primary" id="officialEngineGenerate" data-action="generate-official-obligations" disabled>Generar mensualidades de TODOS los inmuebles (pruebas 2026)</button></div><p class="panel-hint" id="trialBillingProgress" aria-live="polite">La generación general procesa hasta 200 inmuebles por lote, sin duplicar períodos. Los casos que requieren revisión quedarán identificados.</p><p class="panel-hint">En 2026 puede ejecutarse la generación general de pruebas; desde enero de 2027 las mensualidades se procesarán automáticamente en el servidor, incluyendo los inmuebles incorporados después.</p></section>'+
+ '<section class="card udc-tariffs"><div class="panel-head"><h3>Coeficientes de la ordenanza</h3><span class="status">Cálculo en UCD</span></div><p class="udc-formula">Monto mensual = coeficiente × valor vigente de la UCD</p><div class="udc-tariff-grid"><article><span>Tipo I</span><strong>3 UCD</strong><small id="udcType1">—</small></article><article><span>Tipo II</span><strong>1,5 UCD</strong><small id="udcType2">—</small></article><article><span>Tipo III</span><strong>0,5 UCD</strong><small id="udcType3">—</small></article></div><p class="udc-source-note">Las obligaciones se expresan en UCD y se convierten a bolívares con la tasa vigente al registrar cada pago; las facturas conservan la tasa efectivamente aplicada.</p></section>'+
  '<section class="card udc-sector-card"><div class="panel-head"><h3>Consultar tarifa residencial por sector</h3><span class="status pending">Vista previa · sin generar deuda</span></div><p class="udc-sector-intro">Selecciona una parroquia y un sector para consultar su categoría residencial y el valor calculado con la UCD registrada.</p><div class="udc-sector-selectors"><div class="field"><label for="udcParishSelect">Parroquia</label><select id="udcParishSelect"><option value="">Cargando parroquias…</option></select></div><div class="field"><label for="udcSectorSelect">Sector</label><select id="udcSectorSelect" disabled><option value="">Seleccione primero la parroquia</option></select></div></div></section>'+
   '<section class="card udc-sector-correction"><div class="panel-head"><h3>Corrección excepcional de la categoría de un sector</h3><span class="status pending">Solo intendente</span></div><p>Cuando todo un sector esté mal clasificado, el intendente podrá cambiar su categoría para las próximas obligaciones. No modifica deudas anteriores ni excepciones particulares de inmuebles.</p><form id="sectorCorrectionForm"><div class="udc-correction-grid"><div class="field"><label>Parroquia</label><select id="correctionParish" required><option value="">Seleccione parroquia</option></select></div><div class="field"><label>Sector</label><select id="correctionSector" required disabled><option value="">Seleccione parroquia primero</option></select></div><div class="field"><label>Clasificación nueva</label><select id="correctionTypology" required><option value="">Seleccione clasificación</option><option value="TIPO I">Tipo I</option><option value="TIPO II">Tipo II</option><option value="TIPO III">Tipo III</option></select></div><div class="field"><label>Motivo y respaldo de la corrección</label><input id="correctionReason" minlength="10" placeholder="Explique la clasificación correcta" required></div></div><div id="correctionCurrent" class="udc-correction-note">Elige el sector para ver su clasificación actual.</div><div class="form-actions"><button class="btn btn-primary" type="submit" id="correctionSubmit">Guardar corrección del sector</button></div></form></section>'+
   '<div class="grid two-col"><div class="card panel"><div class="panel-head"><h3>Normativa municipal</h3><span class="status active">Documento cargado</span></div>'+
@@ -723,29 +723,29 @@ function ordinance(){
 
 let residentialEngineReady=false,residentialEngineCanCreate=false;
 async function loadResidentialEngineProperties(){
- const select=document.getElementById('officialEngineProperty');if(!select)return;
  const auth=await imaudClient.rpc('has_permission',{permission_code:'assessments.create'});
  residentialEngineCanCreate=!auth.error&&auth.data===true;
- if(!residentialEngineCanCreate){select.innerHTML='<option value="">No tienes autorización para generar obligaciones</option>';return;}
- const {data,error}=await imaudClient.from('properties').select('id,address,contract_number')
- .eq('is_active',true).eq('property_use','residencial').eq('is_consolidated_master',false).order('created_at',{ascending:false}).limit(200);
- if(!select.isConnected)return;
- if(error){select.innerHTML='<option value="">No se pudieron cargar inmuebles</option>';return;}
- select.disabled=!(data?.length);
- select.innerHTML='<option value="">Selecciona el inmueble</option>'+((data||[]).map(p=>'<option value="'+escapeHTML(p.id)+'">'+escapeHTML((p.contract_number||'Sin contrato')+' · '+p.address)+'</option>').join(''));
  await loadResidentialEngineReadiness();
 }
 async function generateOfficialObligations(btn){
  if(!residentialEngineReady||!residentialEngineCanCreate)return;
- const property=document.getElementById('officialEngineProperty')?.value;
- if(!property){toast('Selecciona un inmueble');return;}
- if(!window.confirm('¿Generar mensualidades desde septiembre de 2026 hasta el mes actual para este inmueble? Se exige tarifa aprobada y no se duplicarán períodos.'))return;
- btn.disabled=true;
- const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
- const {data,error}=await imaudClient.rpc('generate_official_property_assessments',{p_property_id:property,p_through_date:date});
- if(error){toast('No se pudo generar: '+error.message);btn.disabled=false;return;}
- toast('Obligaciones oficiales generadas: '+(data||[]).filter(x=>x.result==='created').length);
- await loadResidentialEngineReadiness();
+ if(!window.confirm('¿Generar ahora las mensualidades de prueba de TODOS los inmuebles residenciales y condominios habilitados desde septiembre de 2026? Solo se crearán las obligaciones faltantes; los conflictos quedarán pendientes de revisión.'))return;
+ btn.disabled=true;let created=0,scanned=0,failures=0,batches=0;
+ const progress=document.getElementById('trialBillingProgress');
+ try{
+  while(batches<1000){
+   const {data,error}=await imaudClient.rpc('run_trial_billing_batch',{p_batch_size:200});
+   if(error)throw error;
+   batches++;created+=Number(data?.created||0);scanned+=Number(data?.processed||0);failures+=Number(data?.failed||0);
+   if(progress)progress.textContent='Procesados: '+scanned+' inmuebles · Obligaciones nuevas: '+created+' · Casos para revisión: '+failures+'.';
+   if(data?.status==='cycle_complete')break;
+   if(data?.status!=='more')throw Error('El procesador no respondió con un estado esperado: '+(data?.status||'desconocido'));
+  }
+  if(progress)progress.textContent='Proceso de generación terminado. '+scanned+' inmuebles revisados, '+created+' mensualidades creadas y '+failures+' incidencias. Los casos pendientes requieren conciliación, no alteraciones automáticas.';
+  await loadResidentialEngineReadiness();
+ }catch(error){
+  if(progress)progress.textContent='Generación interrumpida: '+(error.message||String(error))+'. Operaciones de lotes anteriores permanecen registradas; la continuación es segura porque no duplica meses.';
+ }finally{if(btn.isConnected)btn.disabled=!residentialEngineReady||!residentialEngineCanCreate;}
 }
 
 async function loadResidentialEngineReadiness(){
@@ -761,8 +761,10 @@ async function loadResidentialEngineReadiness(){
  if(readiness.error){output.textContent='No se pudo consultar el motor: '+readiness.error.message;return;}
  const data=readiness.data||{},canApprove=!authorization.error&&authorization.data===true;
  const approvedForTrial=!trialTariff.error&&(trialTariff.data||[]).some(x=>x.is_approved===true);
- residentialEngineReady=approvedForTrial&&!!data.rate_current&&Number(data.unclassified_sectors||0)===0;
- const generator=document.getElementById('officialEngineGenerate');if(generator)generator.disabled=!residentialEngineReady||!residentialEngineCanCreate||!document.getElementById('officialEngineProperty')?.value;
+ const inTrial=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())<'2027-01-01';
+ residentialEngineReady=inTrial&&approvedForTrial&&!!data.rate_current&&Number(data.unclassified_sectors||0)===0;
+ const trialPanel=document.getElementById('trialBillingBulk');if(trialPanel)trialPanel.hidden=!inTrial;
+ const generator=document.getElementById('officialEngineGenerate');if(generator)generator.disabled=!residentialEngineReady||!residentialEngineCanCreate;
  const status=document.getElementById('officialEngineStatus'),button=document.getElementById('officialEngineApprove');
  if(status){status.textContent=approvedForTrial?'Tarifa de pruebas aprobada':'Tarifa de septiembre sin aprobación';status.className='status '+(approvedForTrial?'active':'pending');}
  if(button){button.hidden=!!data.approved||!canApprove;button.disabled=false;}

@@ -49,10 +49,22 @@ Deno.serve(async request=>{
    kind==="natural_venezolano"&&identityType!=="V"||
    kind==="natural_extranjero"&&identityType!=="E")
    return respond({error:"El tipo de contribuyente no coincide con la identificación"},400);
+ const canonicalId=identityType==="V"||identityType==="E"
+   ?number.replace(/[^0-9]/g,"")
+   :number.replace(/[^0-9A-Za-z]/g,"").toUpperCase();
+ if(identityType==="J"?!/^J[0-9]{9}$/.test(canonicalId):!/^[0-9]{5,12}$/.test(canonicalId))
+   return respond({error:"La cédula/RIF no tiene un formato válido. Revisa el número antes de registrar."},400);
  const admin=createClient(url,service,{auth:{autoRefreshToken:false,persistSession:false}});
+ // El acceso ciudadano se vincula 1:1 con el correo del titular.
+ // Evita crear expedientes incompletos cuyo email ya pertenece a otro acceso.
+ const {data:mailMatches,error:mailCheckError}=await admin.from("contributors")
+  .select("id,contract_number").ilike("email",email).limit(1);
+ if(mailCheckError)return respond({error:"No se pudo verificar la unicidad del correo. Intenta de nuevo."},503);
+ if(mailMatches?.length)
+   return respond({error:"Este correo ya está registrado en otro expediente. Comprueba el contribuyente existente antes de crear una cuenta nueva."},409);
  const row={
   kind,service_account_type:condo?"condominio":"individual",
-  identification_type:identityType,identification_number:number,email,
+  identification_type:identityType,identification_number:canonicalId,email,
   phone:string("phone",30)||null,
   contact_address:string("contact_address",500)||null,
   contact_parish_name:string("contact_parish_name",140)||null,
@@ -61,7 +73,7 @@ Deno.serve(async request=>{
   first_name:kind!=="juridico"?first:null,
   last_name:kind!=="juridico"?last:null,
   legal_name:kind==="juridico"?legal:null,
-  rif:kind==="juridico"?number:null,
+  rif:kind==="juridico"?canonicalId:null,
   created_by:userResult.user.id
  };
  const {data:contributor,error:insertError}=await admin.from("contributors").insert(row)

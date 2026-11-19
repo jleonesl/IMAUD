@@ -138,8 +138,26 @@ form.addEventListener('submit',async e=>{
   button.disabled=false;button.textContent='Ingresar al portal';
  }
 });
-document.getElementById('citizenForgot').addEventListener('click',e=>{
+document.getElementById('citizenForgot').addEventListener('click',async e=>{
  e.preventDefault();
- message.textContent='Para recuperar tu contraseña sin mostrar ni solicitar el correo en esta pantalla, comunícate con la oficina de recaudación. Se verificará tu identidad antes de restablecer el acceso.';
+ const raw=identity.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+ const legal=['J','C'].includes(type.value);
+ if(legal?!/^J[0-9]{9}$/.test(raw):!/^[0-9]{5,12}$/.test(raw)){
+   message.textContent=legal?'Escribe primero tu RIF completo.':'Escribe primero tu número de cédula.';
+   identity.focus();return;
+ }
+ const link=e.currentTarget;link.style.pointerEvents='none';
+ message.textContent='Procesando solicitud de recuperación…';
+ try{
+  const response=await fetch('https://vlgvojndrmvwhfjlpbid.supabase.co/functions/v1/recover-sitmaud-citizen',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':'sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm'},
+    body:JSON.stringify({type:type.value,identification:raw})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(result.error||'El servicio no está disponible.');
+  message.textContent='Si tu cuenta está activada, recibirás un enlace para cambiar tu contraseña en el correo registrado.';
+ }catch(err){message.textContent=err.message||'No fue posible procesar la recuperación.';}
+ finally{link.style.pointerEvents='';}
 });
 </script></body></html>

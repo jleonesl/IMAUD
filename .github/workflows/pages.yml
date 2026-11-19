@@ -61,6 +61,7 @@ jobs:
           node --test tests/release-safety.test.mjs
           node --test tests/staff-profiles.test.mjs
           node --test tests/payments-layout.test.mjs
+          node --test tests/billing-engine-regression.test.mjs
           node --check dist/official-finance.js
           node --check dist/official-payment-registration.js
           node --check dist/pos-terminals.js

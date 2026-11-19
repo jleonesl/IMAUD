@@ -47,12 +47,13 @@ test('recipient receives an email invitation, not a national ID as password', ()
   assert.match(citizenDocs, /invite-sitmaud-citizen/);
   assert.doesNotMatch(citizenDocs, /password:\s*identification_number/);
 });
-test('receipt is server verified and requires liquidated payment', () => {
-  assert.match(serverReceipt, /status='confirmed'/);
-  assert.match(serverReceipt, /liquidated_at is not null/);
-  assert.match(serverReceipt, /contributor_id=v_owner/);
-  assert.match(receipt, /get_my_citizen_receipt/);
-  assert.match(account, /p\.status==='confirmed'&&p\.liquidated_at/);
+test('citizen receipt is owner scoped and can be issued before treasury confirms', () => {
+  const issuedSql=read('supabase/migrations/20261119070000_citizen_invoice_at_registration.sql');
+  assert.match(issuedSql,/status in \('pending','confirmed'\)/);
+  assert.match(issuedSql,/contributor_id=v_owner/);
+  assert.doesNotMatch(issuedSql,/status='confirmed' and liquidated_at is not null/);
+  assert.match(receipt,/get_my_citizen_receipt/);
+  assert.match(account,/\['pending','confirmed'\]\.includes\(p\.status\)/);
 });
 test('normalize existing national IDs exactly once and publish all portal files', () => {
   assert.match(officialPortal, /regexp_replace\(upper\(v_c\.identification_number\)/);
@@ -146,12 +147,13 @@ test('institutional and citizen receipts use exactly one approved HTML renderer 
  assert.doesNotMatch(receipt,/sit-citizen-receipt-paper/);
  assert.doesNotMatch(account,/@page\s*\{\s*size:5\.5in 8\.5in/);
 });
-test('citizen invoice remains restricted to own confirmed and liquidated payments', () => {
+test('citizen invoice is available upon registration, while reversed stays unavailable', () => {
+ const issuedSql=read('supabase/migrations/20261119070000_citizen_invoice_at_registration.sql');
  assert.match(receipt,/get_my_citizen_receipt/);
- assert.match(receipt,/data\.status!=='confirmed'/);
- assert.match(receipt,/data\.liquidated_at/);
+ assert.match(receipt,/\['pending','confirmed'\]\.includes\(data\.status\)/);
  assert.match(receipt,/Math\.abs\(sum-Number\(payment\.amount\)\)>0\.01/);
- assert.match(serverReceipt,/contributor_id=v_owner/);
+ assert.match(issuedSql,/contributor_id=v_owner/);
+ assert.match(issuedSql,/status in \('pending','confirmed'\)/);
 });
 
 test('treasury payment actions write explicit immutable audit records and require verifiable bank support', () => {

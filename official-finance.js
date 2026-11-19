@@ -99,7 +99,9 @@
       {label:'Por cobrar',icon:'▥',value:'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.amount_to_collect||0)),note:'Saldo registrado de obligaciones pendientes'},
       {label:'Por liquidar',icon:'◷',value:'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.pending_amount||0)),note:(data.pending_count||0)+' operación(es) esperando a Tesorería'},
       {label:'Liquidado hoy',icon:'↗',value:'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.liquidated_today||0)),note:'Ingreso confirmado hoy · hora de Coro'},
-      {label:'Liquidado este mes',icon:'▤',value:'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.liquidated_month||0)),note:'Ingreso confirmado durante el mes'}
+      {label:'Liquidado este mes',icon:'▤',value:'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(data.liquidated_month||0)),note:'Ingreso confirmado durante el mes'},
+      {label:'Pagos registrados hoy',icon:'▧',value:String(Number(data.registered_today_count||0)),note:'Operaciones recibidas; no todas están liquidadas'},
+      {label:'Pagos liquidados este mes',icon:'✓',value:String(Number(data.liquidated_month_count||0)),note:'Operaciones bancarias confirmadas por Tesorería'}
     ];
     host.classList.add('dashboard-section','financial-dashboard');
     host.innerHTML='<div class="dashboard-section-head"><h2>Control financiero institucional</h2><p>Montos en bolívares · únicamente Tesorería confirma los ingresos</p></div>'+

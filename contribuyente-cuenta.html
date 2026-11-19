@@ -170,12 +170,18 @@ body{background:#f4f7f9;color:#243747;font-family:'DM Sans',Arial,sans-serif}
 .citizen-aside-column{display:flex;flex-direction:column}
 .citizen-grid{grid-template-columns:minmax(0,1fr) minmax(270px,300px)}
 @media(max-width:1250px){.citizen-grid{grid-template-columns:1fr}.citizen-aside-column{display:flex}}
+
+/* Logo SITMAUD original sin fondo, con contraste sobre barra azul */
+.citizen-brand{background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:7px 2px 19px!important;margin:0 0 14px!important;min-height:153px!important;position:relative}
+.citizen-brand:before{content:"";pointer-events:none;position:absolute;inset:2px 0 9px;background:radial-gradient(ellipse at center,rgba(219,244,255,.20) 0%,rgba(219,244,255,.08) 42%,transparent 78%);z-index:0}
+.citizen-brand img{position:relative;z-index:1;display:block;width:225px;max-width:100%;height:auto;max-height:155px;object-fit:contain;filter:drop-shadow(0 0 1px rgba(255,255,255,.65));border:0;background:transparent}
+@media(max-width:790px){.citizen-brand{min-height:145px!important}.citizen-brand img{max-height:145px}}
 </style>
 </head>
 <body>
 <div class="citizen-shell">
 <aside class="citizen-sidebar" id="citizenSidebar" aria-label="Menú del contribuyente">
-<div class="citizen-brand"><img src="./assets/logo-sitmaud-oficial.png?v=20261119" alt="SITMAUD · Alcaldía del Municipio Miranda, Coro, Estado Falcón"></div>
+<div class="citizen-brand"><img src="./assets/logo-sitmaud-contribuyente-transparente.png?v=20261119-logo2" alt="SITMAUD · Alcaldía del Municipio Miranda, Coro, Estado Falcón"></div>
 <nav class="citizen-nav" aria-label="Secciones del portal">
 <button type="button" data-citizen-view="inicio" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Inicio</button>
 <button type="button" data-citizen-view="obligaciones" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16M6 4h12v16H6z"/></svg>Mis obligaciones</button>

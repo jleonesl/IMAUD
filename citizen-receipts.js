@@ -32,7 +32,7 @@
    '<div><dt>Fecha de emisión</dt><dd>'+esc(date(p.issued_at))+'</dd></div>'+
    '<div><dt>Fecha de liquidación</dt><dd>'+esc(date(p.liquidated_at))+'</dd></div>'+
    '<div><dt>Contribuyente</dt><dd>'+esc(p.contributor_name)+'</dd></div>'+
-   '<div><dt>Cédula / RIF</dt><dd>'+esc(p.identity)+'</dd></div>'+
+   '<div><dt>Cédula / RIF</dt><dd>'+esc(String(p.identity||'').replace(/^([VEJ])-\1-/,'$1-'))+'</dd></div>'+
    '<div><dt>Banco</dt><dd>'+esc(p.bank||'—')+'</dd></div>'+
    '<div><dt>Referencia</dt><dd>'+esc(p.reference||'—')+'</dd></div>'+
    '<div><dt>Método de pago</dt><dd>'+esc(String(p.payment_method||'').replaceAll('_',' '))+'</dd></div>'+

@@ -89,7 +89,7 @@ html,body{min-height:100%;margin:0}
 </div></section></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase.co","sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm");
+const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase.co","sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm",{auth:{storageKey:"sitmaud-citizen-auth"}});
 const form=document.getElementById('citizenLogin'),button=document.getElementById('citizenSubmit');
 const message=document.getElementById('citizenMessage'),identity=document.getElementById('citizenCedula');
 const type=document.getElementById('citizenType'),password=document.getElementById('citizenPassword');

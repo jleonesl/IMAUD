@@ -8,8 +8,8 @@
  let contributor=null,debts=[],quote=null,busy=false;
  const root=()=>document.getElementById('officialRegisterUdcPanel');
  function markup(){
-  return '<section class="card panel" id="officialRegisterUdcPanel">'+
-    '<div class="panel-head"><div><h3>Registrar pago bancario oficial</h3><p>Selecciona los meses, verifica la tasa UCD de la fecha del pago y adjunta el comprobante. Tesorería confirma el ingreso por separado.</p></div></div>'+
+  return '<div class="official-cashier-backdrop" id="officialCashierBackdrop" hidden><section class="card panel official-cashier-modal" id="officialRegisterUdcPanel" role="dialog" aria-modal="true" aria-labelledby="officialCashierTitle">'+
+    '<div class="panel-head"><div><h3 id="officialCashierTitle">Registrar pago</h3><p>Localiza el expediente, selecciona uno o varios meses y carga los datos bancarios. La confirmación del pago se realiza por separado.</p></div><button type="button" class="btn btn-light" data-official-close-register aria-label="Cerrar registro de pago">✕ Cerrar</button></div>'+
     '<div id="udcCashierMessage" role="status">Verificando permiso de recaudación…</div>'+
     '<form id="udcPaymentLookup" hidden><div class="form-grid"><div class="field"><label>Contrato, cédula o RIF del contribuyente</label><input name="identity" minlength="3" required placeholder="Ej. CD-2027-000001"></div></div><div class="form-actions"><button type="submit" class="btn btn-light">Consultar obligaciones</button></div></form>'+
     '<div id="udcPaymentContributor"></div>'+
@@ -24,7 +24,7 @@
     '</div><div class="form-actions"><button class="btn btn-primary" id="udcPaySubmit" type="submit" disabled>Registrar pago pendiente de Tesorería</button></div>'+
     '<p class="panel-hint">Importes en VES. Solo meses oficiales íntegros, sin pagos anteriores ni exoneraciones pendientes de conciliar. El banco debe acreditar los fondos; registrar no equivale a liquidar.</p></form>'+
     '<div id="udcPaymentConfirmation" aria-live="polite"></div>'+
-  '</section>';
+  '</section></div>';
  }
  const native=window.sitmaudOfficialFinance;
  if(!native)return;
@@ -34,6 +34,31 @@
    await oldMount(v);
    if(v==='pagos')await init();
  };
+
+ let lastFocus=null;
+ function close(){
+   const layer=document.getElementById('officialCashierBackdrop');
+   if(layer)layer.hidden=true;
+   document.body.classList.remove('modal-open');
+   lastFocus?.focus?.();
+ }
+ async function open(identity=''){
+   const layer=document.getElementById('officialCashierBackdrop');
+   if(!layer){window.alert('Abre la sección Recaudación y pagos antes de registrar.');return;}
+   lastFocus=document.activeElement;
+   layer.hidden=false;document.body.classList.add('modal-open');
+   const input=layer.querySelector('#udcPaymentLookup [name="identity"]');
+   if(input){input.value=identity||'';input.focus();}
+   if(identity){
+     try{await showLookup(identity);}catch(e){tell('No se pudo consultar el expediente: '+(e.message||'Intenta otra búsqueda'));}
+   }
+ }
+ window.sitmaudUdcPayment={open,close};
+ document.addEventListener('click',e=>{
+   if(e.target.closest('[data-official-close-register]'))close();
+   if(e.target.id==='officialCashierBackdrop')close();
+ });
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('officialCashierBackdrop')?.hidden)close();});
  function tell(message){const e=document.getElementById('udcCashierMessage');if(e)e.textContent=message;}
  async function init(){
    const can=await imaudClient.rpc('has_permission',{permission_code:'payments.register'});

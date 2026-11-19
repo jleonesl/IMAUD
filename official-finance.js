@@ -124,7 +124,7 @@
     const records=payments.filter(p=>(!status||p.status===status)&&(!term||[p.receipt_number,p.external_reference,contributor(p.contributor),p.contributor?.contract_number].join(' ').toLowerCase().includes(term)));
     if(!records.length){node.innerHTML='<div class="contributors-empty"><b>No hay operaciones registradas para este filtro.</b></div>';return;}
     node.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Fecha</th><th>Comprobante</th><th>Contribuyente</th><th>Referencia</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>'+
-      records.map(p=>'<tr><td>'+safe(fmtDate(p.created_at))+'</td><td><b>'+safe(p.receipt_number)+'</b></td><td>'+safe(contributor(p.contributor))+'</td><td>'+safe(p.external_reference||'—')+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td><td>'+safe(label(p.status))+'</td><td><button class="btn btn-light btn-sm" data-official-invoice="'+safe(p.id)+'">Ver documento</button> '+(p.evidence_path?'<button class="btn btn-light btn-sm" data-treasury-evidence="'+safe(p.id)+'">Ver comprobante</button> ':'')+(p.status==='pending'&&treasuryAllowed?'<button class="btn btn-primary btn-sm" data-official-liquidate="'+safe(p.id)+'">Liquidar (Tesorería)</button> <button class="btn btn-light btn-sm" data-official-reject="'+safe(p.id)+'">Anular registro</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';
+      records.map(p=>'<tr><td>'+safe(fmtDate(p.created_at))+'</td><td><b>'+safe(p.receipt_number)+'</b></td><td>'+safe(contributor(p.contributor))+'</td><td>'+safe(p.external_reference||'—')+'</td><td>'+safe(money(p.amount,p.currency_code))+'</td><td>'+safe(label(p.status))+'</td><td><button class="btn btn-light btn-sm" data-official-invoice="'+safe(p.id)+'">Ver documento</button> '+(p.evidence_path?'<button class="btn btn-light btn-sm" data-treasury-evidence="'+safe(p.id)+'">Ver comprobante</button> ':'')+(p.status==='pending'&&treasuryAllowed?'<button class="btn btn-primary btn-sm" data-official-liquidate="'+safe(p.id)+'">Liquidar (Tesorería)</button> <button class="btn btn-light btn-sm" data-official-reject="'+safe(p.id)+'">Rechazar pago</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';
   }
   function renderInvoiceRows(){
     const node=document.getElementById('officialInvoiceRows');if(!node)return;
@@ -251,7 +251,7 @@
   async function rejectPendingPayment(id,button){
     const payment=payments.find(p=>p.id===id);
     if(!treasuryAllowed||!payment||payment.status!=='pending')return;
-    if(!window.confirm('¿Anular el registro pendiente '+payment.receipt_number+'? La operación no será borrada y el sistema guardará el funcionario, la fecha y la acción en la bitácora.'))return;
+    if(!window.confirm('¿Rechazar el pago pendiente '+payment.receipt_number+'? La operación no será borrada y el sistema guardará el funcionario, la fecha y la acción en la bitácora.'))return;
     const reason=window.prompt('Motivo concreto del rechazo o anulación (obligatorio, mínimo 8 caracteres):','');
     if(reason===null)return;
     if(reason.trim().length<8){window.alert('Escribe un motivo verificable de al menos 8 caracteres.');return;}
@@ -260,7 +260,7 @@
       p_payment_id:id,
       p_reason:reason.trim()
     });
-    if(error){window.alert('No se pudo anular: '+error.message);button.disabled=false;return;}
+    if(error){window.alert('No se pudo rechazar: '+error.message);button.disabled=false;return;}
     await Promise.all([loadPayments(),loadOverview()]);
   }
 

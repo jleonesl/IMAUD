@@ -59,3 +59,12 @@ test('automatic email request after contributor creation; employee only resends'
   assert.match(invitationService, /allow_citizen_access_email/);
   assert.doesNotMatch(citizenDocs, /data-activate-citizen[^]*?Enviar correo de activación/);
 });
+
+test('citizen may optionally change password after current-password verification', () => {
+  assert.match(account, /Seguridad de mi cuenta/);
+  assert.match(account, /Cambiar mi contrase(?:ñ|\u00f1)a/);
+  assert.match(account, /citizenChangePasswordForm/);
+  assert.match(account, /signInWithPassword/);
+  assert.match(account, /updateUser\(\{password:next\}\)/);
+  assert.match(account, /next\.length<12/);
+});

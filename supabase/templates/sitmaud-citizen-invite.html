@@ -15,12 +15,12 @@
 <p style="margin-bottom:5px"><strong>Usuario (cédula o RIF):</strong></p>
 <div style="padding:13px 16px;background:#eef5f9;border-radius:10px;font-weight:bold;font-size:19px;color:#123e5a">{{ .Data.citizen_username }}</div>
 <p style="line-height:1.65">Por seguridad, crearás tu contraseña personal abriendo este enlace:</p>
-<p style="margin:27px 0;text-align:center"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#11658a;padding:14px 22px;color:#fff;text-decoration:none;font-weight:700;border-radius:9px">Activar mi cuenta y crear contraseña</a></p>
+<p style="margin:27px 0;text-align:center"><a href="https://jleonesl.github.io/IMAUD/activar-contribuyente.html?token_hash={{ .TokenHash }}&amp;type=invite" style="display:inline-block;background:#11658a;padding:14px 22px;color:#fff;text-decoration:none;font-weight:700;border-radius:9px">Activar mi cuenta y crear contraseña</a></p>
 <p style="line-height:1.65"><strong>Enlace al Portal del Contribuyente:</strong><br><a href="https://jleonesl.github.io/IMAUD/contribuyente-v2.html" style="color:#11658a">https://jleonesl.github.io/IMAUD/contribuyente-v2.html</a></p>
 {{ else }}
 <h1 style="font-size:22px;color:#143e5b">Invitación institucional SITMAUD</h1>
 <p>Has recibido una invitación a SITMAUD.</p>
-<p><a href="{{ .ConfirmationURL }}" style="color:#11658a;font-weight:bold">Aceptar invitación</a></p>
+<p><a href="https://jleonesl.github.io/IMAUD/activar-contribuyente.html?token_hash={{ .TokenHash }}&amp;type=invite" style="color:#11658a;font-weight:bold">Aceptar invitación</a></p>
 {{ end }}
 <p style="font-size:12px;line-height:1.5;color:#718593;border-top:1px solid #e7edf1;padding-top:17px;margin-top:25px">Si no esperabas este correo, no abras el enlace. Por seguridad no compartas tu enlace de acceso.</p>
 </td></tr></table></td></tr></table>

@@ -21,7 +21,7 @@
     '<div class="field"><label>Banco *</label><select id="udcPayBank" name="bank" required><option value="">Cargando bancos…</option></select></div>'+
     '<div class="field"><label>Referencia de la operación *</label><input name="reference" required minlength="3" maxlength="110" autocomplete="off" placeholder="Referencia bancaria"></div>'+
     '<div class="field"><label>Comprobante (PDF o imagen) *</label><input name="proof" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required></div>'+
-    '</div><div class="form-actions"><button class="btn btn-primary" id="udcPaySubmit" type="submit" disabled>Registrar pago pendiente de Tesorería</button></div>'+
+    '</div><div class="form-actions"><button class="btn btn-primary" id="udcPaySubmit" type="submit" disabled>Registrar pago y emitir factura</button></div>'+
     '<p class="panel-hint">Importes en VES. Solo meses oficiales íntegros, sin pagos anteriores ni exoneraciones pendientes de conciliar. El banco debe acreditar los fondos; registrar no equivale a liquidar.</p></form>'+
     '<div id="udcPaymentConfirmation" aria-live="polite"></div>'+
   '</section></div>';
@@ -194,13 +194,19 @@
         '<p>Total: '+bs(data.amount_bs)+' · '+esc(ucd(data.udc_total))+
         ' · Fecha de la tasa: '+esc(data.rate_date)+
         '</p><p><strong>PENDIENTE de validación y liquidación por Tesorería.</strong></p></div>';
-       tell('El pago quedó en la cola de Tesorería. No se contabiliza aún como ingreso liquidado.');
+       tell('Pago registrado y factura emitida. Tesorería verificará el ingreso para efectos de solvencia.');
+       // La factura nace al registrar el pago. La validación de Tesorería
+       // es posterior y solo condiciona solvencias e ingresos liquidados.
        await window.sitmaudOfficialFinance.mount('pagos');
+       close();
+       if(data.payment_id && window.sitmaudOfficialFinance?.showDocument){
+         await window.sitmaudOfficialFinance.showDocument(data.payment_id);
+       }
      }catch(e){
        tell('No se pudo registrar el pago: '+(e.message||'Error de validación'));
      }finally{
        if(path&&!saved)await imaudClient.storage.from('imaud-payment-proofs').remove([path]).catch(()=>{});
-       busy=false;if(b?.isConnected){b.disabled=!quote;b.textContent='Registrar pago pendiente de Tesorería';}
+       busy=false;if(b?.isConnected){b.disabled=!quote;b.textContent='Registrar pago y emitir factura';}
      }
    }
  });

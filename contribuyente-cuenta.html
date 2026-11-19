@@ -4,40 +4,16 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SITMAUD | Portal del Contribuyente</title>
 <meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="billing.css?v=20261119-identical-invoice1">
 <style>
 :root{font-family:Arial,sans-serif;color:#173e59;background:#f5f8fb}
-*{box-sizing:border-box}body{margin:0}header{background:#103c61;color:white;padding:20px 5%;display:flex;justify-content:space-between;align-items:center;gap:12px}
-header b{font-size:21px}header small{display:block;font-size:11px;margin-top:3px;opacity:.8}button,.btn{border:0;border-radius:9px;padding:12px 18px;background:#0b6b97;color:white;font-weight:700;text-decoration:none;cursor:pointer}
+*{box-sizing:border-box}body{margin:0}body>header{background:#103c61;color:white;padding:20px 5%;display:flex;justify-content:space-between;align-items:center;gap:12px}
+body>header b{font-size:21px}body>header small{display:block;font-size:11px;margin-top:3px;opacity:.8}button,.btn{border:0;border-radius:9px;padding:12px 18px;background:#0b6b97;color:white;font-weight:700;text-decoration:none;cursor:pointer}
 main{max-width:850px;margin:42px auto;padding:0 20px}.card{background:#fff;border:1px solid #e1e9ef;border-radius:14px;padding:28px;box-shadow:0 8px 25px #153b5310}
 h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14px;background:#f0f6fa;border-left:3px solid #1a7e9e;border-radius:6px}
 #sessionStatus{font-size:12px;color:#657b88;margin-bottom:18px}.citizen-summary{display:grid;gap:16px;margin-top:20px}.citizen-summary .info{border:1px solid #dae8ef;border-left:3px solid #1a7e9e;background:#fbfdff}.citizen-item{border-top:1px solid #dfe9ee;padding:11px 0;display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap}.citizen-item b{color:#183d56}.citizen-item small{display:block;color:#6b8596}.citizen-empty{margin:12px 0 0;color:#768f9c}footer{margin-top:22px;color:#738793;font-size:12px}.security-label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}#citizenChangePasswordForm{margin-top:16px}#citizenChangePasswordForm input{width:100%;padding:12px;border:1px solid #ccdce5;border-radius:8px;font:inherit}#citizenChangePasswordSubmit{margin-top:16px}#citizenPasswordFeedback{margin-top:12px;font-size:13px}.payment-info{margin-top:20px}.bank-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:15px}.bank-card{border:1px solid #dbe8ef;border-radius:12px;padding:17px;background:#fff}.bank-card h3{font-size:15px;margin:0 0 12px}.bank-row{margin:8px 0}.bank-row small{display:block;color:#72889b;font-size:11px;margin-bottom:3px}.bank-row b{overflow-wrap:anywhere}.copy-bank{background:#e9f4f8;color:#075b7c;padding:6px 9px;border-radius:6px;margin-left:8px;font-size:11px}
 
-#sitCitizenReceiptModal{position:fixed;inset:0;background:rgba(9,29,47,.75);z-index:9999;display:grid;place-items:center;padding:20px;overflow:auto}
-.sit-citizen-receipt-dialog{background:#fff;border-radius:12px;max-height:96vh;overflow:auto;width:min(100%,650px)}
-.sit-citizen-receipt-toolbar{position:sticky;top:0;background:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;box-shadow:0 2px 8px #102d4615}
-.sit-citizen-receipt-toolbar button{padding:9px 12px;margin:0 3px;font-size:12px}
-.sit-citizen-receipt-paper{padding:24px;margin:auto;width:min(100%,5.5in);min-height:8in;background:white;color:#163b56;font-size:11px}
-.sit-citizen-receipt-header{display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:center;border-bottom:2px solid #1c7094;padding-bottom:12px}
-.sit-citizen-receipt-header img{width:56px;height:56px;object-fit:contain}
-.sit-citizen-receipt-header h1{font-size:17px;margin:0}.sit-citizen-receipt-header p{font-size:9px;margin:5px 0}
-.sit-citizen-receipt-status{text-align:center;padding:9px;background:#eaf5f1;color:#126348;margin:16px 0;font-weight:800}
-.sit-citizen-receipt-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:15px 0}
-.sit-citizen-receipt-grid div{min-width:0}.sit-citizen-receipt-grid dt{font-size:9px;color:#607b90}
-.sit-citizen-receipt-grid dd{margin:3px 0 0;font-weight:700;overflow-wrap:anywhere}
-.sit-citizen-receipt-periods{margin-top:20px;border-top:1px solid #dae7ef;padding-top:13px}
-.sit-citizen-receipt-periods>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #e7eef3}
-.sit-citizen-receipt-total{border-top:2px solid #1c7094;margin-top:20px;padding:12px 0;display:flex;justify-content:space-between;gap:10px;font-weight:800}
-.sit-citizen-receipt-total b{font-size:19px}
-.sit-citizen-receipt-paper footer{margin-top:18px;text-align:center;font-size:9px}
 .citizen-item .citizen-receipt-open{font-size:11px;padding:7px 10px;margin:0}
-@page{size:5.5in 8.5in;margin:0}
-@media print{
- body>*:not(#sitCitizenReceiptModal){display:none!important}
- #sitCitizenReceiptModal{position:static;display:block;background:white;padding:0;overflow:visible}
- .sit-citizen-receipt-dialog{width:5.5in;border:0;box-shadow:none;max-height:none;overflow:visible}
- .sit-citizen-receipt-toolbar{display:none!important}
- .sit-citizen-receipt-paper{width:5.5in;height:8.5in;margin:0;padding:.26in;break-inside:avoid}
-}
 .citizen-pay-month{display:grid;grid-template-columns:20px 1fr;gap:5px 10px;padding:12px;border:1px solid #d8e6ef;border-radius:8px;margin:9px 0;cursor:pointer}.citizen-pay-month input{grid-row:span 2;align-self:center;accent-color:#0b6b97}.citizen-pay-month small{grid-column:2;color:#5d788c}.citizen-payment-form{margin-top:16px}.citizen-payment-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:15px 0}.citizen-payment-grid label{font-size:13px;font-weight:700}.citizen-payment-grid input,.citizen-payment-grid select{display:block;margin-top:7px;width:100%;padding:12px;font:inherit;border:1px solid #cbdce6;border-radius:8px}.citizen-payment-actions{display:flex;flex-wrap:wrap;gap:10px}.citizen-payment-note{background:#f5fafc;padding:12px;border-radius:8px;color:#315d77;font-size:13px;margin:14px 0}.citizen-payment-status{font-size:13px;color:#215c7b;margin:12px 0}</style>
 </head>
 <body>
@@ -72,7 +48,8 @@ h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14p
 <footer>Alcaldía del Municipio Miranda · Instituto Municipal de Aseo Urbano y Domiciliario</footer>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="citizen-receipts.js?v=20261118-verified-receipt2"></script>
+<script src="official-receipt-template.js?v=20261119-identical-invoice1"></script>
+<script src="citizen-receipts.js?v=20261119-identical-invoice1"></script>
 <script src="citizen-payment-registration.js?v=20261119-citizen-payment1"></script>
 <script>
 const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase.co","sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm",{auth:{storageKey:"sitmaud-citizen-auth"}});

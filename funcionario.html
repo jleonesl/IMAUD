@@ -22,12 +22,21 @@ body{font-family:Inter,Manrope,Arial,sans-serif;color:#102d46;background:#fff;ov
 <section class="staff-panel"><div class="staff-card">
 <a class="back" href="./index.html">← Volver a la página principal</a>
 <div class="brand"><img class="brand-logo" src="https://d2ol7oe51mr4n9.cloudfront.net/user_3ItUe8QrEZBnQYkWfCOxM5aX5ic/9e7fac92-e1b9-456f-9a6e-c204e66bae59.png" alt="SITMAUD — Alcaldía del Municipio Miranda, Coro, Estado Falcón"></div>
-<div class="eyebrow">ACCESO INSTITUCIONAL</div><h1>Iniciar sesión</h1><p class="sub">Ingresa con las credenciales asignadas por el equipo intendente.</p>
+<div class="eyebrow">ACCESO INSTITUCIONAL</div><h1 id="staffHeading">Iniciar sesión</h1><p class="sub" id="staffDescription">Ingresa con tu correo y contraseña personal.</p>
 <form id="staffLogin"><label class="field" for="staffEmail">Usuario o correo institucional</label><input id="staffEmail" type="email" autocomplete="username" placeholder="usuario@institucion.gob.ve" required><label class="field" for="staffPassword">Contraseña</label><input id="staffPassword" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required><button class="submit" id="staffSubmit" type="submit">Ingresar al sistema</button></form>
+<form id="staffSetPassword" hidden>
+<label class="field" for="staffNewPassword">Crea tu contraseña *</label>
+<input id="staffNewPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Mínimo 12 caracteres">
+<label class="field" for="staffConfirmPassword">Confirma tu contraseña *</label>
+<input id="staffConfirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Repite tu contraseña">
+<p class="sub">Elige una contraseña de al menos 12 caracteres. Nadie en la Alcaldía necesita conocerla, ni siquiera el superusuario.</p>
+<button class="submit" id="staffPasswordSubmit" type="submit">Guardar contraseña y activar acceso</button>
+</form>
 <a class="forgot" href="#" id="staffForgot">¿Olvidaste tu contraseña?</a><div class="message" id="staffMessage" role="status"></div>
 <div class="foot">Acceso exclusivo para funcionarios autorizados.<br>Las cuentas son creadas y habilitadas por los usuarios intendentes.</div>
 </div></section></main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="staff-password-setup.js?v=20261119-secure-password1" defer></script>
 <script>
 const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase.co","sb_publishable_1_ze-KwpjoSM1j4d9pi_hw_bH6gd6Tm");
 const form=document.getElementById('staffLogin'),button=document.getElementById('staffSubmit'),message=document.getElementById('staffMessage'),email=document.getElementById('staffEmail');
@@ -38,5 +47,5 @@ const {data:profile,error:profileError}=await client.from('staff_profiles').sele
 if(profileError||!profile||!profile.is_active){await client.auth.signOut();message.textContent='Tu cuenta no tiene un perfil de funcionario habilitado. Contacta al usuario intendente.';button.disabled=false;button.textContent='Ingresar al sistema';return;}
 location.replace('./index.html?portal=funcionario');
 });
-document.getElementById('staffForgot').addEventListener('click',async e=>{e.preventDefault();if(!email.value.trim()){message.textContent='Escribe tu correo institucional para solicitar la recuperación.';return;}const {error}=await client.auth.resetPasswordForEmail(email.value.trim(),{redirectTo:location.origin+location.pathname});message.textContent=error?'No se pudo enviar el enlace.':'Si el correo está registrado, recibirás instrucciones para recuperar tu contraseña.';});
+document.getElementById('staffForgot').addEventListener('click',async e=>{e.preventDefault();if(!email.value.trim()){message.textContent='Escribe tu correo institucional para solicitar la recuperación.';return;}const {error}=await client.auth.resetPasswordForEmail(email.value.trim(),{redirectTo:location.origin+location.pathname+'?setup=recovery'});message.textContent=error?'No se pudo enviar el enlace.':'Si el correo está registrado, recibirás instrucciones para recuperar tu contraseña.';});
 </script></body></html>

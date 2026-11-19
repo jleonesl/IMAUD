@@ -907,7 +907,7 @@ function openStaffRegistrationPreview(){
  overlay.id='staffRegistrationPreview';
  overlay.className='staff-reg-overlay';
  overlay.innerHTML='<section class="staff-reg-dialog" role="dialog" aria-modal="true" aria-labelledby="staffRegistrationTitle">'+
- '<div class="staff-reg-header"><div><div class="eyebrow">SITMAUD · GESTIÓN DE USUARIOS</div><h2 id="staffRegistrationTitle">Registrar funcionario</h2><p>La invitación se envía al correo del funcionario. El perfil Intendente no concede el control de superusuario maestro; los permisos operativos de los demás perfiles se asignan desde la matriz.</p></div><button type="button" class="staff-reg-close" data-close-staff-preview aria-label="Cerrar">×</button></div>'+
+ '<div class="staff-reg-header"><div><div class="eyebrow">SITMAUD · GESTIÓN DE USUARIOS</div><h2 id="staffRegistrationTitle">Registrar funcionario</h2><p>El correo del funcionario será su usuario de acceso. Con el servicio de correo institucional configurado recibirá una clave provisional, que podrá cambiar cuando desee. Sin esa configuración recibirá un enlace seguro de activación. El perfil Intendente no concede el control de superusuario maestro; los permisos operativos de los demás perfiles se asignan desde la matriz.</p></div><button type="button" class="staff-reg-close" data-close-staff-preview aria-label="Cerrar">×</button></div>'+
  '<form id="sitmaudStaffInviteForm">'+
  '<div class="staff-reg-fields">'+
  '<label class="field"><span>Nombres *</span><input name="first_name" required maxlength="90" type="text" placeholder="Ej. María Elena" autocomplete="given-name"></label>'+
@@ -917,7 +917,7 @@ function openStaffRegistrationPreview(){
  '<label class="field"><span>Teléfono de contacto</span><input name="phone" maxlength="30" type="tel" placeholder="Ej. 04XX-XXXXXXX"></label>'+
  '<label class="field"><span>Cargo o área *</span><input name="job_title" required minlength="3" maxlength="120" placeholder="Ej. Recaudador, Analista o Tesorero"></label>'+
  '<label class="field"><span>Perfil de cuenta *</span><select name="role" required><option value="">Selecciona el perfil…</option><option value="intendente">Intendente</option><option value="recaudador">Recaudador</option><option value="administrador_analista">Administrador / Analista</option></select></label>'+
- '</div><p class="staff-reg-footnote">El funcionario recibirá una invitación. Su acceso inicial no incluye permisos operativos hasta que el superusuario los asigne individualmente.</p>'+
+ '</div><p class="staff-reg-footnote">El funcionario recibirá las instrucciones de acceso por correo. Sus permisos operativos serán asignados exclusivamente por el superusuario.</p>'+
  '<div class="staff-reg-info" id="sitStaffInviteNotice" aria-live="polite">Registro disponible solo para el superusuario maestro.</div>'+
  '<div class="staff-reg-actions"><button type="button" class="btn btn-light" data-close-staff-preview>Cerrar</button><button class="btn btn-primary" type="submit" id="sitStaffInviteSubmit">Enviar invitación</button></div></form></section>';
  document.body.appendChild(overlay);
@@ -938,8 +938,11 @@ function openStaffRegistrationPreview(){
        throw new Error(detail);
      }
      if(!data?.ok)throw new Error(data?.error||'El servidor no confirmó la creación.');
-     notice.textContent='Funcionario invitado correctamente. Cuenta sin permisos; asígnalos en la matriz.';
-     toast('Invitación enviada. Ahora asigna permisos al funcionario.');
+     const credentialsDelivered=data.delivery_mode==='temporary_password_email';
+     notice.textContent=credentialsDelivered
+       ?'Funcionario registrado. Se envió a su correo el usuario y la clave provisional. Ya puede iniciar sesión; cambiar la contraseña es opcional. Asígnale los permisos en la matriz.'
+       :'Funcionario invitado. Se envió un enlace seguro para crear su clave. Para enviar credenciales provisionales por correo debe configurarse el proveedor institucional de correo.';
+     toast(credentialsDelivered?'Credenciales enviadas al correo del funcionario.':'Invitación de activación enviada.');
      await loadStaffPermissionMatrix();
      form.reset();
    }catch(error){

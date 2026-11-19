@@ -31,7 +31,7 @@ Deno.serve(async (req: Request) => {
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: rateAllowed, error: rateError } = await admin.rpc("allow_citizen_recovery_request", { p_hash: hash });
   if (rateError) return reply({ error: "Servicio de recuperación temporalmente no disponible." }, 503);
-  if (!rateAllowed) return reply(general);
+  if (!rateAllowed) return reply({ error: "Se alcanzó el límite temporal de recuperación. No se envió un correo nuevo. Espera al menos una hora desde la primera solicitud y vuelve a intentarlo una sola vez." }, 429);
   const { data: matches, error: lookupError } = await admin.rpc("resolve_citizen_login_identity", {
     p_type: type, p_identity: identity
   });

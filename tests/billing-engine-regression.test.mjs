@@ -39,3 +39,12 @@ test('financial payment path preserves invoice before treasury validation',()=>{
   assert.match(pos,/register_official_pos_payment/);
   assert.match(pos,/pos_terminal_id/);
 });
+
+test('direct exonerations never appear as debt and cannot be charged',()=>{
+ const sql=read('supabase/migrations/20261119221000_exoneration_enforced_in_payment_quotes_and_debtor_views.sql');
+ for(const name of ['quote_official_udc_payment','quote_citizen_udc_payment','register_official_udc_payment_core','register_citizen_udc_payment_core'])
+   assert.match(sql,new RegExp('public\\.'+name+'\\('));
+ assert.ok((sql.match(/El mes seleccionado está exonerado/g)||[]).length>=4);
+ assert.match(sql,/and g\.revoked_at is null/);
+ assert.match(sql,/get_my_citizen_portal/);
+});

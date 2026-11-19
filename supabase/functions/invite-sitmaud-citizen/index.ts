@@ -38,6 +38,7 @@ Deno.serve(async request=>{
  if(linkedError)return respond({error:"No se pudo verificar la cuenta ciudadana"},503,origin);
  const redirectTo=ORIGIN+"/IMAUD/activar-contribuyente.html";
  if(linked){
+   if(linked.is_active!==true)return respond({error:"La cuenta ciudadana está desactivada; requiere revisión institucional"},403,origin);
    const {data:authRecord,error:authRecordError}=await admin.auth.admin.getUserById(linked.auth_user_id);
    if(authRecordError||!authRecord?.user
      ||String(authRecord.user.email||"").trim().toLowerCase()!==email) {
@@ -62,7 +63,7 @@ Deno.serve(async request=>{
      after_data:{auth_user_id:linked.auth_user_id,contract_number:c.contract_number,channel:"recovery_email"}});
    return respond({ok:true,status:"resend_accepted",email_requested:true,contract_number:c.contract_number},200,origin);
  }
- if(action==="resend")return respond({error:"Este contribuyente todavía no tiene acceso vinculado. Completa la activación institucional."},409,origin);
+ // Para expedientes históricos sin acceso previo, el botón Reenviar prepara su primera invitación.
  const {data:permitted,error:limitError}=await admin.rpc("allow_citizen_access_email",{p_contributor_id:id});
  if(limitError)return respond({error:"No se pudo verificar la autorización de correo"},503,origin);
  if(!permitted)return respond({error:"Se intentó enviar este acceso recientemente. Evita registrar el expediente nuevamente."},429,origin);

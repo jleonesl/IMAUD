@@ -71,6 +71,28 @@ jobs:
           node --check dist/territorial-map.js
           node --check dist/auth.js
           echo "Public site contains only approved website assets; no migrations, archives or demo pages."
+      - name: Check public package for server secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RinE '(SUPABASE_SERVICE_ROLE_KEY|sb_secret_|postgres(ql)?://|PRIVATE_KEY-----)' dist --include='*.html' --include='*.js'; then
+            echo "Private credentials must never be published." >&2
+            exit 1
+          fi
+      - name: Package site for external hosting (not deployed yet)
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd dist && zip -q -r ../sitmaud-hosting-ready.zip .)
+          unzip -l sitmaud-hosting-ready.zip | grep -q 'index.html'
+          unzip -l sitmaud-hosting-ready.zip | grep -q 'contribuyente-cuenta.html'
+      - name: Save reviewed hosting package
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitmaud-hosting-ready
+          path: sitmaud-hosting-ready.zip
+          if-no-files-found: error
+          retention-days: 14
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload public site

@@ -7,6 +7,8 @@ const login = read('contribuyente-v2.html');
 const account = read('contribuyente-cuenta.html');
 const activate = read('activar-contribuyente.html');
 const citizenDocs = read('contributor-documents.js');
+const citizenRegistration = read('app.js');
+const invitationService = read('supabase/functions/invite-sitmaud-citizen/index.ts');
 const receipt = read('citizen-receipts.js');
 const workflow = read('.github/workflows/pages.yml');
 const officialPortal = read('supabase/migrations/20261119030000_citizen_canonical_identity.sql');
@@ -43,4 +45,14 @@ test('normalize existing national IDs exactly once and publish all portal files'
   for(const asset of ['activar-contribuyente.html','citizen-receipts.js','contribuyente-v2.html','contribuyente-cuenta.html']){
     assert.ok(workflow.includes(asset), 'Missing deployment asset: ' + asset);
   }
+});
+test('automatic email request after contributor creation; employee only resends', () => {
+  assert.match(citizenRegistration, /action:'automatic'/);
+  assert.match(citizenDocs, /action:'resend'/);
+  assert.match(citizenDocs, /Reenviar acceso al correo/);
+  assert.match(invitationService, /action==="resend"/);
+  assert.match(invitationService, /resetPasswordForEmail/);
+  assert.match(invitationService, /inviteUserByEmail/);
+  assert.match(invitationService, /allow_citizen_access_email/);
+  assert.doesNotMatch(citizenDocs, /data-activate-citizen[^]*?Enviar correo de activación/);
 });

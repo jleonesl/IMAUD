@@ -66,3 +66,57 @@ body>header{display:none!important}body>main{display:block;max-width:none;margin
 .citizen-workspace{max-width:none!important;margin:0!important;width:100%}
 .citizen-workspace footer{margin:28px 0 8px;font-size:11px;color:#7d90a4}
 .citizen-workspace .citizen-welcome-copy{background:linear-gradient(90deg,#fff 60%,#fffffff0 78%,#ffffff00)}
+
+
+/* Identidad unificada con el portal institucional de funcionarios: sin imágenes decorativas */
+:root{--cit-blue:#247da0;--cit-navy:#102d46;--cit-bright:#218f9b;--cit-text:#243747;--cit-muted:#718292;--cit-line:#e5ebef;--cit-green:#53a879}
+body{background:#f4f7f9;color:#243747;font-family:'DM Sans',Arial,sans-serif}
+.citizen-sidebar{background:#102d46;padding:25px 17px 16px}
+.citizen-brand{background:#fff;border:1px solid #e5ebef;border-radius:11px;box-shadow:none;margin:0 0 22px;min-height:130px;padding:13px}
+.citizen-brand img{max-width:205px;max-height:110px}
+.citizen-nav{gap:4px}
+.citizen-nav button{font-family:'DM Sans',Arial,sans-serif;font-size:12px;font-weight:600;min-height:45px;padding:10px 12px;border-radius:8px;color:#c8d8e2}
+.citizen-nav button:hover{background:#ffffff12}
+.citizen-nav button[aria-current="page"]{background:linear-gradient(90deg,#247da0,#218f9b);color:#fff;box-shadow:0 5px 14px #071c2b55}
+.citizen-nav svg{stroke:#9bc4d2;width:18px;height:18px;flex:0 0 18px}
+.citizen-nav button[aria-current="page"] svg{stroke:#fff}
+.citizen-sidebar-foot{color:#a9c0ce;font-size:10px;line-height:1.6}
+.citizen-workspace{background:#f4f7f9;padding:0 32px 38px}
+.citizen-topbar{min-height:76px;position:sticky;top:0;z-index:4;background:#fff;border-bottom:1px solid #e5ebef;margin:0 -32px 28px;padding:12px 34px}
+.citizen-topbar h1{font:800 23px 'Manrope','DM Sans',Arial,sans-serif;color:#102d46;letter-spacing:-.6px}
+.citizen-topbar p{color:#718292;font-size:12px}
+.citizen-userbar{font-size:12px;color:#243747}
+.citizen-userbar .citizen-avatar{background:#e4f2f3;color:#237f88}
+.citizen-userbar .citizen-avatar svg{stroke:#237f88}
+.citizen-userbar button{border:1px solid #dfe8ed;background:#fff;color:#456071;border-radius:7px;font-size:11px}
+#sessionStatus{font-size:11px;color:#718292}
+.citizen-welcome{min-height:147px;margin:8px 0 19px;background:#fff;border:1px solid #e5ebef;border-radius:11px;box-shadow:0 8px 24px rgba(19,48,69,.055)}
+.citizen-welcome-copy,.citizen-workspace .citizen-welcome-copy{width:100%;padding:24px 27px;background:none}
+.citizen-welcome-copy:before{left:13px;top:27px;bottom:27px;width:4px;background:#21a6a0}
+.citizen-welcome h2{font:800 clamp(21px,2.2vw,28px) 'Manrope','DM Sans',Arial,sans-serif;color:#102d46;letter-spacing:-.5px;margin-bottom:11px}
+.citizen-welcome p{color:#718292;font-size:12px}
+.citizen-coro-visual,.citizen-photo-credit{display:none!important}
+.citizen-quick{gap:14px;margin-bottom:18px}
+.citizen-action{min-height:75px;background:#fff!important;color:#173f5d!important;border:1px solid #e5ebef;border-radius:11px;box-shadow:0 8px 24px rgba(19,48,69,.045);font:700 12px 'DM Sans',Arial,sans-serif;padding:14px}
+.citizen-action.primary{background:#173f5d!important;color:#fff!important;border-color:#173f5d}
+.citizen-action:hover{border-color:#b9d7df;filter:none}
+.citizen-action svg{stroke:#218f9b;width:23px;height:23px}
+.citizen-action.primary svg{stroke:#fff}
+.citizen-grid{gap:16px;grid-template-columns:minmax(0,1fr) minmax(275px,295px)}
+.citizen-kpis{gap:14px}
+.citizen-kpi,.citizen-kpi:nth-child(1),.citizen-kpi:nth-child(2),.citizen-kpi:nth-child(3){background:#fff;border:1px solid #e5ebef;border-radius:11px;box-shadow:0 8px 24px rgba(19,48,69,.045);padding:18px}
+.citizen-kpi:before{content:"";display:block;width:32px;height:4px;border-radius:5px;background:#247da0;margin-bottom:14px}
+.citizen-kpi:nth-child(2):before{background:#53a879}.citizen-kpi:nth-child(3):before{background:#21a6a0}
+.citizen-kpi small{color:#718292;font-size:10px;font-weight:600;margin-bottom:9px}
+.citizen-kpi strong{font:800 clamp(18px,2vw,25px) 'Manrope','DM Sans',Arial,sans-serif;color:#102d46}
+.citizen-kpi span{color:#718292;font-size:10px}
+.citizen-card{border-radius:11px;border:1px solid #e5ebef;background:#fff;box-shadow:0 8px 24px rgba(19,48,69,.055);padding:20px}
+.citizen-card h2,.citizen-card h3{font:700 15px 'Manrope','DM Sans',Arial,sans-serif;color:#102d46}
+.citizen-card p,.citizen-info-row{font-size:12px}
+.citizen-section-head h2{font:800 24px 'Manrope','DM Sans',Arial,sans-serif;color:#102d46}
+.citizen-section-head p{color:#718292}
+.citizen-section-head button,.citizen-card button[data-citizen-view]{background:#fff!important;color:#456071!important;border:1px solid #e5ebef;border-radius:7px}
+.citizen-workspace footer{font-size:10px;color:#8b9aa4}
+@media(max-width:1250px){.citizen-grid{grid-template-columns:1fr}}
+@media(max-width:790px){.citizen-workspace{padding:0 15px 24px}.citizen-topbar{margin:0 -15px 19px;padding:12px 16px;min-height:66px}.citizen-topbar h1{font-size:18px}.citizen-welcome-copy,.citizen-workspace .citizen-welcome-copy{padding:19px 24px}.citizen-welcome{min-height:120px}.citizen-brand{min-height:118px}}
+@media print{body:has(#billModal) .citizen-shell{display:none!important}}

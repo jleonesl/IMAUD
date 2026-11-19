@@ -476,6 +476,7 @@
     overviewPlaceholder:()=>metrics,
     loadOverview,
     view(v){return v==='pagos'?paymentView():v==='facturacion'?invoiceView():reportView();},
+    showDocument,
     async mount(v){
       if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){changeReportPeriod(form);changeReportGrouping(form);renderReportRows(form);}}
       if(v==='reportes')loadOverview();

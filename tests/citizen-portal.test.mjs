@@ -4,6 +4,10 @@ import assert from 'node:assert/strict';
 
 const read = path => readFileSync(path, 'utf8');
 const login = read('contribuyente-v2.html');
+const landing = read('index.html');
+const recoveryTemplate = read('supabase/templates/sitmaud-citizen-recovery.html');
+const inviteTemplate = read('supabase/templates/sitmaud-citizen-invite.html');
+const recoveryService = read('supabase/functions/recover-sitmaud-citizen/index.ts');
 const account = read('contribuyente-cuenta.html');
 const activate = read('activar-contribuyente.html');
 const citizenDocs = read('contributor-documents.js');
@@ -73,4 +77,16 @@ test('citizen login, activation and account use isolated session storage, separa
   for (const page of [login,activate,account]) {
     assert.match(page, /storageKey:"sitmaud-citizen-auth"/);
   }
+});
+
+test('homepage forwards recovery authorization tokens to citizen password setup', () => {
+ assert.match(landing, /location\.replace\('\.\/activar-contribuyente\.html'/);
+ assert.match(landing, /hasAuthToken/);
+ assert.match(landing, /hasTokenHash/);
+});
+test('emails use direct token-hash activation links and recovery reports send failures', () => {
+ assert.match(recoveryTemplate, /activar-contribuyente\.html\?token_hash=\{\{ \.TokenHash \}\}&amp;type=recovery/);
+ assert.match(inviteTemplate, /activar-contribuyente\.html\?token_hash=\{\{ \.TokenHash \}\}&amp;type=invite/);
+ assert.match(activate, /verifyOtp\(\{token_hash:tokenHash,type:tokenType\}\)/);
+ assert.match(recoveryService, /mailError\.status===429/);
 });

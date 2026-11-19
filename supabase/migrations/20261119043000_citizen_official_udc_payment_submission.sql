@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION public.quote_citizen_udc_payment(p_contributor_id uui
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$;
+AS $function$
 declare
  v_rate public.udc_rates%rowtype;
  v_today date := (now() at time zone 'America/Caracas')::date;
@@ -85,7 +85,7 @@ CREATE OR REPLACE FUNCTION public.register_citizen_udc_payment_core(p_contributo
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$;
+AS $function$
 declare
  v_rate public.udc_rates%rowtype;v_today date:=(now() at time zone 'America/Caracas')::date;
  v_id uuid;v_assessment public.assessments%rowtype;
@@ -204,7 +204,7 @@ CREATE OR REPLACE FUNCTION public.register_citizen_udc_payment(p_contributor_id 
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$;
+AS $function$
 declare v_quote jsonb;v_result jsonb;v_rate public.udc_rates%rowtype;
 begin
  if auth.uid() is null or not (exists(select 1 from public.citizen_accounts ca join public.contributors c on c.id=ca.contributor_id join auth.users au on au.id=ca.auth_user_id where ca.auth_user_id=auth.uid() and ca.is_active and ca.contributor_id=p_contributor_id and c.status='active' and au.email_confirmed_at is not null and lower(au.email)=lower(c.email) and not exists(select 1 from public.staff_profiles sp where sp.user_id=auth.uid() and sp.is_active))) then

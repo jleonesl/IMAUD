@@ -204,7 +204,9 @@ test('new homepage displays only genuine citizen data and never assumes solvent 
  assert.match(citizenDashboard,/No equivale a una solvencia oficial/);
  assert.match(citizenDashboard,/Aún no hay cuentas bancarias oficiales publicadas/);
  assert.doesNotMatch(citizenDashboard,/7890|4567|\.textContent\s*=\s*['\"]Solvente['\"]/);
- assert.match(account,/Iglesia de San Francisco/);
+ assert.doesNotMatch(account,/class="citizen-coro-visual"/);
+ assert.doesNotMatch(account,/class="citizen-photo-credit"/);
+ assert.match(account,/Identidad unificada con el portal institucional/);
  assert.match(account,/get_my_citizen_portal/);
  assert.match(account,/get_municipal_payment_instructions/);
  assert.match(account,/sitmaudCitizenPayment\.init/);

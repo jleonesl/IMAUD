@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="billing.css?v=20261119-identical-invoice1">
-<link rel="stylesheet" href="citizen-dashboard.css?v=20261119-ui2">
+<link rel="stylesheet" href="citizen-dashboard.css?v=20261119-ui5">
 <style>
 :root{font-family:Arial,sans-serif;color:#173e59;background:#f5f8fb}
 *{box-sizing:border-box}body{margin:0}body>header{background:#103c61;color:white;padding:20px 5%;display:flex;justify-content:space-between;align-items:center;gap:12px}
@@ -165,6 +165,11 @@ body{background:#f4f7f9;color:#243747;font-family:'DM Sans',Arial,sans-serif}
 @media(max-width:1250px){.citizen-grid{grid-template-columns:1fr}}
 @media(max-width:790px){.citizen-workspace{padding:0 15px 24px}.citizen-topbar{margin:0 -15px 19px;padding:12px 16px;min-height:66px}.citizen-topbar h1{font-size:18px}.citizen-welcome-copy,.citizen-workspace .citizen-welcome-copy{padding:19px 24px}.citizen-welcome{min-height:120px}.citizen-brand{min-height:118px}}
 @media print{body:has(#billModal) .citizen-shell{display:none!important}}
+
+/* Inicio: una sola tarjeta a la derecha; sin cuentas bancarias en el resumen. */
+.citizen-aside-column{display:flex;flex-direction:column}
+.citizen-grid{grid-template-columns:minmax(0,1fr) minmax(270px,300px)}
+@media(max-width:1250px){.citizen-grid{grid-template-columns:1fr}.citizen-aside-column{display:flex}}
 </style>
 </head>
 <body>
@@ -208,7 +213,7 @@ body{background:#f4f7f9;color:#243747;font-family:'DM Sans',Arial,sans-serif}
 <div class="citizen-card"><div class="citizen-section-head"><h2>Mis últimas operaciones</h2><button type="button" data-citizen-view="facturas">Ver todas</button></div><div id="citizenRecentTransactions" aria-live="polite">Consultando…</div></div>
 </div><div class="citizen-aside-column">
 <div class="citizen-card"><h2>Mi inmueble</h2><div id="citizenHomeProperty">Consultando…</div><button type="button" data-citizen-view="informacion" style="margin-top:12px;background:#eaf3fc;color:#0c5799">Ver información</button></div>
-<div class="citizen-card"><h2>Cuentas bancarias oficiales</h2><p>Realiza tus pagos exclusivamente a cuentas publicadas por la Alcaldía.</p><div id="citizenHomeBanks">Consultando…</div><button type="button" data-citizen-view="cuentas" style="margin-top:12px;background:#eaf3fc;color:#0c5799">Ver cuentas oficiales</button></div>
+
 </div></div></section>
 <section class="citizen-view" data-citizen-view-panel="obligaciones" hidden><div class="citizen-section-head"><div><h2>Mis obligaciones</h2><p>Consulta los períodos registrados por el sistema tributario municipal.</p></div><button type="button" data-citizen-view="cargar-pago">Cargar pago</button></div><div class="citizen-card"><div id="citizenAssessments">Consultando obligaciones…</div></div></section>
 <section class="citizen-view" data-citizen-view-panel="cargar-pago" hidden><div class="citizen-section-head"><div><h2>Cargar pago</h2><p>Registra el comprobante para la revisión de Tesorería.</p></div></div><section class="card payment-info" id="citizenPaymentRegistration" hidden>

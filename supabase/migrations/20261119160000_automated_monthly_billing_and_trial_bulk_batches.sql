@@ -502,5 +502,5 @@ grant execute on function public.run_trial_billing_batch(integer) to authenticat
 
 -- Programador en horario de Caracas: lote pequeño cada minuto; se reanuda desde cursor.
 -- A partir de enero, cron genera mensualidades sin intervención del funcionario.
-select cron.schedule('sitmaud-monthly-billing-batches','* * * * *',
+select cron.schedule('sitmaud-monthly-billing-batches','* 4-13 * * *',
   $$select private.run_billing_batch(100,false)$$);

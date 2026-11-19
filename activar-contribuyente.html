@@ -1,8 +1,8 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Activar o recuperar acceso · SITMAUD</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#f1f6f9;font:15px/1.5 Arial,sans-serif;color:#123a55;min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(100%,440px);background:#fff;padding:30px;border:1px solid #e0eaf0;border-radius:16px;box-shadow:0 10px 30px #17354c10}h1{font-size:23px;margin:0 0 10px}p{color:#617d90}.field{display:block;margin:18px 0 7px;font-weight:700}input{width:100%;padding:13px;border:1px solid #cddce4;border-radius:9px;font:inherit}button{border:0;border-radius:9px;background:#115777;color:#fff;padding:13px 20px;font-weight:700;cursor:pointer;margin-top:20px}button:disabled{opacity:.6}#status{margin-top:15px;color:#245d73}a{color:#146e8c}</style></head>
+<style>*{box-sizing:border-box}body{margin:0;background:#f1f6f9;font:15px/1.5 Arial,sans-serif;color:#123a55;min-height:100vh;display:grid;place-items:center;padding:20px}.card{width:min(100%,440px);background:#fff;padding:30px;border:1px solid #e0eaf0;border-radius:16px;box-shadow:0 10px 30px #17354c10}h1{font-size:23px;margin:0 0 10px}p{color:#617d90}.field{display:block;margin:18px 0 7px;font-weight:700}input{width:100%;padding:13px;border:1px solid #cddce4;border-radius:9px;font:inherit}button{border:0;border-radius:9px;background:#115777;color:#fff;padding:13px 20px;font-weight:700;cursor:pointer;margin-top:20px}button:disabled{opacity:.6}#status{margin-top:15px;color:#245d73}.identity-card{background:#eef6fa;border:1px solid #d6e7ef;border-radius:11px;padding:12px 15px;margin:14px 0}.identity-card small{display:block;color:#597e91}.identity-card strong{display:block;font-size:19px;margin-top:4px;word-break:break-word}a{color:#146e8c}</style></head>
 <body><main class="card"><small>SITMAUD · Portal del Contribuyente</small><h1>Crear o renovar mi contraseña</h1>
 <p>Establece una contraseña personal para ingresar con tu cédula o RIF. Esta página funciona tanto para una invitación nueva como para recuperar el acceso.</p>
-<form id="activate" hidden><label class="field" for="password">Nueva contraseña</label><input id="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Mínimo 12 caracteres"><label class="field" for="repeat">Confirmar contraseña</label><input id="repeat" type="password" autocomplete="new-password" minlength="12" maxlength="128" required><button type="submit">Activar mi acceso</button></form>
+<div class="identity-card" id="citizenIdentityInfo" hidden><small>Tu usuario para entrar en SITMAUD</small><strong id="citizenIdentityValue"></strong></div><form id="activate" hidden><label class="field" for="password">Nueva contraseña</label><input id="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Mínimo 12 caracteres"><label class="field" for="repeat">Confirmar contraseña</label><input id="repeat" type="password" autocomplete="new-password" minlength="12" maxlength="128" required><button type="submit">Activar mi acceso</button></form>
 <div id="status" role="status">Verificando el enlace de activación…</div><p><a href="./contribuyente-v2.html">Ir al inicio de sesión</a></p>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,6 +17,8 @@ try{
  if(error||!session)throw new Error("No se reconoció el enlace de activación. Abre el enlace original recibido en el correo.");
  const {data,error:accessError}=await client.rpc("get_my_citizen_portal");
  if(accessError||!data?.activated)throw new Error("El acceso no está vinculado a un expediente de contribuyente activo. Solicita revisión a IMAUD.");
+ document.getElementById("citizenIdentityValue").textContent=data.identification||"";
+ document.getElementById("citizenIdentityInfo").hidden=false;
  form.hidden=false;status.textContent="Enlace verificado. Establece tu contraseña personal.";
  form.addEventListener("submit",async ev=>{
  ev.preventDefault();const p=document.getElementById("password").value,q=document.getElementById("repeat").value;
@@ -26,7 +28,7 @@ try{
  if(e){status.textContent="No fue posible guardar la contraseña: "+e.message;b.disabled=false;return;}
  sessionStorage.removeItem("sitmaud_citizen_view");
  await client.auth.signOut();
- form.hidden=true;status.textContent="Tu contraseña se guardó correctamente. Ya puedes ingresar con tu cédula o RIF y tu nueva clave.";
+ form.hidden=true;status.textContent="Tu contraseña se guardó correctamente. Usuario: "+(data.identification||"tu cédula/RIF")+". Ingresa ahora al Portal del Contribuyente con esta identificación y la contraseña que acabas de crear.";
  });
 }catch(e){status.textContent=e.message||"No se pudo activar la cuenta."}
 })();

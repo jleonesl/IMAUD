@@ -47,7 +47,7 @@ function init(portal){
  if($('citizenDebtValue'))$('citizenDebtValue').textContent=obligations.length?fmt(owed):'—';
  if($('citizenDebtNote'))$('citizenDebtNote').textContent=obligations.length?pending.length+' obligación(es) con saldo registrado':'No hay obligaciones oficiales registradas';
  if($('citizenPaidValue'))$('citizenPaidValue').textContent=fmt(paid);
- if($('citizenPaidNote'))$('citizenPaidNote').textContent=confirmed.length+' pago(s) liquidados por Tesorería';
+ if($('citizenPaidNote'))$('citizenPaidNote').textContent=confirmed.length+' pago(s) confirmados';
  if($('citizenStatusValue'))$('citizenStatusValue').textContent=obligations.length?(pending.length?'Con obligaciones pendientes':'Sin deuda registrada'):'Por determinar';
  if($('citizenStatusNote'))$('citizenStatusNote').textContent='No equivale a una solvencia oficial';
  if($('citizenHomeProperty')){
@@ -58,7 +58,7 @@ function init(portal){
  if($('citizenRecentTransactions')){
   $('citizenRecentTransactions').innerHTML=payments.length?payments.slice(0,4).map(p=>
    '<div class="citizen-info-row"><div><b>'+esc(p.receipt)+'</b><br><small>'+
-   esc(p.status==='confirmed'&&p.liquidated_at?'Liquidado por Tesorería':p.status==='reversed'?'Rechazado':'Pendiente de validación')+'</small></div><b>'+fmt(p.amount_bs)+'</b></div>').join(''):
+   esc(p.status==='confirmed'&&p.liquidated_at?'Pago confirmado':p.status==='reversed'?'Rechazado':'Pendiente de validación')+'</small></div><b>'+fmt(p.amount_bs)+'</b></div>').join(''):
    '<div class="citizen-empty-state"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 5h17l9 9v27H12z M29 5v10h9 M19 25h15 M19 31h12"/><circle cx="36" cy="36" r="9" fill="#fff"/><path d="m32 36 3 3 6-7"/></svg><strong>Aún no tienes operaciones registradas</strong><p>Cuando realices un pago, podrás ver aquí su estado.</p></div>';
  }
  // Los datos reales se consultan en la RPC. No asumir estado Solvente, tipología o cuentas.

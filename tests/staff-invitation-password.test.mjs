@@ -39,3 +39,21 @@ test('GitHub Pages bundles and syntax-checks the password workflow',()=>{
  assert.match(workflow,/node --check dist\/staff-password-setup\.js/);
  assert.match(page,/staff-password-setup\.js/);
 });
+
+test('institutional credential delivery uses a server secret and preserves fallback',()=>{
+ assert.match(edge,/RESEND_API_KEY/);
+ assert.match(edge,/SITMAUD_MAIL_FROM/);
+ assert.match(edge,/crypto\.getRandomValues/);
+ assert.match(edge,/admin\.auth\.admin\.createUser/);
+ assert.match(edge,/https:\/\/api\.resend\.com\/emails/);
+ assert.match(edge,/delivery_mode:"temporary_password_email"/);
+ assert.match(edge,/delivery_mode:"activation_link"/);
+ assert.match(edge,/inviteUserByEmail/);
+ assert.doesNotMatch(edge,/after_data:\s*\{[^}]*temporaryPassword/);
+});
+test('temporary password can later be changed optionally by an authenticated employee',()=>{
+ assert.match(setup,/mode==='change'/);
+ assert.match(page,/staff-password-setup\.js/);
+ const home=read('index.html');
+ assert.match(home,/funcionario\.html\?setup=change/);
+});

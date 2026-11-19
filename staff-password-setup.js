@@ -11,7 +11,7 @@
   const hashParams=new URLSearchParams(location.hash.replace(/^#/,''));
   const query=new URLSearchParams(location.search);
   let mode=query.get('setup')||hashParams.get('type')||'';
-  const hasAuthLink=mode==='invite'||mode==='recovery'||mode==='signup';
+  const hasAuthLink=mode==='invite'||mode==='recovery'||mode==='signup'||mode==='change';
   let configured=false;
   const error=hashParams.get('error_description')||query.get('error_description');
   function showLogin(){
@@ -21,16 +21,17 @@
   }
   function showSetup(){
     login.hidden=true;setup.hidden=false;forgot.hidden=true;
-    heading.textContent=mode==='recovery'?'Restablecer contraseña':'Crear contraseña de acceso';
+    heading.textContent=mode==='recovery'?'Restablecer contraseña':mode==='change'?'Cambiar mi contraseña':'Crear contraseña de acceso';
     description.textContent=mode==='recovery'
       ?'Confirma una nueva contraseña para recuperar tu acceso a SITMAUD.'
+      :mode==='change'?'Establece una contraseña nueva para tu cuenta. Este cambio es voluntario.'
       :'Invitación aceptada. Para ingresar, crea una contraseña personal y segura.';
   }
   async function verifyAndShow(){
     if(configured||!hasAuthLink)return;
     const {data,error:authError}=await client.auth.getSession();
     if(authError||!data.session){
-      message.textContent='El enlace no tiene una sesión válida o expiró. Solicita una nueva invitación al intendente.';
+      message.textContent=mode==='change'?'Primero inicia sesión para cambiar tu contraseña.':'El enlace no tiene una sesión válida o expiró. Solicita una nueva invitación al intendente.';
       showLogin();
       return;
     }

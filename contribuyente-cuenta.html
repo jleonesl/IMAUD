@@ -86,26 +86,51 @@ body>header{display:none!important}body>main{display:block;max-width:none;margin
 .citizen-workspace footer{margin:28px 0 8px;font-size:11px;color:#7d90a4}
 .citizen-workspace .citizen-welcome-copy{background:linear-gradient(90deg,#fff 60%,#fffffff0 78%,#ffffff00)}
 
+
+/* SITMAUD visual polish: brand and fully responsive summary */
+.citizen-sidebar{background:linear-gradient(165deg,#0a3466,#061e43 68%);padding:24px 16px 20px}
+.citizen-brand{background:linear-gradient(145deg,#ecf8ff,#f8fcff);border:1px solid #b9d7ea;border-radius:16px;padding:18px 13px;margin:0 0 26px;min-height:145px;align-content:center;box-shadow:0 8px 20px #020f272d}
+.citizen-brand img{width:100%;max-width:210px;max-height:125px;border:0;border-radius:0;object-fit:contain}
+.citizen-brand span{display:none}
+.citizen-nav button{min-height:52px;font-size:13px;gap:13px}
+.citizen-nav svg{width:21px;height:21px;stroke:#e7f4ff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.citizen-nav button[aria-current="page"] svg{stroke:white}
+.citizen-userbar .citizen-avatar svg{width:21px;height:21px;stroke:#fff;stroke-width:1.8;fill:none}
+.citizen-action svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.citizen-action{gap:12px;padding:15px 16px;line-height:1.3}
+.citizen-grid{grid-template-columns:minmax(0,1fr) minmax(280px,310px)}
+.citizen-main-column,.citizen-aside-column,.citizen-card,.citizen-kpi{min-width:0}
+.citizen-card .citizen-info-row{display:flex;flex-direction:column;gap:4px;align-items:flex-start;overflow-wrap:anywhere;word-break:normal}
+.citizen-card .citizen-info-row>span,.citizen-card .citizen-info-row>div{width:100%;min-width:0}
+.citizen-card .citizen-info-row b{text-align:left;overflow-wrap:anywhere}
+.citizen-kpi strong{overflow-wrap:anywhere;hyphens:auto}
+.citizen-welcome-copy{width:66%;background:linear-gradient(90deg,#fff 72%,#fffffff2 88%,#ffffff00)}
+.citizen-coro-visual{inset:0 0 0 47%;background-position:50% 47%}
+.citizen-photo-credit{font-size:9px;background:#071b3688;padding:3px 6px;border-radius:4px;text-decoration:none}
+.citizen-photo-credit:hover{text-decoration:underline}
+.citizen-workspace .citizen-welcome-copy{background:linear-gradient(90deg,#fff 70%,#fffffff0 85%,#ffffff00)}
+@media(max-width:1250px){.citizen-grid{grid-template-columns:1fr}.citizen-aside-column{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:790px){.citizen-sidebar{padding-top:20px}.citizen-aside-column{grid-template-columns:1fr}.citizen-brand{min-height:130px}}
 </style>
 </head>
 <body>
 <div class="citizen-shell">
 <aside class="citizen-sidebar" id="citizenSidebar" aria-label="Menú del contribuyente">
-<div class="citizen-brand"><img src="./assets/logo-sitmaud-sidebar.jpg?v=2" alt="Logo institucional SITMAUD"><span>Alcaldía del Municipio Miranda<br>Coro · Estado Falcón</span></div>
+<div class="citizen-brand"><img src="./assets/logo-sitmaud-oficial.png?v=20261119" alt="SITMAUD · Alcaldía del Municipio Miranda, Coro, Estado Falcón"></div>
 <nav class="citizen-nav" aria-label="Secciones del portal">
-<button type="button" data-citizen-view="inicio" aria-current="page"><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">⌂</span>Inicio</button>
-<button type="button" data-citizen-view="obligaciones" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">▱</span>Mis obligaciones</button>
-<button type="button" data-citizen-view="cargar-pago" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">▣</span>Cargar pago</button>
-<button type="button" data-citizen-view="facturas" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">▤</span>Mis facturas</button>
-<button type="button" data-citizen-view="cuentas" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">▥</span>Cuentas oficiales</button>
-<button type="button" data-citizen-view="informacion" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">♙</span>Mi información</button>
-<button type="button" data-citizen-view="ayuda" ><span aria-hidden="true" style="font-size:22px;width:22px;text-align:center">ⓘ</span>Ayuda y soporte</button>
+<button type="button" data-citizen-view="inicio" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Inicio</button>
+<button type="button" data-citizen-view="obligaciones" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16M6 4h12v16H6z"/></svg>Mis obligaciones</button>
+<button type="button" data-citizen-view="cargar-pago" ><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg>Cargar pago</button>
+<button type="button" data-citizen-view="facturas" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6zM15 2v6h5M9 12h8M9 16h8"/></svg>Mis facturas</button>
+<button type="button" data-citizen-view="cuentas" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 9 9-6 9 6M4 10h16M6 10v9M10 10v9M14 10v9M18 10v9M3 21h18"/></svg>Cuentas oficiales</button>
+<button type="button" data-citizen-view="informacion" ><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>Mi información</button>
+<button type="button" data-citizen-view="ayuda" ><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.2-3 4M12 17.5v.1"/></svg>Ayuda y soporte</button>
 </nav><div class="citizen-sidebar-foot">Instituto Municipal de Aseo Urbano y Domiciliario<br>Portal de contribuyentes · SITMAUD</div>
 </aside>
 <main class="citizen-workspace">
 <div class="citizen-topbar">
 <div style="display:flex;align-items:center;gap:13px"><button class="citizen-mobile-toggle" id="citizenMenuToggle" aria-expanded="false" aria-controls="citizenSidebar" type="button">☰</button><div><h1 id="citizenSectionTitle">Portal del Contribuyente</h1><p>Sistema Integral Tributario Municipal de Aseo Urbano y Domiciliario</p></div></div>
-<div class="citizen-userbar"><span class="citizen-avatar" aria-hidden="true">●</span><span class="citizen-userbar-name" id="citizenTopName">Contribuyente</span><button id="exit" type="button">Cerrar sesión</button></div>
+<div class="citizen-userbar"><span class="citizen-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><span class="citizen-userbar-name" id="citizenTopName">Contribuyente</span><button id="exit" type="button">Cerrar sesión</button></div>
 </div>
 <div id="sessionStatus" role="status">Verificando acceso institucional…</div>
 <section id="account" class="citizen-view" data-citizen-view-panel="inicio" hidden>
@@ -115,10 +140,10 @@ body>header{display:none!important}body>main{display:block;max-width:none;margin
 <a class="citizen-photo-credit" target="_blank" rel="noopener noreferrer" href="https://commons.wikimedia.org/wiki/File:Iglesia_de_San_Francisco,_Coro.jpg">Foto: Janethrodri / Wikimedia Commons · CC BY-SA</a>
 </div>
 <div class="citizen-quick">
-<button class="citizen-action" type="button" data-citizen-view="obligaciones"><span aria-hidden="true">▱</span> Ver mis obligaciones</button>
-<button class="citizen-action primary" type="button" data-citizen-view="cargar-pago"><span aria-hidden="true">▣</span> Cargar pago</button>
-<button class="citizen-action" type="button" data-citizen-view="facturas"><span aria-hidden="true">▤</span> Mis facturas</button>
-<button class="citizen-action" type="button" data-citizen-view="cuentas"><span aria-hidden="true">▥</span> Cuentas oficiales</button>
+<button class="citizen-action" type="button" data-citizen-view="obligaciones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16M6 4h12v16H6z"/></svg> Ver mis obligaciones</button>
+<button class="citizen-action primary" type="button" data-citizen-view="cargar-pago"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg> Cargar pago</button>
+<button class="citizen-action" type="button" data-citizen-view="facturas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6zM15 2v6h5M9 12h8M9 16h8"/></svg> Mis facturas</button>
+<button class="citizen-action" type="button" data-citizen-view="cuentas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 9 9-6 9 6M4 10h16M6 10v9M10 10v9M14 10v9M18 10v9M3 21h18"/></svg> Cuentas oficiales</button>
 </div>
 <div class="citizen-grid"><div class="citizen-main-column">
 <div class="citizen-kpis">

@@ -18,6 +18,7 @@ const receipt = read('citizen-receipts.js');
 const workflow = read('.github/workflows/pages.yml');
 const officialPortal = read('supabase/migrations/20261119030000_citizen_canonical_identity.sql');
 const serverReceipt = read('supabase/migrations/20261119024500_citizen_verified_paid_receipt.sql');
+const loginThrottle = read('supabase/migrations/20261119041500_citizen_login_throttle.sql');
 
 test('citizen login uses identity service and does not expose registered email', () => {
   assert.match(login, /citizen-identity-login/);
@@ -89,4 +90,14 @@ test('emails use direct token-hash activation links and recovery reports send fa
  assert.match(inviteTemplate, /activar-contribuyente\.html\?token_hash=\{\{ \.TokenHash \}\}&amp;type=invite/);
  assert.match(activate, /verifyOtp\(\{token_hash:tokenHash,type:tokenType\}\)/);
  assert.match(recoveryService, /mailError\.status===429/);
+});
+
+test('login lockout does not increase rejected-attempt counter', () => {
+  assert.match(loginThrottle, /citizen_auth_attempts\.attempts<8/);
+  assert.match(loginThrottle, /return v_id is not null/);
+});
+test('citizen account access relies on confirmed auth and verified owner, not sessionStorage flags', () => {
+  assert.match(account, /client\.auth\.getUser\(\)/);
+  assert.match(account, /client\.rpc\('get_my_citizen_portal'\)/);
+  assert.doesNotMatch(account, /sessionStorage\.getItem\('sitmaud_citizen_view'\)/);
 });

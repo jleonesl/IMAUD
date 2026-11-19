@@ -173,13 +173,13 @@ async function saveContributor(form){
  if(payload.email){
    // Crear el expediente es independiente del envío de correo: un fallo de SMTP
    // no elimina ni duplica al contribuyente.
-   const invited=await imaudClient.functions.invoke('invite-sitmaud-citizen',{body:{contributor_id:data.id}});
+   const invited=await imaudClient.functions.invoke('invite-sitmaud-citizen',{body:{contributor_id:data.id,action:'automatic'}});
    if(invited.error||!invited.data?.ok){
      document.getElementById('savedContributorNote').textContent+=' No se pudo enviar todavía la activación por correo. Puedes reenviarla desde el expediente.';
-     toast('Contribuyente guardado. Activación por correo pendiente.');
+     toast('Contribuyente guardado. No se confirmó el envío del correo; revisa el expediente.');
    }else{
-     document.getElementById('savedContributorNote').textContent+=' Se envió la invitación para crear su contraseña.';
-     toast('Contribuyente guardado. Correo de activación enviado.');
+     document.getElementById('savedContributorNote').textContent+=invited.data?.email_requested?' Solicitud de correo de activación aceptada por Supabase; entrega pendiente de confirmación.':' La cuenta ciudadana ya está vinculada; desde el expediente puedes reenviar el acceso.';
+     toast(invited.data?.email_requested?'Contribuyente registrado. Supabase aceptó la solicitud de correo.':'Contribuyente registrado. Acceso ciudadano existente.');
    }
  }else{
    toast('Contribuyente guardado sin correo. Añade un correo verificado para activar el portal.');

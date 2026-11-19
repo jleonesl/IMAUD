@@ -43,7 +43,7 @@ async function show(client,id){
  if(!validId(id))return;
  document.getElementById('billModal')?.remove();
  const overlay=document.createElement('div');overlay.id='billModal';overlay.className='bill-backdrop';
- overlay.innerHTML='<div class="bill-dialog"><div class="bill-toolbar"><div><b>Recibo de operación · SITMAUD</b><small>Factura institucional</small></div><div><button type="button" id="citizenReceiptClose">Cerrar</button><button type="button" id="citizenReceiptPrint" disabled>Imprimir</button></div></div><div id="billContent" role="status">Verificando factura oficial con Tesorería…</div></div>';
+ overlay.innerHTML='<div class="bill-dialog"><div class="bill-toolbar"><div><b>Recibo de operación · SITMAUD</b><small>Factura institucional</small></div><div><button type="button" id="citizenReceiptClose">Cerrar</button><button type="button" id="citizenReceiptPrint" disabled>Imprimir</button></div></div><div id="billContent" role="status">Verificando factura oficial…</div></div>';
  document.body.appendChild(overlay);
  const host=overlay.querySelector('#billContent'),print=overlay.querySelector('#citizenReceiptPrint');
  const close=()=>overlay.remove();
@@ -52,7 +52,7 @@ async function show(client,id){
  try{
   const {data,error}=await client.rpc('get_my_citizen_receipt',{p_payment_id:id});
   if(error)throw error;
-  if(!data||data.status!=='confirmed'||!data.liquidated_at)throw Error('La factura todavía no está liquidada por Tesorería');
+  if(!data||data.status!=='confirmed'||!data.liquidated_at)throw Error('La factura todavía no está disponible porque el pago está pendiente de confirmación');
   if(!Array.isArray(data.periods)||!data.periods.length)throw Error('La factura no contiene meses oficialmente verificados');
   const {payment,allocations}=normalize(data);
   const sum=allocations.reduce((t,v)=>t+Number(v.amount||0),0);

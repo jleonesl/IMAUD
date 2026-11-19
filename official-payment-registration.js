@@ -20,7 +20,7 @@
     '<div class="field"><label>Método bancario *</label><select name="method" required><option value="transferencia">Transferencia</option><option value="pago_movil">Pago móvil</option><option value="punto_venta">Punto de venta</option></select></div>'+
     '<div class="field"><label>Banco *</label><select id="udcPayBank" name="bank" required><option value="">Cargando bancos…</option></select></div>'+
     '<div class="field"><label>Referencia de la operación *</label><input name="reference" required minlength="3" maxlength="110" autocomplete="off" placeholder="Referencia bancaria"></div>'+
-    '<div class="field"><label>Comprobante (PDF o imagen) *</label><input name="proof" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required></div>'+
+    '<div class="field"><label id="udcProofLabel">Comprobante (PDF o imagen) *</label><input id="udcProofFile" name="proof" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required><small id="udcProofHelp">Obligatorio para transferencias y pago móvil. Opcional para punto de venta.</small></div>'+
     '</div><div class="form-actions"><button class="btn btn-primary" id="udcPaySubmit" type="submit" disabled>Registrar pago y emitir factura</button></div>'+
     '<p class="panel-hint">Importes en VES. Solo meses oficiales íntegros, sin pagos anteriores ni exoneraciones pendientes de conciliar. El banco debe acreditar los fondos; registrar no equivale a liquidar.</p></form>'+
     '<div id="udcPaymentConfirmation" aria-live="polite"></div>'+
@@ -111,7 +111,7 @@
    document.getElementById('udcPaymentConfirmation').textContent='';
    if(!debts.length){form.hidden=true;tell('No existen obligaciones oficiales pendientes para este contribuyente.');return;}
    const names=new Map(result.properties.map(p=>[p.id,p]));
-   form.reset();form.hidden=false;
+   form.reset();form.hidden=false;adjustProofRequirement();
    months.innerHTML='<div class="table-toolbar"><b>Selecciona los meses a cobrar</b><span id="udcPaySelectedCount">0 meses</span></div>'+
     '<div class="payment-debt-scroll"><table><thead><tr><th>Selección</th><th>Mes</th><th>Cuenta o inmueble</th><th>Base UCD</th></tr></thead><tbody>'+
     debts.map(x=>{
@@ -148,6 +148,15 @@
    '</p><p>Origen: '+esc(quote.source_url)+'</p><small>El servidor recalcula al registrar; si la tasa cambia, no se guardará un importe elegido manualmente.</small></div>';
    button.disabled=false;
  }
+ function adjustProofRequirement(){
+   const form=document.getElementById('udcPaymentRegister');
+   if(!form)return;
+   const proof=form.elements.proof;
+   const required=form.elements.method.value!=='punto_venta';
+   proof.required=required;
+   const lbl=document.getElementById('udcProofLabel');
+   if(lbl)lbl.textContent=required?'Comprobante (PDF o imagen) *':'Comprobante (opcional para punto de venta)';
+ }
  document.addEventListener('submit',async event=>{
    if(event.target.id==='udcPaymentLookup'){
      event.preventDefault();if(busy)return;
@@ -163,7 +172,7 @@
      if(!selected.length)return;
      const form=event.target,b=document.getElementById('udcPaySubmit');
      const file=form.elements.proof.files?.[0];
-     if(!file||file.size>10*1024*1024||!['image/png','image/jpeg','image/webp','application/pdf'].includes(file.type)){
+     if((form.elements.method.value!=='punto_venta'&&!file)||(file&&(file.size>10*1024*1024||!['image/png','image/jpeg','image/webp','application/pdf'].includes(file.type)))){
        tell('Comprobante inválido. Se admite PDF, JPG, PNG o WebP, hasta 10 MB.');return;
      }
      if(!window.confirm('Registrar '+selected.length+' mes(es) por '+bs(quote.total_bs)+
@@ -171,18 +180,20 @@
      busy=true;b.disabled=true;b.textContent='Registrando y guardando comprobante…';
      let path='',saved=false;
      try{
-       const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','application/pdf':'pdf'}[file.type];
-       path=contributor.id+'/'+crypto.randomUUID()+'.'+ext;
-       const up=await imaudClient.storage.from('imaud-payment-proofs').upload(path,file,{
-         contentType:file.type,cacheControl:'3600',upsert:false
-       });
-       if(up.error)throw up.error;
+       if(file){
+         const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','application/pdf':'pdf'}[file.type];
+         path=contributor.id+'/'+crypto.randomUUID()+'.'+ext;
+         const up=await imaudClient.storage.from('imaud-payment-proofs').upload(path,file,{
+           contentType:file.type,cacheControl:'3600',upsert:false
+         });
+         if(up.error)throw up.error;
+       }
        const rpc=await imaudClient.rpc('register_official_udc_payment',{
          p_contributor_id:contributor.id,p_assessment_ids:selected,
          p_payment_method:form.elements.method.value,
          p_external_reference:form.elements.reference.value.trim(),
          p_bank_code:form.elements.bank.value,
-         p_evidence_path:path,p_paid_at:new Date().toISOString(),
+         p_evidence_path:path||null,p_paid_at:new Date().toISOString(),
          p_expected_rate_id:quote.rate_id,p_expected_total_bs:Number(quote.total_bs)
        });
        if(rpc.error)throw rpc.error;
@@ -212,5 +223,6 @@
  });
  document.addEventListener('change',e=>{
    if(e.target.matches('#udcPaymentRegister .udc-month'))updateQuote();
+   if(e.target.matches('#udcPaymentRegister [name="method"]'))adjustProofRequirement();
  });
 })();

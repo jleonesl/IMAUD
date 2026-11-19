@@ -186,9 +186,9 @@ test('contributor portal uses responsive navigable dashboard without stacking ev
    assert.match(account,new RegExp('data-citizen-view="'+part+'"'));
  }
  assert.match(account,/id="citizenSidebar"/);
- assert.match(account,/logo-sitmaud-oficial\.png/);
+ assert.match(account,/logo-sitmaud-contribuyente-transparente\.png/);
  assert.match(account,/citizen-nav[^]*?<svg viewBox=/);
- assert.match(account,/citizen-brand\{background:linear-gradient/);
+ assert.match(account,/\.citizen-brand\{background:transparent!important/);
  assert.match(account,/citizen-dashboard\.css/);
  assert.match(account,/window\.sitmaudCitizenDashboard=\{init,navigate,updateBanks\}/);
  assert.match(citizenDashboard,/window\.sitmaudCitizenDashboard=\{init,navigate,updateBanks\}/);
@@ -211,3 +211,5 @@ test('new homepage displays only genuine citizen data and never assumes solvent 
  assert.match(account,/get_municipal_payment_instructions/);
  assert.match(account,/sitmaudCitizenPayment\.init/);
 });
+
+test("home dashboard hides bank accounts but standalone official accounts still loads", () => { assert.doesNotMatch(account,/id="citizenHomeBanks"/); assert.match(account,/id="municipalBankList"/); assert.match(account,/data-citizen-view-panel="cuentas"/); });

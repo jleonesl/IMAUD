@@ -12,11 +12,15 @@
   const metrics='<section id="financialOverview"><div class="contributors-loading">Consultando indicadores institucionales…</div></section>';
   function financeKpis(){return metrics}
   function paymentView(){
-    return header('Recaudación y Tesorería','Registro, verificación y liquidación de pagos institucionales.')+financeKpis()+
-      '<section class="card panel"><div class="panel-head"><div><h3>Operaciones registradas</h3><p>Un pago registrado no se considera recaudado hasta su liquidación por Tesorería.</p></div><button class="btn btn-light" data-official-action="refresh">Actualizar</button></div>'+
+    return '<div class="page-head"><div><div class="eyebrow">SITMAUD · GESTIÓN TRIBUTARIA</div><h1>Recaudación y pagos</h1><p>Contribuyentes, inmuebles y condominios con obligaciones oficiales pendientes.</p></div>'+
+      '<button type="button" class="btn btn-primary" data-official-open-register>＋ Registrar pago</button></div>'+
+      '<section class="card payment-debt-card official-debtors"><div class="payment-list-head"><div><h3>Contribuyentes con deudas</h3><p>Consulta los períodos pendientes, identifica la cuenta y registra el pago correspondiente.</p></div><span class="table-count" id="officialDebtorCount">Consultando…</span></div>'+
+      '<div class="payment-debt-toolbar"><input type="search" class="search" id="officialDebtorSearch" placeholder="Buscar nombre, cédula, RIF, contrato o inmueble" aria-label="Buscar contribuyentes con obligaciones"><select class="filter-select" id="officialDebtorType" aria-label="Tipo de contribuyente"><option value="">Todos los tipos</option><option value="individual">Contribuyentes e inmuebles</option><option value="condominio">Condominios</option></select><button type="button" class="btn btn-light" data-official-action="refresh">Actualizar</button></div>'+
+      '<div id="officialDebtorRows"><div class="contributors-loading">Consultando obligaciones oficiales…</div></div></section>'+
+      '<details class="card panel official-operations-details"><summary><strong>Operaciones registradas y Tesorería</strong><span>Consultar pagos pendientes, liquidados y rechazados</span></summary>'+
+      '<div class="panel-head"><div><h3>Operaciones registradas</h3><p>Los pagos pendientes solo se consideran recaudados después de la validación bancaria.</p></div></div>'+
       '<div class="payment-debt-toolbar"><input type="search" class="search" id="officialPaySearch" placeholder="Buscar contribuyente, referencia o comprobante"><select class="filter-select" id="officialPayStatus"><option value="">Todos los estados</option><option value="pending">Por liquidar</option><option value="confirmed">Liquidados</option><option value="reversed">Rechazados</option></select></div>'+
-      '<div id="officialPaymentRows"><div class="contributors-loading">Consultando pagos…</div></div></section>'+
-      '<section class="card panel"><h3>Registro de pagos</h3><p>El registro de una operación oficial requiere obligaciones verificadas, datos bancarios y comprobante cuando corresponda. Nunca se contabilizará como ingreso hasta su liquidación.</p><div id="officialPaymentReadiness">Validando condiciones para registrar…</div></section>'+
+      '<div id="officialPaymentRows"><div class="contributors-loading">Consultando pagos…</div></div></details>'+
       '<section class="card panel" id="officialDebtReliefPanel" hidden><div class="panel-head"><div><h3>Exonerar deudas</h3><p>Selecciona meses pendientes de un contribuyente. Solo funcionarios con permiso de exoneración.</p></div></div>'+
       '<form id="officialDebtReliefLookup"><div class="form-grid"><div class="field"><label for="reliefContributorLookup">N.º de contrato, cédula o RIF</label><input id="reliefContributorLookup" name="identity" required placeholder="Buscar contribuyente"></div></div><div class="form-actions"><button class="btn btn-light" type="submit">Buscar obligaciones</button></div></form>'+
       '<div id="officialReliefObligations" aria-live="polite"></div></section>';
@@ -109,6 +113,48 @@
         '<article class="card kpi home-kpi"><div class="kpi-top"><span>'+safe(item.label)+'</span><span class="kpi-icon">'+safe(item.icon)+'</span></div>'+
         '<div class="kpi-value">'+safe(item.value)+'</div><div class="kpi-note">'+safe(item.note)+'</div></article>'
       ).join('')+'</div>';
+  }
+
+  let debtors=[],debtorLimit=false;
+  const officialBalance=(a)=>{
+    const confirmed=(a.payment_allocations||[]).filter(x=>x.payments?.status==='confirmed')
+      .reduce((v,x)=>v+Number(x.amount||0),0);
+    return Math.max(0,Number(a.total_amount||0)-confirmed);
+  };
+  const debtorName=(c)=>c.kind==='juridico'?(c.legal_name||'Persona jurídica'):
+    ([c.first_name,c.last_name].filter(Boolean).join(' ')||'Contribuyente');
+  function renderDebtors(){
+    const node=document.getElementById('officialDebtorRows');
+    if(!node)return;
+    const term=(document.getElementById('officialDebtorSearch')?.value||'').trim().toLocaleLowerCase('es-VE');
+    const type=document.getElementById('officialDebtorType')?.value||'';
+    const rows=debtors.filter(d=>(!type||(type==='condominio')===d.condominium)&&
+      (!term||[d.name,d.contract,d.idNumber,d.address].join(' ').toLocaleLowerCase('es-VE').includes(term)));
+    const count=document.getElementById('officialDebtorCount');
+    if(count)count.textContent=rows.length+' contribuyente(s) con deuda'+(debtorLimit?' · resultado limitado':'');
+    if(!rows.length){node.innerHTML='<div class="payment-debt-empty"><b>No hay obligaciones oficiales pendientes para estos filtros.</b><span>Los expedientes aparecerán cuando tengan períodos exigibles registrados.</span></div>';return;}
+    node.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Contrato</th><th>Contribuyente / Titular</th><th>Cédula / RIF</th><th>Inmueble / Cuenta matriz</th><th>Meses pendientes</th><th>Deuda registrada</th><th>Acción</th></tr></thead><tbody>'+
+      rows.map(d=>'<tr><td><b>'+safe(d.contract)+'</b></td><td><strong>'+safe(d.name)+'</strong><div class="official-debtor-type">'+(d.condominium?'Condominio':'Contribuyente')+'</div></td><td>'+safe(d.idNumber)+'</td><td>'+safe(d.address)+'</td><td>'+safe(d.months)+'</td><td><b>Bs. '+safe(new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(d.debt))+'</b></td><td><button type="button" class="btn btn-primary btn-sm" data-official-register-person="'+safe(d.contract)+'">Registrar pago</button></td></tr>').join('')+'</tbody></table></div>'+
+      (debtorLimit?'<p class="panel-hint">Se muestran hasta 500 expedientes. Utiliza los filtros o la búsqueda del registro para otros contribuyentes.</p>':'');
+  }
+  async function loadDebtors(){
+    const host=document.getElementById('officialDebtorRows');if(!host)return;
+    host.innerHTML='<div class="contributors-loading">Consultando contribuyentes y meses pendientes…</div>';
+    const select='id,kind,service_account_type,contract_number,legal_name,first_name,last_name,identification_type,identification_number,properties(address,is_active,is_consolidated_master,consolidated_units,assessments(id,period_start,total_amount,status,is_demo,payment_allocations(amount,payments(status))))';
+    const {data,error}=await imaudClient.from('contributors').select(select).order('created_at',{ascending:false}).limit(500);
+    if(!host.isConnected)return;
+    if(error){host.innerHTML='<div class="payment-debt-empty"><b>No se pudieron consultar las obligaciones.</b><span>Verifica permisos de consulta de contribuyentes, inmuebles y pagos.</span></div>';const count=document.getElementById('officialDebtorCount');if(count)count.textContent='Consulta no disponible';return;}
+    debtorLimit=(data||[]).length===500;
+    debtors=(data||[]).map(c=>{
+      const active=(c.properties||[]).filter(p=>p.is_active!==false);
+      const debts=active.flatMap(p=>(p.assessments||[]).filter(a=>a.is_demo===false&&['pending','partially_paid'].includes(a.status))
+        .map(a=>({a,p,balance:officialBalance(a)})).filter(x=>x.balance>0));
+      const months=new Set(debts.map(x=>x.a.period_start));
+      const condo=c.service_account_type==='condominio'||active.some(x=>x.is_consolidated_master);
+      const addr=debts.map(x=>x.p.is_consolidated_master?'Cuenta matriz · '+Number(x.p.consolidated_units||0)+' viviendas':x.p.address||'Inmueble').filter((a,i,arr)=>arr.indexOf(a)===i).join(' · ');
+      return {contract:c.contract_number||'',name:debtorName(c),idNumber:[c.identification_type,c.identification_number].filter(Boolean).join('-'),address:addr,condominium:condo,months:months.size,debt:debts.reduce((t,x)=>t+x.balance,0)};
+    }).filter(c=>c.months>0);
+    renderDebtors();
   }
   async function loadPayments(){
     if(!document.getElementById('officialPaymentRows')&&!document.getElementById('officialInvoiceRows')&&!document.getElementById('officialReportRows'))return;
@@ -362,12 +408,14 @@
   document.addEventListener('click',e=>{
     const action=e.target.closest('[data-official-action]');
     if(action){
-      if(action.dataset.officialAction==='refresh'){loadPayments();loadOverview();verifyReadiness();}
+      if(action.dataset.officialAction==='refresh'){loadPayments();loadDebtors();}
       if(action.dataset.officialAction==='close-document')document.getElementById('billModal')?.remove();
       if(action.dataset.officialAction==='print')window.print();
       if(action.dataset.officialAction==='export')exportCSV();
       return;
     }
+    const open=e.target.closest('[data-official-open-register],[data-official-register-person]');
+    if(open){window.sitmaudUdcPayment?.open(open.dataset.officialRegisterPerson||'');return;}
     const reportPageBtn=e.target.closest('[data-report-page]');
     if(reportPageBtn){const form=document.getElementById('officialFinancialFilter');if(form)renderReportRows(form,reportPage+(reportPageBtn.dataset.reportPage==='next'?1:-1));return;}
     const evidence=e.target.closest('[data-treasury-evidence]');if(evidence){openTreasuryEvidence(evidence.dataset.treasuryEvidence,evidence);return;}
@@ -376,8 +424,8 @@
     const invoice=e.target.closest('[data-official-invoice]');if(invoice){showDocument(invoice.dataset.officialInvoice);return;}
     const pay=e.target.closest('[data-official-liquidate]');if(pay){liquidate(pay.dataset.officialLiquidate,pay);return;}
   });
-  document.addEventListener('input',e=>{if(e.target.id==='officialPaySearch')renderPaymentRows();});
-  document.addEventListener('change',e=>{if(e.target.id==='reliefSelectAll'){document.querySelectorAll('.relief-month-check').forEach(x=>x.checked=e.target.checked);updateReliefSelection();}if(e.target.matches('.relief-month-check'))updateReliefSelection();if(e.target.id==='officialPayStatus')renderPaymentRows();if(e.target.id==='officialReportPeriod')changeReportPeriod(e.target.form);if(e.target.id==='officialReportGroup')changeReportGrouping(e.target.form);});
+  document.addEventListener('input',e=>{if(e.target.id==='officialPaySearch')renderPaymentRows();if(e.target.id==='officialDebtorSearch')renderDebtors();});
+  document.addEventListener('change',e=>{if(e.target.id==='reliefSelectAll'){document.querySelectorAll('.relief-month-check').forEach(x=>x.checked=e.target.checked);updateReliefSelection();}if(e.target.matches('.relief-month-check'))updateReliefSelection();if(e.target.id==='officialPayStatus')renderPaymentRows();if(e.target.id==='officialDebtorType')renderDebtors();if(e.target.id==='officialReportPeriod')changeReportPeriod(e.target.form);if(e.target.id==='officialReportGroup')changeReportGrouping(e.target.form);});
   document.addEventListener('submit',e=>{if(e.target.id==='officialFinancialFilter'){e.preventDefault();renderReportRows(e.target);}if(e.target.id==='officialDebtReliefLookup'){e.preventDefault();findReliefObligations(e.target);}});
   window.sitmaudOfficialFinance={
     overviewPlaceholder:()=>metrics,
@@ -385,8 +433,8 @@
     view(v){return v==='pagos'?paymentView():v==='facturacion'?invoiceView():reportView();},
     async mount(v){
       if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){changeReportPeriod(form);changeReportGrouping(form);renderReportRows(form);}}
-      if(v==='pagos'||v==='reportes')loadOverview();
-      if(v==='pagos'){verifyReadiness();loadFinancialPrivileges();}
+      if(v==='reportes')loadOverview();
+      if(v==='pagos'){loadDebtors();loadFinancialPrivileges();}
       await loadPayments();
     }
   };

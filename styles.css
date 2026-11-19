@@ -1087,3 +1087,19 @@ body.modal-open{overflow:hidden}
  .official-operations-details>summary{flex-direction:column;align-items:flex-start}
  .official-debtors .payment-debt-toolbar .search,.official-debtors .payment-debt-toolbar select{width:100%;min-width:0}
 }
+
+
+/* Recaudación compacta: vistas exclusivas y operaciones en su propia fila. */
+.official-payment-view-tabs{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid #e5ebef;background:#fff}
+.official-payment-tab{background:#f1f6f8!important;border:1px solid #dce7ec!important;color:#23455d!important;border-radius:8px!important;font-size:12px!important;font-weight:700!important;padding:10px 16px!important}
+.official-payment-tab.active{background:linear-gradient(90deg,#247da0,#218f9b)!important;color:#fff!important;border-color:#218f9b!important}
+#officialDebtsView[hidden],#officialPaymentsView[hidden],#officialReliefBackdrop[hidden]{display:none!important}
+.official-relief-backdrop{position:fixed;inset:0;z-index:10005;background:rgba(9,32,51,.62);display:flex;align-items:center;justify-content:center;padding:18px}
+.official-relief-modal{width:min(880px,100%);max-height:calc(100vh - 36px);overflow-y:auto;margin:0;padding:24px!important;border-radius:16px;background:#fff;box-shadow:0 20px 65px #102d4660}
+.official-relief-modal>.panel-head{align-items:flex-start;gap:10px;margin-bottom:15px}
+.official-debtors .payment-debt-scroll td:last-child{white-space:nowrap}
+#officialPaymentsView .payment-debt-scroll{overflow:auto}
+#officialPaymentsView .payment-debt-scroll table{min-width:860px}
+#officialPaymentsView .payment-debt-scroll td:last-child{white-space:normal;min-width:245px}
+#officialPaymentsView .payment-debt-scroll .btn{margin:2px}
+@media(max-width:760px){.official-payment-view-tabs{flex-wrap:wrap}.official-payment-tab{flex:1 1 150px}.official-relief-backdrop{padding:8px}.official-relief-modal{max-height:calc(100vh - 16px);padding:16px!important}}

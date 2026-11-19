@@ -13,7 +13,13 @@ test('payments home is a debtor directory, not duplicated financial dashboard',(
  assert.match(view,/officialDebtorType/);
  assert.doesNotMatch(view,/financeKpis\(/);
  assert.doesNotMatch(view,/financialOverview/);
- assert.match(view,/<details class="card panel official-operations-details"/);
+ assert.doesNotMatch(view,/<details class="card panel official-operations-details"/);
+ assert.match(view,/data-official-payment-tab="deudas"/);
+ assert.match(view,/data-official-payment-tab="pagos"/);
+ assert.match(view,/id="officialPaymentsView" hidden/);
+ assert.match(view,/id="officialReliefBackdrop" hidden/);
+ assert.doesNotMatch(view,/section class="card panel" id="officialDebtReliefPanel"/);
+
 });
 test('debtors come only from official pending obligations and respect partial amounts',()=>{
  assert.match(fin,/a\.is_demo===false/);
@@ -31,4 +37,20 @@ test('registration opens existing server-backed official cashier instead of lega
  assert.match(cashier,/register_official_udc_payment/);
  assert.doesNotMatch(cashier,/register_demo_payment_with_proof/);
  assert.match(styles,/\.official-cashier-backdrop\[hidden\]\{display:none!important\}/);
+});
+
+test('exoneration is contextual and always checked against permission',()=>{
+ assert.match(fin,/reliefAllowed\?'<button type="button" class="btn btn-light btn-sm" data-official-relief-person=/);
+ assert.match(fin,/if\(!reliefAllowed\)return;/);
+ assert.match(fin,/data-official-relief-close/);
+ assert.match(fin,/openReliefFor\(relief\.dataset\.officialReliefPerson\)/);
+ assert.match(fin,/exonerate_official_assessments/);
+});
+test('treasury actions remain per pending payment with permission gate',()=>{
+ assert.match(fin,/p\.status==='pending'&&treasuryAllowed/);
+ assert.match(fin,/data-official-liquidate/);
+ assert.match(fin,/data-official-reject/);
+ assert.match(fin,/data-official-invoice/);
+ assert.match(fin,/id="officialPaymentRows"/);
+ assert.match(styles,/#officialDebtsView\[hidden\],#officialPaymentsView\[hidden\]/);
 });

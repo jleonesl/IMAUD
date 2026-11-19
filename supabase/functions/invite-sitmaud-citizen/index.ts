@@ -37,6 +37,9 @@ Deno.serve(async request=>{
  .select("auth_user_id,is_active").eq("contributor_id",id).maybeSingle();
  if(linkedError)return respond({error:"No se pudo verificar la cuenta ciudadana"},503,origin);
  const redirectTo=ORIGIN+"/IMAUD/activar-contribuyente.html";
+ const identityTypeForEmail=c.service_account_type==="condominio"?"J":String(c.identification_type||"");
+ const identityDigits=String(c.identification_number).replace(/[^0-9A-Za-z]/g,"").toUpperCase().replace(/^[VEJ]/,"");
+ const citizenUsername=identityTypeForEmail+"-"+identityDigits;
  if(linked){
    if(linked.is_active!==true)return respond({error:"La cuenta ciudadana está desactivada; requiere revisión institucional"},403,origin);
    const {data:authRecord,error:authRecordError}=await admin.auth.admin.getUserById(linked.auth_user_id);
@@ -50,6 +53,14 @@ Deno.serve(async request=>{
      return respond({error:"No es posible usar un acceso de funcionario como contribuyente"},409,origin);
    if(action!=="resend")
      return respond({ok:true,status:"already_registered",email_requested:false,contract_number:c.contract_number},200,origin);
+   // Metadatos de presentación para la plantilla de correo; la autorización siempre depende de la base de datos.
+   const {error:metadataError}=await admin.auth.admin.updateUserById(linked.auth_user_id,{
+     user_metadata:{
+       ...(authRecord.user.user_metadata||{}),
+       citizen_portal:true,citizen_username:citizenUsername,citizen_contract:c.contract_number
+     }
+   });
+   if(metadataError)return respond({error:"No se pudieron preparar los datos de acceso del contribuyente."},503,origin);
    const {data:permitted,error:limitError}=await admin.rpc("allow_citizen_access_email",{p_contributor_id:id});
    if(limitError)return respond({error:"No se pudo verificar el límite de reenvíos"},503,origin);
    if(!permitted)return respond({error:"Ya se solicitó un correo recientemente. Vuelve a intentarlo más tarde."},429,origin);
@@ -68,7 +79,7 @@ Deno.serve(async request=>{
  if(limitError)return respond({error:"No se pudo verificar la autorización de correo"},503,origin);
  if(!permitted)return respond({error:"Se intentó enviar este acceso recientemente. Evita registrar el expediente nuevamente."},429,origin);
  const {data:invitation,error:invitationError}=await admin.auth.admin.inviteUserByEmail(email,{
-  data:{citizen_portal:true},redirectTo
+  data:{citizen_portal:true,citizen_username:citizenUsername,citizen_contract:c.contract_number},redirectTo
  });
  if(invitationError||!invitation.user)return respond({error:"No se pudo emitir la invitación. Si el correo ya tiene una cuenta de acceso, verifica su titularidad y utiliza la activación institucional existente."},409,origin);
  const newId=invitation.user.id;

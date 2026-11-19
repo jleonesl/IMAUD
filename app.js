@@ -766,7 +766,7 @@ async function loadResidentialEngineReadiness(){
  const trialPanel=document.getElementById('trialBillingBulk');if(trialPanel)trialPanel.hidden=!inTrial;
  const generator=document.getElementById('officialEngineGenerate');if(generator)generator.disabled=!residentialEngineReady||!residentialEngineCanCreate;
  const status=document.getElementById('officialEngineStatus'),button=document.getElementById('officialEngineApprove');
- if(status){status.textContent=approvedForTrial?'Tarifa de pruebas aprobada':'Tarifa de septiembre sin aprobación';status.className='status '+(approvedForTrial?'active':'pending');}
+ if(status){status.textContent=!inTrial?(data.approved?'Generación automática desde enero 2027':'Falta aprobar tarifa de producción'):(approvedForTrial?'Tarifa de pruebas aprobada':'Tarifa de septiembre sin aprobación');status.className='status '+((!inTrial?data.approved:approvedForTrial)?'active':'pending');}
  if(button){button.hidden=!!data.approved||!canApprove;button.disabled=false;}
  const safeText=v=>escapeHTML(String(v??'—'));
  output.innerHTML='<div class="grid two-col">'+
@@ -774,13 +774,13 @@ async function loadResidentialEngineReadiness(){
   '<div><b>Inicio de obligaciones</b><p>Pruebas: 01/09/2026 · Producción: 01/01/2027</p></div>'+
   '<div><b>Sectorización</b><p>'+safeText(data.sector_count)+' sectores activos · '+safeText(data.unclassified_sectors)+' sin tipología válida</p></div>'+
   '<div><b>Última UCD registrada</b><p>'+safeText(data.last_udc_currency)+' · '+safeText(data.last_udc_rate_date)+'</p></div>'+
-  '<div><b>Estado tarifario</b><p>'+safeText(approvedForTrial?'Aprobado para septiembre de 2026':'Falta aprobación del tabulador de pruebas')+'</p></div>'+
+  '<div><b>Estado tarifario</b><p>'+safeText(inTrial?(approvedForTrial?'Aprobado para septiembre de 2026':'Falta aprobación del tabulador de pruebas'):(data.approved?'Aprobado para producción 2027':'Falta aprobar tabulador de producción'))+'</p></div>'+
   '<div><b>Obligaciones oficiales</b><p>'+safeText(data.official_obligations)+'</p></div>'+
   '</div>'+
   '<p class="panel-hint">'+(data.rate_current?'Tasa almacenada dentro del margen de actualización.':'La tasa registrada requiere actualización y validación antes de generar cargos.')+
   ' Los importes en bolívares deben verificarse contra el tipo de cambio vigente en la fecha efectiva del pago.</p>'+
   (!data.approved&&!canApprove?'<p class="notice">Tu usuario puede consultar, pero no tiene el permiso «Administrar tarifas» para activar el tabulador.</p>':'')+
-  (!approvedForTrial?'<p class="notice">Para generar mensualidades desde septiembre 2026, primero debe aprobarse por funcionario autorizado el tabulador correspondiente. No se utilizarán tarifas sin aprobación.</p>':'');
+  (inTrial&&!approvedForTrial?'<p class="notice">Para generar mensualidades desde septiembre 2026, primero debe aprobarse por funcionario autorizado el tabulador correspondiente. No se utilizarán tarifas sin aprobación.</p>':(!inTrial?'<p class="panel-hint">La generación de mensualidades funciona automáticamente en el servidor desde enero 2027. No es necesario seleccionar ni procesar contribuyentes manualmente.</p>':''));
 }
 async function approveResidentialTariff(button){
  if(!window.confirm('¿Aprobar oficialmente los coeficientes residenciales de la Ordenanza 2024 para comenzar en enero de 2027? Se registrará tu usuario en la bitácora. No se generarán deudas ahora.'))return;

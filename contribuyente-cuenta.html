@@ -10,17 +10,18 @@
 header b{font-size:21px}header small{display:block;font-size:11px;margin-top:3px;opacity:.8}button,.btn{border:0;border-radius:9px;padding:12px 18px;background:#0b6b97;color:white;font-weight:700;text-decoration:none;cursor:pointer}
 main{max-width:850px;margin:42px auto;padding:0 20px}.card{background:#fff;border:1px solid #e1e9ef;border-radius:14px;padding:28px;box-shadow:0 8px 25px #153b5310}
 h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14px;background:#f0f6fa;border-left:3px solid #1a7e9e;border-radius:6px}
-#sessionStatus{font-size:12px;color:#657b88;margin-bottom:18px}footer{margin-top:22px;color:#738793;font-size:12px}.payment-info{margin-top:20px}.bank-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:15px}.bank-card{border:1px solid #dbe8ef;border-radius:12px;padding:17px;background:#fff}.bank-card h3{font-size:15px;margin:0 0 12px}.bank-row{margin:8px 0}.bank-row small{display:block;color:#72889b;font-size:11px;margin-bottom:3px}.bank-row b{overflow-wrap:anywhere}.copy-bank{background:#e9f4f8;color:#075b7c;padding:6px 9px;border-radius:6px;margin-left:8px;font-size:11px}
+#sessionStatus{font-size:12px;color:#657b88;margin-bottom:18px}.citizen-summary{display:grid;gap:16px;margin-top:20px}.citizen-summary .info{border:1px solid #dae8ef;border-left:3px solid #1a7e9e;background:#fbfdff}.citizen-item{border-top:1px solid #dfe9ee;padding:11px 0;display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap}.citizen-item b{color:#183d56}.citizen-item small{display:block;color:#6b8596}.citizen-empty{margin:12px 0 0;color:#768f9c}footer{margin-top:22px;color:#738793;font-size:12px}.payment-info{margin-top:20px}.bank-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:15px}.bank-card{border:1px solid #dbe8ef;border-radius:12px;padding:17px;background:#fff}.bank-card h3{font-size:15px;margin:0 0 12px}.bank-row{margin:8px 0}.bank-row small{display:block;color:#72889b;font-size:11px;margin-bottom:3px}.bank-row b{overflow-wrap:anywhere}.copy-bank{background:#e9f4f8;color:#075b7c;padding:6px 9px;border-radius:6px;margin-left:8px;font-size:11px}
 </style>
 </head>
 <body>
 <header><div><b>SITMAUD</b><small>Portal del Contribuyente · Municipio Miranda, Coro</small></div><button id="exit">Cerrar sesión</button></header>
 <main><div id="sessionStatus" role="status">Verificando acceso institucional…</div>
 <section class="card" id="account" hidden>
-<h1>Bienvenido al Portal del Contribuyente</h1>
-<p>Tu identidad fue validada para acceder al sistema.</p>
-<div class="info"><b>Servicios financieros temporalmente restringidos</b><p>Las obligaciones, pagos y comprobantes se mostrarán únicamente cuando su emisión y consulta oficial estén habilitadas y verificadas por el Instituto. No se mostrarán datos de prueba.</p></div>
-<p>Para solicitar información sobre tu expediente, comunícate con la oficina de recaudación del Instituto Municipal de Aseo Urbano y Domiciliario.</p>
+<h1 id="citizenGreeting">Mi cuenta SITMAUD</h1>
+<p id="citizenAccountIdentifier">Expediente institucional</p>
+<section class="citizen-summary"><div class="info"><b>Mis inmuebles y cuentas matrices</b><div id="citizenProperties">Consultando…</div></div>
+<div class="info"><b>Mis obligaciones</b><div id="citizenAssessments">Consultando…</div></div>
+<div class="info"><b>Mis pagos</b><div id="citizenPayments">Consultando…</div></div></section>
 </section>
 <section class="card payment-info" id="paymentInformation" hidden><h2>Cuentas bancarias oficiales de la Alcaldía</h2><div id="municipalBankList" role="status">Cargando cuentas bancarias…</div></section>
 <footer>Alcaldía del Municipio Miranda · Instituto Municipal de Aseo Urbano y Domiciliario</footer>
@@ -38,6 +39,16 @@ const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase
   const {data:portal,error:accessError}=await client.rpc('get_my_citizen_portal');
   if(accessError||!portal?.activated){location.replace('./contribuyente-v2.html');return;}
   status.textContent='Acceso de contribuyente verificado';
+  const escCitizen=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const bsCitizen=n=>'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0));
+  document.getElementById('citizenGreeting').textContent='Bienvenido, '+(portal.name||'contribuyente');
+  document.getElementById('citizenAccountIdentifier').textContent='Contrato '+(portal.contract_number||'—')+' · '+(portal.identification||'');
+  const properties=Array.isArray(portal.properties)?portal.properties:[];
+  document.getElementById('citizenProperties').innerHTML=properties.length?properties.map(p=>'<div class="citizen-item"><div><b>'+escCitizen(p.address)+'</b><small>'+escCitizen([p.sector,p.parish].filter(Boolean).join(' · '))+'</small></div><small>'+escCitizen(p.consolidated?'Cuenta matriz':'Inmueble')+'</small></div>').join(''):'<p class="citizen-empty">No hay inmuebles activos vinculados.</p>';
+  const debts=Array.isArray(portal.obligations)?portal.obligations:[];
+  document.getElementById('citizenAssessments').innerHTML=debts.length?debts.map(a=>'<div class="citizen-item"><div><b>'+escCitizen(a.period_start)+'</b><small>'+escCitizen(a.status==='paid'?'Pagado':a.status==='partially_paid'?'Pago parcial':'Pendiente')+'</small></div><b>'+bsCitizen(a.amount_bs)+'</b></div>').join(''):'<p class="citizen-empty">No existen obligaciones oficiales registradas.</p>';
+  const payments=Array.isArray(portal.payments)?portal.payments:[];
+  document.getElementById('citizenPayments').innerHTML=payments.length?payments.map(p=>'<div class="citizen-item"><div><b>'+escCitizen(p.receipt)+'</b><small>'+escCitizen(p.status==='confirmed'?'Liquidado por Tesorería':p.status==='reversed'?'Reversado':'Pendiente de validación')+'</small></div><b>'+bsCitizen(p.amount_bs)+'</b></div>').join(''):'<p class="citizen-empty">No existen pagos oficiales registrados.</p>';
   document.getElementById('account').hidden=false;
   document.getElementById('paymentInformation').hidden=false;
   const bankHost=document.getElementById('municipalBankList');

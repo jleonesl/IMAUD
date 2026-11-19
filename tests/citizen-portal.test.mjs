@@ -15,6 +15,8 @@ const citizenRegistration = read('app.js');
 const registrationServer = read('supabase/functions/register-sitmaud-contributor/index.ts');
 const invitationService = read('supabase/functions/invite-sitmaud-citizen/index.ts');
 const receipt = read('citizen-receipts.js');
+const sharedInvoice = read('official-receipt-template.js');
+const officialFinance = read('official-finance.js');
 const workflow = read('.github/workflows/pages.yml');
 const officialPortal = read('supabase/migrations/20261119030000_citizen_canonical_identity.sql');
 const serverReceipt = read('supabase/migrations/20261119024500_citizen_verified_paid_receipt.sql');
@@ -127,4 +129,24 @@ test('citizen submissions are private, official, owner-restricted and pending tr
  assert.match(citizenPaymentOptions,/where is_published=true/);
  assert.match(citizenPayments,/10\*1024\*1024/);
  assert.doesNotMatch(citizenPayments,/service_role/);
+});
+
+test('institutional and citizen receipts use exactly one approved HTML renderer and CSS', () => {
+ assert.match(sharedInvoice,/function render\(\{payment:p,allocations,preview=false\}\)/);
+ assert.match(sharedInvoice,/bill-paper sit-receipt/);
+ assert.match(officialFinance,/window\.sitmaudOfficialReceipt\.render\(\{payment:p,allocations,preview\}\)/);
+ assert.match(receipt,/window\.sitmaudOfficialReceipt\.render\(\{payment,allocations,preview:false\}\)/);
+ assert.match(account,/billing\.css\?v=20261119-identical-invoice1/);
+ assert.match(account,/official-receipt-template\.js/);
+ assert.match(landing,/official-receipt-template\.js/);
+ assert.ok(workflow.includes('official-receipt-template.js'));
+ assert.doesNotMatch(receipt,/sit-citizen-receipt-paper/);
+ assert.doesNotMatch(account,/@page\s*\{\s*size:5\.5in 8\.5in/);
+});
+test('citizen invoice remains restricted to own confirmed and liquidated payments', () => {
+ assert.match(receipt,/get_my_citizen_receipt/);
+ assert.match(receipt,/data\.status!=='confirmed'/);
+ assert.match(receipt,/data\.liquidated_at/);
+ assert.match(receipt,/Math\.abs\(sum-Number\(payment\.amount\)\)>0\.01/);
+ assert.match(serverReceipt,/contributor_id=v_owner/);
 });

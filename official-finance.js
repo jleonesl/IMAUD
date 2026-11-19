@@ -126,40 +126,34 @@
   };
   const debtorName=(c)=>c.kind==='juridico'?(c.legal_name||'Persona jurídica'):
     ([c.first_name,c.last_name].filter(Boolean).join(' ')||'Contribuyente');
+  let debtorTotal=0,debtorPage=0,debtorRequestSequence=0,debtorSearchTimer=null;
   function renderDebtors(){
-    const node=document.getElementById('officialDebtorRows');
-    if(!node)return;
-    const term=(document.getElementById('officialDebtorSearch')?.value||'').trim().toLocaleLowerCase('es-VE');
-    const type=document.getElementById('officialDebtorType')?.value||'';
-    const rows=debtors.filter(d=>(!type||(type==='condominio')===d.condominium)&&
-      (!term||[d.name,d.contract,d.idNumber,d.address].join(' ').toLocaleLowerCase('es-VE').includes(term)));
+    const node=document.getElementById('officialDebtorRows');if(!node)return;
+    const rows=debtors;
     const count=document.getElementById('officialDebtorCount');
-    if(count)count.textContent=rows.length+' contribuyente(s) con deuda'+(debtorLimit?' · resultado limitado':'');
-    if(!rows.length){node.innerHTML='<div class="payment-debt-empty"><b>No hay obligaciones oficiales pendientes para estos filtros.</b><span>Los expedientes aparecerán cuando tengan períodos exigibles registrados.</span></div>';return;}
+    if(count)count.textContent=debtorTotal+' contribuyente(s) con deuda';
+    if(!rows.length){node.innerHTML='<div class="payment-debt-empty"><b>No hay obligaciones oficiales pendientes para estos filtros.</b><span>Si esperabas mensualidades, revisa el panel de generación general ubicado arriba.</span></div>';return;}
     node.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Contrato</th><th>Contribuyente / Titular</th><th>Cédula / RIF</th><th>Inmueble / Cuenta matriz</th><th>Meses pendientes</th><th>Deuda registrada</th><th>Acción</th></tr></thead><tbody>'+
-      rows.map(d=>'<tr><td><b>'+safe(d.contract)+'</b></td><td><strong>'+safe(d.name)+'</strong><div class="official-debtor-type">'+(d.condominium?'Condominio':'Contribuyente')+'</div></td><td>'+safe(d.idNumber)+'</td><td>'+safe(d.address)+'</td><td>'+safe(d.months)+'</td><td><b>Bs. '+safe(new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(d.debt))+'</b></td><td><button type="button" class="btn btn-primary btn-sm" data-official-register-person="'+safe(d.contract)+'">Registrar pago</button> '+(reliefAllowed?'<button type="button" class="btn btn-light btn-sm" data-official-relief-person="'+safe(d.contract)+'">Exonerar</button>':'')+'</td></tr>').join('')+'</tbody></table></div>'+
-      (debtorLimit?'<p class="panel-hint">Se muestran hasta 500 expedientes. Utiliza los filtros o la búsqueda del registro para otros contribuyentes.</p>':'');
+      rows.map(d=>'<tr><td><b>'+safe(d.contract)+'</b></td><td><strong>'+safe(d.name)+'</strong><div class="official-debtor-type">'+(d.condominium?'Condominio':'Contribuyente')+'</div></td><td>'+safe(d.idNumber)+'</td><td>'+safe(d.address)+'</td><td>'+safe(d.months)+'</td><td><b>Bs. '+safe(new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(d.debt||0)))+'</b></td><td><button type="button" class="btn btn-primary btn-sm" data-official-register-person="'+safe(d.contract)+'">Registrar pago</button> '+(reliefAllowed?'<button type="button" class="btn btn-light btn-sm" data-official-relief-person="'+safe(d.contract)+'">Exonerar</button>':'')+'</td></tr>').join('')+'</tbody></table></div>'+
+      '<div class="form-actions"><button class="btn btn-light" type="button" data-official-debtor-page="prev" '+(debtorPage===0?'disabled':'')+'>Anterior</button><span class="panel-hint">Página '+(debtorPage+1)+' de '+Math.max(1,Math.ceil(debtorTotal/50))+' · '+debtorTotal+' expedientes</span><button class="btn btn-light" type="button" data-official-debtor-page="next" '+((debtorPage+1)*50>=debtorTotal?'disabled':'')+'>Siguiente</button></div>'+
+      '<p class="panel-hint">Saldo registrado en bolívares, como referencia. El importe efectivo se recalcula con la tasa UCD vigente al registrar el pago.</p>';
   }
-  async function loadDebtors(){
+  async function loadDebtors(page=0){
     const host=document.getElementById('officialDebtorRows');if(!host)return;
-    host.innerHTML='<div class="contributors-loading">Consultando contribuyentes y meses pendientes…</div>';
-    const select='id,kind,service_account_type,contract_number,legal_name,first_name,last_name,identification_type,identification_number,properties(address,is_active,is_consolidated_master,consolidated_units,assessments(id,period_start,total_amount,status,is_demo,payment_allocations(amount,payments(status))))';
-    const {data,error}=await imaudClient.from('contributors').select(select).order('created_at',{ascending:false}).limit(500);
-    if(!host.isConnected)return;
-    if(error){host.innerHTML='<div class="payment-debt-empty"><b>No se pudieron consultar las obligaciones.</b><span>Verifica permisos de consulta de contribuyentes, inmuebles y pagos.</span></div>';const count=document.getElementById('officialDebtorCount');if(count)count.textContent='Consulta no disponible';return;}
-    debtorLimit=(data||[]).length===500;
-    debtors=(data||[]).map(c=>{
-      const active=(c.properties||[]).filter(p=>p.is_active!==false);
-      const debts=active.flatMap(p=>(p.assessments||[]).filter(a=>a.is_demo===false&&['pending','partially_paid'].includes(a.status))
-        .map(a=>({a,p,balance:officialBalance(a)})).filter(x=>x.balance>0));
-      const months=new Set(debts.map(x=>x.a.period_start));
-      const condo=c.service_account_type==='condominio'||active.some(x=>x.is_consolidated_master);
-      const addr=debts.map(x=>x.p.is_consolidated_master?'Cuenta matriz · '+Number(x.p.consolidated_units||0)+' viviendas':x.p.address||'Inmueble').filter((a,i,arr)=>arr.indexOf(a)===i).join(' · ');
-      return {contract:c.contract_number||'',name:debtorName(c),idNumber:[c.identification_type,c.identification_number].filter(Boolean).join('-'),address:addr,condominium:condo,months:months.size,debt:debts.reduce((t,x)=>t+x.balance,0)};
-    }).filter(c=>c.months>0);
+    const seq=++debtorRequestSequence;
+    debtorPage=Math.max(0,page);
+    host.innerHTML='<div class="contributors-loading">Consultando deudores en el servidor…</div>';
+    const search=document.getElementById('officialDebtorSearch')?.value.trim()||'';
+    const kind=document.getElementById('officialDebtorType')?.value||'';
+    const {data,error}=await imaudClient.rpc('list_official_debtors',{
+      p_search:search,p_kind:kind,p_limit:50,p_offset:debtorPage*50
+    });
+    if(seq!==debtorRequestSequence||!host.isConnected)return;
+    if(error){host.innerHTML='<div class="payment-debt-empty"><b>No se pudieron consultar las obligaciones.</b><span>'+safe(error.message)+'</span></div>';const count=document.getElementById('officialDebtorCount');if(count)count.textContent='Consulta no disponible';return;}
+    debtors=data?.items||[];debtorTotal=Number(data?.total||0);
     renderDebtors();
   }
-  async function loadPayments(){
+    async function loadPayments(){
     if(!document.getElementById('officialPaymentRows')&&!document.getElementById('officialInvoiceRows')&&!document.getElementById('officialReportRows'))return;
     const {data,error}=await imaudClient.from('payments').select('id,receipt_number,amount,currency_code,paid_at,created_at,invoice_issued_at,liquidated_at,payment_method,external_reference,status,registration_channel,evidence_path,bank_code,payment_udc_total,payment_udc_rate_id,rate:udc_rates!payments_payment_udc_rate_id_fkey(effective_date,udc_currency_code,udc_value,source_url),contributor:contributors!payments_contributor_id_fkey(kind,legal_name,first_name,last_name,contract_number,identification_type,identification_number)').order('created_at',{ascending:false}).limit(500);
     if(error){for(const h of ['officialPaymentRows','officialInvoiceRows','officialReportRows']){const node=document.getElementById(h);if(node)node.innerHTML='<div class="contributors-empty">Error al consultar operaciones oficiales: '+safe(error.message)+'</div>';}return;}
@@ -447,6 +441,7 @@
     finally{if(button?.isConnected)button.disabled=false;}
   }
   document.addEventListener('click',e=>{
+    const page=e.target.closest('[data-official-debtor-page]');if(page){loadDebtors(Math.max(0,debtorPage+(page.dataset.officialDebtorPage==='next'?1:-1)));return;}
     const action=e.target.closest('[data-official-action]');
     if(action){
       if(action.dataset.officialAction==='refresh'){loadPayments();loadDebtors();}
@@ -470,8 +465,8 @@
     const invoice=e.target.closest('[data-official-invoice]');if(invoice){showDocument(invoice.dataset.officialInvoice);return;}
     const pay=e.target.closest('[data-official-liquidate]');if(pay){liquidate(pay.dataset.officialLiquidate,pay);return;}
   });
-  document.addEventListener('input',e=>{if(e.target.id==='officialPaySearch')renderPaymentRows();if(e.target.id==='officialDebtorSearch')renderDebtors();});
-  document.addEventListener('change',e=>{if(e.target.id==='reliefSelectAll'){document.querySelectorAll('.relief-month-check').forEach(x=>x.checked=e.target.checked);updateReliefSelection();}if(e.target.matches('.relief-month-check'))updateReliefSelection();if(e.target.id==='officialPayStatus')renderPaymentRows();if(e.target.id==='officialDebtorType')renderDebtors();if(e.target.id==='officialReportPeriod')changeReportPeriod(e.target.form);if(e.target.id==='officialReportGroup')changeReportGrouping(e.target.form);});
+  document.addEventListener('input',e=>{if(e.target.id==='officialPaySearch')renderPaymentRows();if(e.target.id==='officialDebtorSearch'){clearTimeout(debtorSearchTimer);debtorSearchTimer=setTimeout(()=>loadDebtors(0),300);}});
+  document.addEventListener('change',e=>{if(e.target.id==='reliefSelectAll'){document.querySelectorAll('.relief-month-check').forEach(x=>x.checked=e.target.checked);updateReliefSelection();}if(e.target.matches('.relief-month-check'))updateReliefSelection();if(e.target.id==='officialPayStatus')renderPaymentRows();if(e.target.id==='officialDebtorType')loadDebtors(0);if(e.target.id==='officialReportPeriod')changeReportPeriod(e.target.form);if(e.target.id==='officialReportGroup')changeReportGrouping(e.target.form);});
   document.addEventListener('submit',e=>{if(e.target.id==='officialFinancialFilter'){e.preventDefault();renderReportRows(e.target);}if(e.target.id==='officialDebtReliefLookup'){e.preventDefault();findReliefObligations(e.target);}});
 
   // Explain why the collection list is empty and allow the authorized intendente

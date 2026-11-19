@@ -28,7 +28,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/assets
-          for file in index.html funcionario.html contribuyente-v2.html contribuyente-cuenta.html verificar-solvencia.html \
+          for file in index.html funcionario.html contribuyente-v2.html contribuyente-cuenta.html activar-contribuyente.html verificar-solvencia.html \
             styles.css auth.css billing.css territorial-map.css \
             auth.js official-finance.js official-payment-registration.js solvency-documents.js \
             condominium-assessments.js municipal-bank-admin.js app.js territorial-map.js contributor-documents.js; do

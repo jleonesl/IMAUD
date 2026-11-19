@@ -13,8 +13,15 @@ const status=document.getElementById("status"),form=document.getElementById("act
 try{
  const parsed=new URLSearchParams(location.search);
  if(parsed.get("error")||parsed.get("error_description"))throw new Error("El enlace expiró o no es válido. Solicita uno nuevo a IMAUD.");
+ const tokenHash=parsed.get("token_hash");
+ if(tokenHash){
+  const tokenType=parsed.get("type")==="invite"?"invite":"recovery";
+  const result=await client.auth.verifyOtp({token_hash:tokenHash,type:tokenType});
+  if(result.error)throw new Error("El enlace no pudo verificarse o ya caducó. Solicita uno nuevo desde el Portal del Contribuyente.");
+  history.replaceState(null,"",location.pathname);
+ }
  const {data:{session},error}=await client.auth.getSession();
- if(error||!session)throw new Error("No se reconoció el enlace de activación. Abre el enlace original recibido en el correo.");
+ if(error||!session)throw new Error("No se reconoció el enlace de activación. Solicita un enlace nuevo desde el Portal del Contribuyente y abre ese mensaje.");
  const {data,error:accessError}=await client.rpc("get_my_citizen_portal");
  if(accessError||!data?.activated)throw new Error("El acceso no está vinculado a un expediente de contribuyente activo. Solicita revisión a IMAUD.");
  document.getElementById("citizenIdentityValue").textContent=data.identification||"";

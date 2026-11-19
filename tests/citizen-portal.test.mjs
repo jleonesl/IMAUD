@@ -17,6 +17,7 @@ const invitationService = read('supabase/functions/invite-sitmaud-citizen/index.
 const receipt = read('citizen-receipts.js');
 const sharedInvoice = read('official-receipt-template.js');
 const officialFinance = read('official-finance.js');
+const treasurySql = read('supabase/migrations/20261119050000_treasury_payment_audit_and_evidence.sql');
 const workflow = read('.github/workflows/pages.yml');
 const officialPortal = read('supabase/migrations/20261119030000_citizen_canonical_identity.sql');
 const serverReceipt = read('supabase/migrations/20261119024500_citizen_verified_paid_receipt.sql');
@@ -149,4 +150,29 @@ test('citizen invoice remains restricted to own confirmed and liquidated payment
  assert.match(receipt,/data\.liquidated_at/);
  assert.match(receipt,/Math\.abs\(sum-Number\(payment\.amount\)\)>0\.01/);
  assert.match(serverReceipt,/contributor_id=v_owner/);
+});
+
+test('treasury payment actions write explicit immutable audit records and require verifiable bank support', () => {
+ assert.match(treasurySql,/treasury_payment_liquidated/);
+ assert.match(treasurySql,/treasury_payment_rejected/);
+ assert.match(treasurySql,/payment_treasury_events/);
+ assert.match(treasurySql,/has_permission\('payments.validate'\)/);
+ assert.match(treasurySql,/for update/);
+ assert.match(treasurySql,/payment_allocations/);
+ assert.match(treasurySql,/v_payment\.registration_channel='portal_contribuyente'/);
+ assert.match(treasurySql,/imaud-payment-proofs/);
+ assert.match(treasurySql,/minimum 20|mínimo 20/);
+ assert.match(treasurySql,/status='confirmed'/);
+ assert.match(treasurySql,/status='reversed'/);
+});
+test('treasury renders private proof only through temporary signed URL and does not fake liquidation', () => {
+ assert.match(officialFinance,/data-treasury-evidence/);
+ assert.match(officialFinance,/createSignedUrl\(p\.evidence_path,60\)/);
+ assert.match(officialFinance,/payment_proof_viewed/);
+ assert.match(officialFinance,/liquidate_official_payment/);
+ assert.match(officialFinance,/reject_official_payment/);
+ assert.match(officialFinance,/liquidated_today/);
+ assert.match(officialFinance,/liquidated_month/);
+ assert.match(officialFinance,/get_official_operations_report/);
+ assert.match(officialFinance,/get_official_territorial_revenue/);
 });

@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION public.quote_citizen_udc_payment(p_contributor_id uui
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$
+AS $function$;
 declare
  v_rate public.udc_rates%rowtype;
  v_today date := (now() at time zone 'America/Caracas')::date;
@@ -77,7 +77,7 @@ begin
    'rate_id',v_rate.id,'rate',v_rate.udc_value,'currency',v_rate.udc_currency_code,
    'source_url',v_rate.source_url,'total_udc',v_total_udc,
    'total_bs',v_total,'allocations',v_items);
-end; $function$
+end; $function$;
 
 
 CREATE OR REPLACE FUNCTION public.register_citizen_udc_payment_core(p_contributor_id uuid, p_assessment_ids uuid[], p_payment_method text, p_external_reference text, p_bank_code text, p_evidence_path text, p_paid_at timestamp with time zone, p_municipal_account_id uuid)
@@ -85,7 +85,7 @@ CREATE OR REPLACE FUNCTION public.register_citizen_udc_payment_core(p_contributo
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$
+AS $function$;
 declare
  v_rate public.udc_rates%rowtype;v_today date:=(now() at time zone 'America/Caracas')::date;
  v_id uuid;v_assessment public.assessments%rowtype;
@@ -196,7 +196,7 @@ begin
  'status','pending','amount_bs',v_total,'udc_total',v_total_udc,
  'rate',v_rate.udc_value,'rate_date',v_rate.effective_date,
  'source_url',v_rate.source_url);
-end; $function$
+end; $function$;
 
 
 CREATE OR REPLACE FUNCTION public.register_citizen_udc_payment(p_contributor_id uuid, p_assessment_ids uuid[], p_payment_method text, p_external_reference text, p_bank_code text, p_evidence_path text, p_paid_at timestamp with time zone, p_expected_rate_id uuid, p_expected_total_bs numeric, p_municipal_account_id uuid)
@@ -204,7 +204,7 @@ CREATE OR REPLACE FUNCTION public.register_citizen_udc_payment(p_contributor_id 
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
-AS $function$
+AS $function$;
 declare v_quote jsonb;v_result jsonb;v_rate public.udc_rates%rowtype;
 begin
  if auth.uid() is null or not (exists(select 1 from public.citizen_accounts ca join public.contributors c on c.id=ca.contributor_id join auth.users au on au.id=ca.auth_user_id where ca.auth_user_id=auth.uid() and ca.is_active and ca.contributor_id=p_contributor_id and c.status='active' and au.email_confirmed_at is not null and lower(au.email)=lower(c.email) and not exists(select 1 from public.staff_profiles sp where sp.user_id=auth.uid() and sp.is_active))) then
@@ -228,7 +228,7 @@ begin
    raise exception 'El valor registrado difiere de lo confirmado; transacción cancelada.';
  end if;
  return v_result;
-end; $function$
+end; $function$;
 
 
 

@@ -17,7 +17,7 @@ function response(body: unknown, status: number, origin: string | null) {
 }
 Deno.serve(async (request) => {
   const origin = request.headers.get("origin");
-  if (request.method === "OPTIONS") return response({}, 204, origin);
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
   if (request.method !== "POST") return response({ error: "Método no permitido" }, 405, origin);
   if (origin && !allowedOrigins.has(origin)) return response({ error: "Origen no permitido" }, 403, origin);
   const jwt = (request.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");

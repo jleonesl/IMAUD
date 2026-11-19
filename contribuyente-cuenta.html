@@ -187,12 +187,51 @@ body{background:#f4f7f9;color:#243747;font-family:'DM Sans',Arial,sans-serif}
 .citizen-nav button[aria-current="page"]{background:linear-gradient(90deg,#247da0,#218f9b)!important;color:#fff!important;box-shadow:0 4px 10px #173f5d22}
 .citizen-nav button[aria-current="page"] svg{stroke:#fff!important}
 .citizen-sidebar-foot{border-top-color:#173f5d30!important;color:#234d66!important}
+
+/* Barra lateral contribuyente = barra lateral institucional, estilos tomados de styles.css */
+.citizen-sidebar{
+ background:#eaf1f5!important;
+ background-image:none!important;
+ color:#173f5d!important;
+ border-right:1px solid #d7e3ea!important;
+ padding:25px 17px 16px!important;
+}
+.citizen-brand{
+ background:transparent!important;border:0!important;border-bottom:1px solid #cbdbe4!important;
+ border-radius:0!important;box-shadow:none!important;
+ height:118px!important;min-height:118px!important;
+ padding:6px 8px 12px!important;margin:0 0 14px!important;
+ width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.citizen-brand:before{display:none!important;content:none!important}
+.citizen-brand img{
+ display:block!important;width:100%!important;max-width:210px!important;
+ height:100%!important;max-height:100px!important;object-fit:contain!important;object-position:center;
+ margin:0 auto!important;mix-blend-mode:multiply!important;
+ filter:contrast(1.04) saturate(1.04)!important;
+ opacity:1!important;background:transparent!important;border:0!important;box-shadow:none!important;
+}
+.citizen-nav button{
+ background:transparent!important;color:#24475f!important;
+ padding:10px 12px!important;margin:2px 0!important;
+ font:500 12px 'DM Sans',Arial,sans-serif!important;border-radius:8px!important;
+ min-height:43px!important;box-shadow:none!important;
+}
+.citizen-nav button svg{stroke:#47869b!important;width:18px;height:18px}
+.citizen-nav button:hover{background:#dce9ef!important;color:#103b59!important}
+.citizen-nav button[aria-current="page"]{
+ background:linear-gradient(90deg,#247da0,#218f9b)!important;
+ color:#fff!important;box-shadow:0 5px 14px rgba(16,59,89,.13)!important;
+}
+.citizen-nav button[aria-current="page"] svg{stroke:#fff!important}
+.citizen-sidebar-foot{border-top:1px solid #cbdbe4!important;color:#557486!important}
+@media(max-width:790px){.citizen-brand{height:118px!important;min-height:118px!important}.citizen-brand img{max-height:100px!important}}
 </style>
 </head>
 <body>
 <div class="citizen-shell">
 <aside class="citizen-sidebar" id="citizenSidebar" aria-label="Menú del contribuyente">
-<div class="citizen-brand"><img src="./assets/logo-sitmaud-contribuyente-transparente.png?v=20261119-logo2" alt="SITMAUD · Alcaldía del Municipio Miranda, Coro, Estado Falcón"></div>
+<div class="citizen-brand"><img src="./assets/logo-sitmaud-sidebar.jpg?v=2" alt="SITMAUD · Alcaldía del Municipio Miranda, Coro, Estado Falcón"></div>
 <nav class="citizen-nav" aria-label="Secciones del portal">
 <button type="button" data-citizen-view="inicio" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Inicio</button>
 <button type="button" data-citizen-view="obligaciones" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16M6 4h12v16H6z"/></svg>Mis obligaciones</button>

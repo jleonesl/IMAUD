@@ -236,7 +236,10 @@ state.propertyPage=1;
 state.propertySelectedContributor=null;
 function propertyStatus(p){
  if(p.is_active===false)return 'inactive';
- if((p.assessments||[]).some(a=>['pending','partially_paid'].includes(a.status)))return 'pending';
+ const official=(p.assessments||[]).filter(a=>a.is_demo===false&&a.status!=='void');
+ // Un inmueble sin liquidaciones oficiales no demuestra que el titular esté al día.
+ if(!official.length)return 'unassessed';
+ if(official.some(a=>['pending','partially_paid'].includes(a.status)))return 'pending';
  return 'active';
 }
 function propertyContributorName(c){
@@ -293,7 +296,7 @@ function renderPropertiesTable(){
  const rows=filteredProperties(),pages=Math.max(1,Math.ceil(rows.length/PROPERTY_PAGE_SIZE));
  state.propertyPage=Math.min(state.propertyPage,pages);
  const from=(state.propertyPage-1)*PROPERTY_PAGE_SIZE,visible=rows.slice(from,from+PROPERTY_PAGE_SIZE);
- const labels={active:'Al día',pending:'Con deuda',inactive:'Inactivo'},target=document.getElementById('propertiesTable');
+ const labels={active:'Al día',pending:'Con deuda',inactive:'Inactivo',unassessed:'Sin liquidaciones'},target=document.getElementById('propertiesTable');
  if(!rows.length)target.innerHTML='<div class="contributors-empty"><b>No hay inmuebles que mostrar</b><span>Registra un inmueble o ajusta los filtros de búsqueda.</span></div>';
  else target.innerHTML='<table><thead><tr><th>Contrato del contribuyente</th><th>Contribuyente</th><th>Cédula / RIF</th><th>Parroquia</th><th>Sector</th><th>Estado</th><th>Último pago</th><th>Acciones</th></tr></thead><tbody>'+visible.map(p=>{
   const c=p.contributor||{},status=propertyStatus(p);
@@ -386,7 +389,7 @@ async function savePropertyEdit(form){
 }
 function showPropertyDetails(id){
  const p=state.properties.find(x=>x.id===id);if(!p)return;
- const c=p.contributor||{},status=propertyStatus(p),labels={active:'Al día',pending:'Con deuda',inactive:'Inactivo'};
+ const c=p.contributor||{},status=propertyStatus(p),labels={active:'Al día',pending:'Con deuda',inactive:'Inactivo',unassessed:'Sin liquidaciones'};
  const sectorTypology=p.sector?.default_typology||state.sectors.find(x=>x.id===p.sector_id)?.default_typology||'Sin clasificación';
  const effectiveTypology=p.typology_override||sectorTypology;
  const coefficient={'TIPO I':3,'TIPO II':1.5,'TIPO III':0.5}[effectiveTypology];

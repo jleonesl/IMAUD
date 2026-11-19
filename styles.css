@@ -1054,3 +1054,36 @@ body.modal-open{overflow:hidden}
  .dashboard-kpi-grid.home-indicators,
  .dashboard-kpi-grid.financial-kpi-grid{grid-template-columns:1fr}
 }
+
+
+/* SITMAUD - Recaudación operativa: lista de deudores y formulario oficial en ventana */
+.official-debtors{margin-top:10px}
+.official-debtors .payment-debt-toolbar{display:flex;flex-wrap:wrap;align-items:center}
+.official-debtors .payment-debt-toolbar .search{flex:1 1 300px}
+.official-debtors .payment-debt-toolbar select{min-width:190px}
+.official-debtors .payment-debt-scroll{overflow:auto;max-height:calc(100vh - 300px)}
+.official-debtors .payment-debt-scroll table{width:100%;min-width:930px}
+.official-debtors .payment-debt-scroll th{position:sticky;top:0;background:#f7fafc;z-index:1}
+.official-debtors .payment-debt-scroll td{vertical-align:middle}
+.official-debtor-type{font-size:10px;color:#708797;margin-top:4px}
+.official-operations-details{margin-top:18px;padding:0;overflow:hidden}
+.official-operations-details>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;cursor:pointer;color:#173f5d;list-style:none}
+.official-operations-details>summary::-webkit-details-marker{display:none}
+.official-operations-details>summary>span{font-size:12px;color:#758a99}
+.official-operations-details[open]>summary{border-bottom:1px solid #e5ebef;background:#f7fafc}
+.official-operations-details>.panel-head{padding:16px 20px 0}
+.official-cashier-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(9,32,51,.62);display:flex;align-items:center;justify-content:center;padding:18px}
+.official-cashier-backdrop[hidden]{display:none!important}
+.official-cashier-modal{width:min(900px,100%);max-height:calc(100vh - 36px);overflow-y:auto;padding:24px!important;margin:0;background:#fff;border-radius:16px;box-shadow:0 20px 65px #102d4660}
+.official-cashier-modal>.panel-head{align-items:flex-start;margin-bottom:16px}
+.official-cashier-modal h3{font:800 21px 'Manrope',sans-serif;color:#173b56}
+.official-cashier-modal .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.official-cashier-modal #udcCashierMessage{font-size:12px;color:#557286;background:#f1f7fa;padding:11px 13px;border-radius:9px;margin-bottom:14px}
+.official-cashier-modal .payment-debt-scroll{overflow:auto}
+@media(max-width:760px){
+ .official-cashier-backdrop{padding:8px}
+ .official-cashier-modal{max-height:calc(100vh - 16px);padding:16px!important}
+ .official-cashier-modal .form-grid{grid-template-columns:1fr}
+ .official-operations-details>summary{flex-direction:column;align-items:flex-start}
+ .official-debtors .payment-debt-toolbar .search,.official-debtors .payment-debt-toolbar select{width:100%;min-width:0}
+}

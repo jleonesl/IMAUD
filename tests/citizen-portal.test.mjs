@@ -186,7 +186,9 @@ test('contributor portal uses responsive navigable dashboard without stacking ev
    assert.match(account,new RegExp('data-citizen-view="'+part+'"'));
  }
  assert.match(account,/id="citizenSidebar"/);
- assert.match(account,/logo-sitmaud-contribuyente-transparente\.png/);
+ assert.match(account,/logo-sitmaud-sidebar\.jpg/);
+ assert.match(account,/background:#eaf1f5!important/);
+ assert.match(account,/mix-blend-mode:multiply!important/);
  assert.match(account,/citizen-nav[^]*?<svg viewBox=/);
  assert.match(account,/\.citizen-brand\{background:transparent!important/);
  assert.match(account,/citizen-dashboard\.css/);

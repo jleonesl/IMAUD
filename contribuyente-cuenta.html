@@ -62,11 +62,11 @@ const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase
  const status=document.getElementById('sessionStatus');
  try{
   const {data:{user},error}=await client.auth.getUser();
-  if(error||!user||sessionStorage.getItem('sitmaud_citizen_view')!=='authenticated'){
+  if(error||!user){
    location.replace('./contribuyente-v2.html');return;
   }
   const {data:portal,error:accessError}=await client.rpc('get_my_citizen_portal');
-  if(accessError||!portal?.activated){location.replace('./contribuyente-v2.html');return;}
+  if(accessError||!portal?.activated){status.textContent='No se pudo validar este expediente ciudadano. Vuelve a iniciar sesión.';return;}
   status.textContent='Acceso de contribuyente verificado';
   const escCitizen=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const bsCitizen=n=>'Bs. '+new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0));

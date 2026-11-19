@@ -19,6 +19,9 @@ const workflow = read('.github/workflows/pages.yml');
 const officialPortal = read('supabase/migrations/20261119030000_citizen_canonical_identity.sql');
 const serverReceipt = read('supabase/migrations/20261119024500_citizen_verified_paid_receipt.sql');
 const loginThrottle = read('supabase/migrations/20261119041500_citizen_login_throttle.sql');
+const citizenPayments = read('citizen-payment-registration.js');
+const citizenPaymentSql = read('supabase/migrations/20261119043000_citizen_official_udc_payment_submission.sql');
+const citizenPaymentOptions = read('supabase/migrations/20261119043500_citizen_payment_options.sql');
 
 test('citizen login uses identity service and does not expose registered email', () => {
   assert.match(login, /citizen-identity-login/);
@@ -100,4 +103,28 @@ test('citizen account access relies on confirmed auth and verified owner, not se
   assert.match(account, /client\.auth\.getUser\(\)/);
   assert.match(account, /client\.rpc\('get_my_citizen_portal'\)/);
   assert.doesNotMatch(account, /sessionStorage\.getItem\('sitmaud_citizen_view'\)/);
+});
+
+test('payment UI is included in published portal and quotes official months on server', () => {
+ assert.match(account,/id="citizenPaymentRegistration"/);
+ assert.match(account,/citizen-payment-registration\.js/);
+ assert.ok(workflow.includes('citizen-payment-registration.js'));
+ assert.match(citizenPayments,/quote_citizen_udc_payment/);
+ assert.match(citizenPayments,/register_citizen_udc_payment/);
+ assert.match(citizenPayments,/get_citizen_payment_options/);
+ assert.match(citizenPayments,/status!=="reversed"/);
+});
+test('citizen submissions are private, official, owner-restricted and pending treasury', () => {
+ assert.match(citizenPaymentSql,/payment_proof_upload_citizen/);
+ assert.match(citizenPaymentSql,/citizen_accounts ca/);
+ assert.match(citizenPaymentSql,/receiving_account_id/);
+ assert.match(citizenPaymentSql,/is_published/);
+ assert.match(citizenPaymentSql,/'portal_contribuyente'/);
+ assert.match(citizenPaymentSql,/'pending'/);
+ assert.match(citizenPaymentSql,/p_expected_total_bs/);
+ assert.match(citizenPaymentSql,/register_citizen_udc_payment_core/);
+ assert.match(citizenPaymentSql,/revoke all on function public\.register_citizen_udc_payment_core/);
+ assert.match(citizenPaymentOptions,/where is_published=true/);
+ assert.match(citizenPayments,/10\*1024\*1024/);
+ assert.doesNotMatch(citizenPayments,/service_role/);
 });

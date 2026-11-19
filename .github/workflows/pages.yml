@@ -57,6 +57,7 @@ jobs:
               raise SystemExit("Leaflet dependencies are not declared for the territorial map.")
           print("All local assets and map dependencies are present.")
           PY
+          node --test tests/citizen-portal.test.mjs
           node --check dist/official-finance.js
           node --check dist/official-payment-registration.js
           node --check dist/solvency-documents.js

@@ -175,8 +175,10 @@ async function saveContributor(form){
    // no elimina ni duplica al contribuyente.
    const invited=await imaudClient.functions.invoke('invite-sitmaud-citizen',{body:{contributor_id:data.id,action:'automatic'}});
    if(invited.error||!invited.data?.ok){
-     document.getElementById('savedContributorNote').textContent+=' No se pudo enviar todavía la activación por correo. Puedes reenviarla desde el expediente.';
-     toast('Contribuyente guardado. No se confirmó el envío del correo; revisa el expediente.');
+     let reason=invited.data?.error||invited.error?.message||'El servidor no confirmó la solicitud.';
+     try{if(invited.error?.context){const response=await invited.error.context.json();reason=response.error||reason;}}catch(_){}
+     document.getElementById('savedContributorNote').textContent+=' Activación por correo NO CONFIRMADA: '+reason+'. Verifica el correo del expediente y usa Reenviar acceso cuando esté vinculado.';
+     toast('Contribuyente guardado; revisa el error de correo en el formulario.');
    }else{
      document.getElementById('savedContributorNote').textContent+=invited.data?.email_requested?' Solicitud de correo de activación aceptada por Supabase; entrega pendiente de confirmación.':' La cuenta ciudadana ya está vinculada; desde el expediente puedes reenviar el acceso.';
      toast(invited.data?.email_requested?'Contribuyente registrado. Supabase aceptó la solicitud de correo.':'Contribuyente registrado. Acceso ciudadano existente.');

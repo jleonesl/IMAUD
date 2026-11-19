@@ -19,7 +19,7 @@ https://supabase.com/dashboard/project/vlgvojndrmvwhfjlpbid/auth/templates
 
 Las plantillas condicionan el contenido con `{{ if .Data.citizen_portal }}` y admiten también cuentas de funcionarios con el diseño institucional genérico.
 
-Las variables de Supabase Auth `{{ .ConfirmationURL }}` y `{{ .Data.citizen_username }}` se sustituyen dinámicamente en cada correo. No transformar `ConfirmationURL` en un enlace fijo, porque contiene el token necesario para activar o recuperar el acceso.
+Las plantillas ahora construyen un enlace directo a `activar-contribuyente.html` con el token de un solo uso `{{ .TokenHash }}`, diferenciando `type=recovery` y `type=invite`. **No sustituir `{{ .TokenHash }}` por valores fijos**: Supabase lo genera para cada correo. La página de activación verifica ese token mediante `verifyOtp` antes de permitir crear una contraseña. La variable `{{ .Data.citizen_username }}` muestra la cédula/RIF.
 
 El sistema establece `citizen_username` a partir de la cédula/RIF registrada. Ese identificador se muestra también en la página de activación. **La contraseña NO se envía por correo:** el contribuyente la crea desde el enlace de un solo uso y luego inicia sesión.
 
@@ -32,3 +32,10 @@ El sistema establece `citizen_username` a partir de la cédula/RIF registrada. E
 5. Crear contraseña y entrar en `https://jleonesl.github.io/IMAUD/contribuyente-v2.html` con la cédula/RIF.
 
 El servicio Edge de reenvío solo afirma que Supabase aceptó la solicitud de envío; no confirma entrega final en la bandeja de entrada.
+
+## Si el correo te envía a la portada de SITMAUD
+
+1. Verificar que la plantilla **Reset password** de Auth use la plantilla de este repositorio (Supabase no la actualiza automáticamente desde GitHub).
+2. Solicitar **un nuevo correo**, porque un enlace antiguo conserva su antigua dirección de retorno y los enlaces son de un solo uso.
+3. Si Supabase devuelve HTTP 429, se alcanzó el límite temporal de envío; el portal debe mostrar ese error y no prometer que llegó un nuevo correo.
+4. Si un enlace antiguo llega a la portada con los parámetros de recuperación, `index.html` lo dirige automáticamente a `activar-contribuyente.html` preservando los tokens.

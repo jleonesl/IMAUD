@@ -29,7 +29,7 @@ Deno.serve(async req=>{
  const {data:matches,error:findError}=await admin.from("contributors")
   .select("id,email,identification_type,identification_number,service_account_type,status")
   .eq("status","active").eq("identification_type",idType)
-  .limit(10);
+  .ilike("identification_number","%"+digits+"%").limit(10);
  if(findError)return respond({error:"No se pudo consultar el acceso"},503);
  const normalized=(v:unknown)=>String(v||"").replace(/[^A-Za-z0-9]/g,"").toUpperCase().replace(/^[VEJ]/,"");
  const candidates=(matches||[]).filter(c=>

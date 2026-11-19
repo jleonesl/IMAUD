@@ -86,3 +86,42 @@ Antes de importar:
 ## 8. Estado a 19/11/2026
 
 El frontend y los servicios principales existen; no hay pagos oficiales, cuentas receptoras publicadas ni obligaciones oficiales generadas. El calendario 2027 figura aprobado y existen sectores tipificados. La actualización BCV usa también fuentes secundarias en el registro histórico; **la cotización de pagos oficiales ahora está restringida a la procedencia directa BCV**, por lo que puede permanecer bloqueada hasta disponer de una tasa oficial reciente.
+
+
+## 9. Protocolo específico solicitado: septiembre a diciembre de 2026
+
+### Objetivo funcional
+
+Las pruebas se hacen con **los mismos formularios y las mismas vistas reales** de SITMAUD, con cuentas de funcionarios y contribuyentes autorizados. Se usan los **meses de septiembre, octubre, noviembre y diciembre de 2026** como una cartera de **obligaciones simuladas de QA**, sin modificar la fecha de inicio oficial del ciclo 2027.
+
+Durante noviembre de 2026, diciembre es un mes futuro y **solo puede generarse como período de ensayo** dentro del entorno QA. No equivale a una obligación municipal exigible. Las cuentas y las operaciones de prueba llevan un marcador interno e inequívoco `QA`; todos los recibos y reportes de QA muestran «PRUEBA — SIN VALIDEZ FISCAL».
+
+### Escenarios obligatorios
+
+| Escenario | Deuda QA inicial | Acción | Saldo QA esperado |
+| --- | --- | --- | --- |
+| A | Sep, Oct, Nov, Dic | Pagar únicamente septiembre | Oct, Nov y Dic pendientes |
+| B | Sep, Oct, Nov, Dic | Pagar septiembre y octubre | Nov y Dic pendientes |
+| C | Sep, Oct, Nov, Dic | Pagar todos los meses | Sin deuda QA pendiente |
+| D | Sep, Oct, Nov, Dic | Reportar pago de dos meses y rechazarlo | Los cuatro meses continúan pendientes |
+| E | Sep, Oct, Nov, Dic | Exonerar octubre con permiso explícito | Solo octubre queda exonerado; otros meses intactos |
+| F | Un condominio matriz | Simular pago consolidado | Única cuenta, asignaciones correctas, una factura QA |
+| G | Pago pendiente | Usuario sin permiso intenta validar | Operación denegada y no contabilizada |
+| H | Contribuyente A y B | A intenta consultar datos o factura de B | Denegado por servidor |
+
+La selección de uno, dos o cuatro meses debe mantener la misma experiencia de usuario y cálculos de UCD que se emplearán desde 2027, pero con **transacciones ficticias segregadas y no fiscales**.
+
+### Limpieza, incluido el expediente Jesús Leones
+
+El expediente ciudadano de Jesús Leones (contrato `CT-2026-000001`) es un dato de ensayo que el propietario solicita **no conservar en la base oficial final**. Su eliminación no debe ejecutarse ahora: primero debe existir respaldo verificable, un procedimiento de baja integral que cubra sesiones y usuario Auth, vínculo con funcionario, inmuebles, archivos de Storage, obligaciones, asignaciones, pagos, facturas, solvencias y registros de auditoría sujetos a retención.
+
+Si el mismo usuario Auth está vinculado a cuenta de funcionario o superusuario, **no eliminar la identidad institucional**: desvincular solo la identidad ciudadana después de confirmar todas las dependencias. No eliminar ningún registro de un tercero accidentalmente.
+
+La limpieza final se acepta únicamente cuando:
+1. La base QA tiene cero contribuyentes, inmuebles, obligaciones, pagos y documentos de ensayo pendientes de conservación, o se retiró por completo el entorno QA preservando evidencia no personal;
+2. La base principal fue conciliada de forma independiente y el expediente de prueba citado se eliminó con autorización y respaldo, sin afectar usuarios de funcionarios;
+3. No quedan cifras de ensayo en indicadores ni facturas oficiales;
+4. El hosting definitivo ya está desplegado y probado;
+5. El sistema arranca con saldo contable oficial correcto y ciclo `2027-01-01`, antes de importar la base anterior.
+
+El hecho de preparar un entorno QA no elimina ni crea por sí mismo datos en producción. **La limpieza nunca ocurre automáticamente al llegar enero.**

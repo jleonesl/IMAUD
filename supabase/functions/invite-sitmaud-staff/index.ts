@@ -61,6 +61,74 @@ Deno.serve(async (request) => {
     if(countError) return response({error:"No se pudo verificar el límite de intendentes."},503,origin);
     if((count ?? 0) >= 5) return response({error:"Se alcanzó el máximo de cinco intendentes activos."},409,origin);
   }
+  // Para enviar credenciales completas, configurar RESEND_API_KEY y
+  // SITMAUD_MAIL_FROM en los secretos de esta Edge Function.
+  // Sin correo institucional configurado se mantiene la invitación segura existente.
+  const mailApiKey = Deno.env.get("RESEND_API_KEY");
+  const mailFrom = Deno.env.get("SITMAUD_MAIL_FROM");
+  if (mailApiKey && mailFrom) {
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#%";
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    const temporaryPassword = [...bytes].map(x => alphabet[x % alphabet.length]).join("");
+    const { data: created, error: createError } = await admin.auth.admin.createUser({
+      email, password: temporaryPassword, email_confirm: true,
+      user_metadata: { full_name: first + " " + last },
+      app_metadata: { staff_pending_activation: true }
+    });
+    if (createError || !created.user) {
+      return response({error: "No se pudo crear la cuenta del funcionario. Comprueba si el correo ya está registrado."}, 409, origin);
+    }
+    const newUserId = created.user.id;
+    const { error: insertError } = await admin.from("staff_profiles").insert({
+      user_id: newUserId, display_name: first + " " + last, role,
+      job_title: title, identification_number: identity,
+      contact_phone: phone || null, is_active: true
+    });
+    if (insertError) {
+      await admin.auth.admin.deleteUser(newUserId);
+      return response({error:"No se pudo registrar el perfil. No se generaron credenciales operativas."},503,origin);
+    }
+    const escapeHTML = (x:string)=>x.replace(/[&<>"']/g,c=>({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c] || c));
+    const messageHTML = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#173348">
+      <h2 style="color:#0c4666">SITMAUD · Acceso institucional</h2>
+      <p>Hola, <strong>${escapeHTML(first)} ${escapeHTML(last)}</strong>.</p>
+      <p>Tu cuenta de funcionario ha sido registrada por la administración de SITMAUD.</p>
+      <p><strong>Usuario:</strong> ${escapeHTML(email)}</p>
+      <p><strong>Clave provisional:</strong> <code style="font-size:16px">${escapeHTML(temporaryPassword)}</code></p>
+      <p>Acceso: <a href="https://jleonesl.github.io/IMAUD/funcionario.html">Portal del Funcionario</a></p>
+      <p>Esta clave permite el ingreso inicial. Por seguridad, recomendamos cambiarla al iniciar sesión.
+      No compartas este correo ni tus credenciales.</p>
+      <p>Los permisos de trabajo son asignados de forma independiente por el superusuario.</p></div>`;
+    let mailSent=false;
+    try {
+      const mailResponse = await fetch("https://api.resend.com/emails",{
+        method:"POST",
+        headers:{"Authorization":"Bearer "+mailApiKey,"Content-Type":"application/json"},
+        body:JSON.stringify({from:mailFrom,to:[email],subject:"SITMAUD · Usuario y clave de acceso provisional",
+          html:messageHTML})
+      });
+      mailSent=mailResponse.ok;
+    }catch(_mailError){mailSent=false;}
+    if(!mailSent){
+      // No conservar una cuenta con clave desconocida si el envío falla.
+      await admin.from("staff_profiles").delete().eq("user_id",newUserId);
+      await admin.auth.admin.deleteUser(newUserId);
+      return response({error:"El correo institucional no pudo entregar las credenciales. La operación se canceló; vuelve a intentarlo cuando se configure el proveedor de correo."},503,origin);
+    }
+    const {error: auditError}=await admin.from("audit_log").insert({
+      actor_user_id:userData.user.id,action:"staff_user_provisioned",
+      entity_table:"staff_profiles",entity_id:newUserId,
+      after_data:{role,job_title:title,permission_count:0,channel:"institutional_email_temporary_password"}
+    });
+    return response({
+      ok:true,user_id:newUserId,role,invited:true,permissions_assigned:0,
+      delivery_mode:"temporary_password_email",
+      audit_recorded:!auditError
+    },201,origin);
+  }
   // El envío de la invitación se realiza en Supabase Auth, nunca desde el navegador.
   const { data: invitation, error: invitationError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: first+" "+last, staff_pending_activation: true },
@@ -88,5 +156,5 @@ Deno.serve(async (request) => {
     // Se mantiene la cuenta sin permisos. El incidente exige atención en los logs.
     return response({ error: "El funcionario fue invitado, pero falló la bitácora; requiere revisión administrativa." }, 503, origin);
   }
-  return response({ ok:true, user_id:invitation.user.id, role, invited:true, permissions_assigned:0 }, 201, origin);
+  return response({ ok:true, user_id:invitation.user.id, role, invited:true, permissions_assigned:0, delivery_mode:"activation_link", mail_configuration_required_for_password:true }, 201, origin);
 });

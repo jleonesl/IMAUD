@@ -17,6 +17,8 @@ const invitationService = read('supabase/functions/invite-sitmaud-citizen/index.
 const receipt = read('citizen-receipts.js');
 const sharedInvoice = read('official-receipt-template.js');
 const officialFinance = read('official-finance.js');
+const citizenDashboard = read('citizen-dashboard.js');
+const citizenDashboardCss = read('citizen-dashboard.css');
 const treasurySql = read('supabase/migrations/20261119050000_treasury_payment_audit_and_evidence.sql');
 const workflow = read('.github/workflows/pages.yml');
 const officialPortal = read('supabase/migrations/20261119030000_citizen_canonical_identity.sql');
@@ -175,4 +177,33 @@ test('treasury renders private proof only through temporary signed URL and does 
  assert.match(officialFinance,/liquidated_month/);
  assert.match(officialFinance,/get_official_operations_report/);
  assert.match(officialFinance,/get_official_territorial_revenue/);
+});
+
+test('contributor portal uses responsive navigable dashboard without stacking every section', () => {
+ const sections=['inicio','obligaciones','cargar-pago','facturas','cuentas','informacion','ayuda'];
+ for(const part of sections){
+   assert.match(account,new RegExp('data-citizen-view-panel="'+part+'"'));
+   assert.match(account,new RegExp('data-citizen-view="'+part+'"'));
+ }
+ assert.match(account,/id="citizenSidebar"/);
+ assert.match(account,/logo-sitmaud-sidebar\.jpg/);
+ assert.match(account,/citizen-dashboard\.css/);
+ assert.match(account,/citizen-dashboard\.js/);
+ assert.match(citizenDashboard,/window\.sitmaudCitizenDashboard=\{init,navigate,updateBanks\}/);
+ assert.match(citizenDashboardCss,/@media\(max-width:790px\)/);
+ assert.ok(workflow.includes('citizen-dashboard.js'));
+ assert.ok(workflow.includes('citizen-dashboard.css'));
+});
+test('new homepage displays only genuine citizen data and never assumes solvent status or fictitious bank details', () => {
+ assert.match(citizenDashboard,/portal\.obligations/);
+ assert.match(citizenDashboard,/portal\.payments/);
+ assert.match(citizenDashboard,/getElementById|const \$=id=>document\.getElementById/);
+ assert.match(citizenDashboard,/Por determinar/);
+ assert.match(citizenDashboard,/No equivale a una solvencia oficial/);
+ assert.match(citizenDashboard,/Aún no hay cuentas bancarias oficiales publicadas/);
+ assert.doesNotMatch(citizenDashboard,/7890|4567|Solvente/);
+ assert.match(account,/Iglesia de San Francisco/);
+ assert.match(account,/get_my_citizen_portal/);
+ assert.match(account,/get_municipal_payment_instructions/);
+ assert.match(account,/sitmaudCitizenPayment\.init/);
 });

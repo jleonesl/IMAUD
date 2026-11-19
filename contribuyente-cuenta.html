@@ -10,7 +10,7 @@
 header b{font-size:21px}header small{display:block;font-size:11px;margin-top:3px;opacity:.8}button,.btn{border:0;border-radius:9px;padding:12px 18px;background:#0b6b97;color:white;font-weight:700;text-decoration:none;cursor:pointer}
 main{max-width:850px;margin:42px auto;padding:0 20px}.card{background:#fff;border:1px solid #e1e9ef;border-radius:14px;padding:28px;box-shadow:0 8px 25px #153b5310}
 h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14px;background:#f0f6fa;border-left:3px solid #1a7e9e;border-radius:6px}
-#sessionStatus{font-size:12px;color:#657b88;margin-bottom:18px}.citizen-summary{display:grid;gap:16px;margin-top:20px}.citizen-summary .info{border:1px solid #dae8ef;border-left:3px solid #1a7e9e;background:#fbfdff}.citizen-item{border-top:1px solid #dfe9ee;padding:11px 0;display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap}.citizen-item b{color:#183d56}.citizen-item small{display:block;color:#6b8596}.citizen-empty{margin:12px 0 0;color:#768f9c}footer{margin-top:22px;color:#738793;font-size:12px}.payment-info{margin-top:20px}.bank-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:15px}.bank-card{border:1px solid #dbe8ef;border-radius:12px;padding:17px;background:#fff}.bank-card h3{font-size:15px;margin:0 0 12px}.bank-row{margin:8px 0}.bank-row small{display:block;color:#72889b;font-size:11px;margin-bottom:3px}.bank-row b{overflow-wrap:anywhere}.copy-bank{background:#e9f4f8;color:#075b7c;padding:6px 9px;border-radius:6px;margin-left:8px;font-size:11px}
+#sessionStatus{font-size:12px;color:#657b88;margin-bottom:18px}.citizen-summary{display:grid;gap:16px;margin-top:20px}.citizen-summary .info{border:1px solid #dae8ef;border-left:3px solid #1a7e9e;background:#fbfdff}.citizen-item{border-top:1px solid #dfe9ee;padding:11px 0;display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap}.citizen-item b{color:#183d56}.citizen-item small{display:block;color:#6b8596}.citizen-empty{margin:12px 0 0;color:#768f9c}footer{margin-top:22px;color:#738793;font-size:12px}.security-label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}#citizenChangePasswordForm{margin-top:16px}#citizenChangePasswordForm input{width:100%;padding:12px;border:1px solid #ccdce5;border-radius:8px;font:inherit}#citizenChangePasswordSubmit{margin-top:16px}#citizenPasswordFeedback{margin-top:12px;font-size:13px}.payment-info{margin-top:20px}.bank-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:15px}.bank-card{border:1px solid #dbe8ef;border-radius:12px;padding:17px;background:#fff}.bank-card h3{font-size:15px;margin:0 0 12px}.bank-row{margin:8px 0}.bank-row small{display:block;color:#72889b;font-size:11px;margin-bottom:3px}.bank-row b{overflow-wrap:anywhere}.copy-bank{background:#e9f4f8;color:#075b7c;padding:6px 9px;border-radius:6px;margin-left:8px;font-size:11px}
 
 #sitCitizenReceiptModal{position:fixed;inset:0;background:rgba(9,29,47,.75);z-index:9999;display:grid;place-items:center;padding:20px;overflow:auto}
 .sit-citizen-receipt-dialog{background:#fff;border-radius:12px;max-height:96vh;overflow:auto;width:min(100%,650px)}
@@ -50,6 +50,7 @@ h1{margin-top:0;font-size:24px}p{line-height:1.7;color:#5d7589}.info{padding:14p
 <div class="info"><b>Mis obligaciones</b><div id="citizenAssessments">Consultando…</div></div>
 <div class="info"><b>Mis pagos</b><div id="citizenPayments">Consultando…</div></div></section>
 </section>
+<section class="card" id="citizenSecurity" hidden style="margin-top:20px"><h2>Seguridad de mi cuenta</h2><p>Si deseas cambiar tu contraseña, puedes hacerlo aquí. No es obligatorio modificarla después de iniciar sesión.</p><button type="button" id="citizenChangePasswordToggle">Cambiar mi contraseña</button><form id="citizenChangePasswordForm" hidden><label for="citizenCurrentPassword" class="security-label">Contraseña actual</label><input id="citizenCurrentPassword" type="password" autocomplete="current-password" required minlength="1"><label for="citizenNewPassword" class="security-label">Nueva contraseña (mínimo 12 caracteres)</label><input id="citizenNewPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><label for="citizenNewPasswordRepeat" class="security-label">Confirmar nueva contraseña</label><input id="citizenNewPasswordRepeat" type="password" autocomplete="new-password" required minlength="12" maxlength="128"><button type="submit" id="citizenChangePasswordSubmit">Guardar nueva contraseña</button><div id="citizenPasswordFeedback" role="status" aria-live="polite"></div></form></section>
 <section class="card payment-info" id="paymentInformation" hidden><h2>Cuentas bancarias oficiales de la Alcaldía</h2><div id="municipalBankList" role="status">Cargando cuentas bancarias…</div></section>
 <footer>Alcaldía del Municipio Miranda · Instituto Municipal de Aseo Urbano y Domiciliario</footer>
 </main>
@@ -78,6 +79,7 @@ const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase
   const payments=Array.isArray(portal.payments)?portal.payments:[];
   document.getElementById('citizenPayments').innerHTML=payments.length?payments.map(p=>'<div class="citizen-item"><div><b>'+escCitizen(p.receipt)+'</b><small>'+escCitizen(p.status==='confirmed'?'Liquidado por Tesorería':p.status==='reversed'?'Reversado':'Pendiente de validación')+'</small></div><div><b>'+bsCitizen(p.amount_bs)+'</b> '+(p.status==='confirmed'&&p.liquidated_at?'<button type="button" class="citizen-receipt-open" data-citizen-receipt="'+escCitizen(p.id)+'">Ver recibo</button>':'')+'</div></div>').join(''):'<p class="citizen-empty">No existen pagos oficiales registrados.</p>';
   document.getElementById('account').hidden=false;
+  document.getElementById('citizenSecurity').hidden=false;
   document.getElementById('paymentInformation').hidden=false;
   const bankHost=document.getElementById('municipalBankList');
   const {data:bankData,error:bankError}=await client.rpc('get_municipal_payment_instructions');
@@ -90,6 +92,36 @@ const client=window.supabase.createClient("https://vlgvojndrmvwhfjlpbid.supabase
 document.addEventListener('click',event=>{
  const btn=event.target.closest('[data-citizen-receipt]');
  if(btn&&window.sitmaudCitizenReceipt)window.sitmaudCitizenReceipt.show(client,btn.dataset.citizenReceipt);
+});
+document.getElementById('citizenChangePasswordToggle').addEventListener('click',()=>{
+ const form=document.getElementById('citizenChangePasswordForm');
+ form.hidden=!form.hidden;
+ if(form.hidden){form.reset();document.getElementById('citizenPasswordFeedback').textContent='';}
+});
+document.getElementById('citizenChangePasswordForm').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const form=event.currentTarget,feedback=document.getElementById('citizenPasswordFeedback');
+ const current=document.getElementById('citizenCurrentPassword').value;
+ const next=document.getElementById('citizenNewPassword').value;
+ const repeat=document.getElementById('citizenNewPasswordRepeat').value;
+ if(next!==repeat){feedback.textContent='Las contraseñas nuevas no coinciden.';return;}
+ if(next.length<12){feedback.textContent='La nueva contraseña debe tener al menos 12 caracteres.';return;}
+ if(next===current){feedback.textContent='La nueva contraseña debe ser diferente de la actual.';return;}
+ const submit=document.getElementById('citizenChangePasswordSubmit');
+ submit.disabled=true;feedback.textContent='Verificando contraseña actual…';
+ try{
+  const {data:sessionResult,error:sessionError}=await client.auth.getUser();
+  if(sessionError||!sessionResult.user?.email)throw new Error('Tu sesión expiró. Vuelve a iniciar sesión.');
+  const originalId=sessionResult.user.id;
+  const {data:verified,error:verifyError}=await client.auth.signInWithPassword({email:sessionResult.user.email,password:current});
+  if(verifyError||verified.user?.id!==originalId)throw new Error('La contraseña actual es incorrecta.');
+  const {error:changeError}=await client.auth.updateUser({password:next});
+  if(changeError)throw new Error(changeError.message||'No se pudo actualizar la contraseña.');
+  form.reset();form.hidden=true;
+  feedback.textContent='';document.getElementById('citizenChangePasswordToggle').textContent='Cambiar mi contraseña';
+  document.getElementById('sessionStatus').textContent='Tu contraseña se actualizó correctamente. Puedes seguir usando el portal.';
+ }catch(err){feedback.textContent=err.message||'No se pudo cambiar la contraseña.';}
+ finally{submit.disabled=false;}
 });
 document.getElementById('exit').addEventListener('click',async()=>{
  sessionStorage.removeItem('sitmaud_citizen_view');

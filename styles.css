@@ -1236,3 +1236,18 @@ body.modal-open{overflow:hidden}
  .cashier-month-count{font-size:11px;padding:8px 9px}
  .official-cashier-modal #udcPaySubmit{width:100%}
 }
+
+/* SITMAUD cashier: bolívares are visible beside the legal UCD basis. */
+.official-cashier-modal .payment-debt-scroll th:last-child,
+.official-cashier-modal .payment-debt-scroll td:last-child{text-align:right;white-space:nowrap}
+.official-cashier-modal .payment-debt-scroll th small{font-size:9px;letter-spacing:0;text-transform:none;display:block;font-weight:500}
+.official-cashier-modal .cashier-bs-cell strong{font-size:13px;color:#153a58;white-space:nowrap;font-variant-numeric:tabular-nums}
+.official-cashier-modal .cashier-reference-summary{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#eef7f8;border:1px solid #d1e5e9;border-radius:11px;padding:13px 17px;margin:14px 0 8px}
+.official-cashier-modal .cashier-reference-summary span{font-size:12px;font-weight:700;color:#456778}
+.official-cashier-modal .cashier-reference-summary strong{font:800 17px Manrope,sans-serif;color:#103d56;white-space:nowrap;font-variant-numeric:tabular-nums}
+.official-cashier-modal .cashier-reference-note{font-size:11px;line-height:1.55;color:#738795;margin:0 0 13px}
+@media(max-width:760px){
+ .official-cashier-modal .cashier-reference-summary{flex-wrap:wrap;padding:11px 13px}
+ .official-cashier-modal .cashier-reference-summary strong{font-size:16px}
+ .official-cashier-modal .payment-debt-scroll table{min-width:710px}
+}

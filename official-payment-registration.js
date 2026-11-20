@@ -134,9 +134,9 @@
       '<td>'+esc(date)+'</td><td>'+esc(p.is_consolidated_master?'Cuenta matriz · '+units+' viviendas':p.address||'Inmueble')+'</td>'+
       '<td>'+esc(ucd(base))+'</td><td class="cashier-bs-cell"><strong>'+esc(bs(x.total_amount))+'</strong></td></tr>';
     }).join('')+'</tbody></table></div>'+
-    '<div class="cashier-reference-summary"><span>Saldo de referencia de las mensualidades</span><strong>'+esc(bs(debts.reduce((sum,item)=>sum+Number(item.total_amount||0),0)))+'</strong></div>'+
+    '<div class="cashier-reference-summary" aria-live="polite"><span id="udcSelectedTotalLabel">Total seleccionado en Bs. (referencia)</span><strong id="udcSelectedTotalBs">Bs. 0,00</strong></div>'+
     '<p class="cashier-reference-note">Montos en bolívares registrados al generar las obligaciones. Son informativos; al seleccionar meses, el total para pagar se calcula con la tasa UCD vigente y validada.</p>';
-   document.getElementById('udcPaymentQuote').innerHTML='<p class="panel-hint">Selecciona los meses para obtener el importe vigente desde el servidor.</p>';
+   document.getElementById('udcPaymentQuote').innerHTML='<p class="panel-hint">Al marcar los meses verás su saldo en Bs. como referencia. El monto definitivo del cobro se verificará con la tasa oficial vigente.</p>';
    document.getElementById('udcPaySubmit').disabled=true;
    tell('Comprueba los meses seleccionados antes de registrar la operación.');
  }
@@ -148,6 +148,15 @@
    if(!button||!host)return;
    button.disabled=true;
    document.getElementById('udcPaySelectedCount').textContent=selected.length+' '+(selected.length===1?'mes':'meses');
+   const selectedSet=new Set(selected);
+   const selectedReferenceBs=debts.reduce((sum,item)=>selectedSet.has(item.id)?sum+Number(item.total_amount||0):sum,0);
+   const refTotal=document.getElementById('udcSelectedTotalBs');
+   if(refTotal)refTotal.textContent=bs(selectedReferenceBs);
+   const refLabel=document.getElementById('udcSelectedTotalLabel');
+   if(refLabel)refLabel.textContent=selected.length
+      ?'Total seleccionado en Bs. (referencia)'
+      :'Selecciona meses para ver su equivalente en Bs.';
+
    const notice=document.getElementById('udcRateNotice');if(notice){notice.hidden=true;notice.innerHTML='';}
    if(!selected.length){host.textContent='Selecciona uno o varios meses para calcular el pago.';return;}
    host.textContent='Consultando tasa y obligaciones oficiales…';

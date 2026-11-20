@@ -1168,3 +1168,71 @@ body.modal-open{overflow:hidden}
  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
  .grid,.module-grid{min-width:0}
 }
+
+/* SITMAUD — formulario real de Registro de pago · identidad institucional 2027 */
+.official-cashier-backdrop{background:rgba(12,36,56,.64);backdrop-filter:blur(3px)}
+.official-cashier-modal{width:min(1060px,calc(100vw - 44px));max-height:calc(100dvh - 50px);padding:0 30px 26px!important;border:1px solid #deeaee;border-radius:20px;box-shadow:0 24px 76px rgba(9,35,57,.29);scrollbar-gutter:stable}
+.official-cashier-modal .cashier-header{display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:3;background:#fff;padding:21px 0 17px;border-bottom:1px solid #e1e9ee;margin:0 0 20px}
+.cashier-title-wrap{display:flex;align-items:center;gap:14px;min-width:0}
+.cashier-title-icon{width:46px;height:46px;display:grid;place-items:center;border-radius:13px;background:linear-gradient(145deg,#0b5b76,#073b5a);color:white;font-size:25px;flex-shrink:0}
+.cashier-eyebrow{font-size:9px;letter-spacing:1.45px;font-weight:800;color:#1596a2}
+.official-cashier-modal .cashier-header h3{font:800 24px/1.2 Manrope,'DM Sans',sans-serif;color:#102f4c;margin:3px 0 4px}
+.cashier-header p{font-size:11px;color:#6b8191;margin:0;line-height:1.4}
+.cashier-close{display:grid;place-items:center;width:40px;height:40px;border:1px solid #dce6ec;border-radius:11px;background:#f7fafc;color:#28536c;font-size:20px;cursor:pointer;flex-shrink:0}
+.cashier-close:hover{background:#eaf4f7}
+.official-cashier-modal #udcCashierMessage{font-size:11px;background:#eef6f8;color:#567b8e;border-radius:10px;padding:10px 14px;margin-bottom:18px}
+.official-cashier-modal .cashier-search{display:block;margin:0 0 18px}
+.cashier-search>label{font-size:12px;font-weight:800;color:#3b5870;display:block;margin:0 0 9px}
+.cashier-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:stretch}
+.cashier-search-input{position:relative;display:flex;align-items:center;min-width:0;border:1px solid #cfdee6;border-radius:12px;background:#fff;box-shadow:0 3px 12px rgba(32,66,89,.045)}
+.cashier-search-input:focus-within{border-color:#158aa4;box-shadow:0 0 0 3px rgba(23,151,168,.09)}
+.cashier-search-input>span{flex:0 0 42px;text-align:center;font-size:25px;color:#27536e}
+.cashier-search-input input{flex:1;min-width:0;width:100%;height:52px;padding:8px 10px 8px 0!important;border:0!important;outline:none!important;background:transparent!important;box-shadow:none!important;font-size:15px}
+.cashier-search-row>.btn{min-height:52px;padding:12px 22px;border-radius:11px;font-size:12px;white-space:nowrap;background:linear-gradient(115deg,#087e8f,#0e3f60);box-shadow:0 4px 14px rgba(16,77,101,.13)}
+.cashier-contributor-card{display:flex;align-items:center;gap:15px;flex-wrap:wrap;padding:19px 22px;border:1px solid #bcdfe4;border-radius:15px;background:linear-gradient(110deg,#f0fafb,#f3f8fa);margin:0 0 20px}
+.cashier-person-icon{display:grid;place-items:center;width:58px;height:58px;flex-shrink:0;border-radius:13px;background:#dceff0;color:#0f7285;font-size:31px}
+.cashier-person-details{display:flex;flex-direction:column;gap:6px;flex:1 1 220px;min-width:0}
+.cashier-person-details strong{font:800 19px/1.2 Manrope,sans-serif;color:#0e3553;overflow-wrap:anywhere}
+.cashier-person-details span{font-size:12px;color:#456478}
+.cashier-debt-count{border-radius:999px;background:#d6edef;color:#0c6878;padding:10px 14px;font-size:12px;font-weight:800;white-space:normal}
+.official-cashier-modal #udcRateNotice:not([hidden]){display:block;margin:0 0 20px}
+.cashier-rate-alert{display:flex;align-items:center;gap:18px;border:1px solid #e4b467;background:linear-gradient(110deg,#fffaef,#fffdf9);border-radius:14px;padding:18px 22px}
+.cashier-alert-icon{width:64px;height:64px;border-radius:13px;background:#fff1d9;display:grid;place-items:center;color:#ad731c;font-size:30px;flex-shrink:0}
+.cashier-rate-alert strong{display:block;font:800 17px/1.4 Manrope,sans-serif;color:#153a58}
+.cashier-rate-alert p{margin:5px 0 0;color:#476276;line-height:1.55;font-size:12px}
+.cashier-month-title{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #dce7ed;margin:14px 0 13px;padding:0 0 12px}
+.cashier-month-heading{display:flex;align-items:center;gap:11px;min-width:0}
+.cashier-calendar-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:11px;background:#e5f3f5;color:#087c8d;font-size:24px;flex-shrink:0}
+.cashier-month-title b{font:800 16px/1.4 Manrope,sans-serif;color:#163a58}
+.cashier-month-count{font-size:12px;font-weight:800;color:#0d6d7a;background:#e5f4f5;border-radius:100px;padding:9px 13px;white-space:nowrap}
+.official-cashier-modal .payment-debt-scroll{max-width:100%;overflow-x:auto;scrollbar-color:#adc0cb transparent}
+.official-cashier-modal .payment-debt-scroll table{width:100%;min-width:600px;border-collapse:collapse}
+.official-cashier-modal .payment-debt-scroll th{background:#f1f6f8;color:#517084;text-transform:uppercase;letter-spacing:.5px;font-size:10px}
+.official-cashier-modal .payment-debt-scroll td{font-size:12px;color:#476275}
+.official-cashier-modal .payment-debt-scroll th,.official-cashier-modal .payment-debt-scroll td{padding:14px 12px}
+.official-cashier-modal .udc-month{width:18px;height:18px;accent-color:#178da5;cursor:pointer}
+.official-cashier-modal #udcPaymentQuote{margin:10px 0 18px}
+.official-cashier-modal #udcPaymentRegister>.form-grid{margin-top:8px}
+.official-cashier-modal #udcPaySubmit{min-height:44px;border-radius:10px}
+@media(max-width:760px){
+ .official-cashier-modal{width:100%!important;max-height:100dvh!important;border:0;border-radius:0!important;padding:0 15px max(26px,env(safe-area-inset-bottom))!important;scrollbar-gutter:auto}
+ .official-cashier-modal .cashier-header{padding:17px 0 14px;margin-bottom:16px}
+ .cashier-title-icon{width:42px;height:42px}
+ .official-cashier-modal .cashier-header h3{font-size:20px}
+ .cashier-header p{font-size:10px}
+ .cashier-search-row{grid-template-columns:1fr;gap:10px}
+ .cashier-search-row>.btn{width:100%;min-height:46px}
+ .cashier-contributor-card{padding:14px;gap:11px}
+ .cashier-person-icon{width:43px;height:43px;font-size:24px}
+ .cashier-person-details{flex:1 1 calc(100% - 60px)}
+ .cashier-person-details strong{font-size:16px}
+ .cashier-debt-count{width:100%;text-align:center}
+ .cashier-rate-alert{padding:14px;gap:12px;align-items:flex-start}
+ .cashier-alert-icon{width:45px;height:45px;font-size:23px}
+ .cashier-rate-alert strong{font-size:14px}
+ .cashier-rate-alert p{font-size:11px}
+ .cashier-month-title b{font-size:13px}
+ .cashier-calendar-icon{width:35px;height:35px;font-size:20px}
+ .cashier-month-count{font-size:11px;padding:8px 9px}
+ .official-cashier-modal #udcPaySubmit{width:100%}
+}

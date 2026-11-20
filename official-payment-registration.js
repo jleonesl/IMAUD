@@ -156,7 +156,7 @@
        host.innerHTML='<section class="notice" role="alert" style="padding:14px;border:1px solid #e7d9ad;border-radius:10px;background:#fffaf0">'+
        '<b>Tasa UCD pendiente de verificación oficial</b>'+
        '<p>Las mensualidades seleccionadas sí existen. El registro de pago está temporalmente bloqueado porque no se dispone de una tasa del euro verificable directamente desde el BCV para la fecha vigente.</p>'+
-       '<p>El superusuario debe verificar y registrar una tasa con respaldo oficial en Ordenanza y tarifas. No es necesario volver a generar las deudas ni modificar el expediente.</p>'+
+       '<p>La administración debe incorporar una tasa con respaldo verificable del BCV antes de habilitar el cobro. No es necesario volver a generar las deudas ni modificar el expediente.</p>'+
        '</section>';
      }else host.textContent='No se pudo cotizar: '+r.error.message;
      return;

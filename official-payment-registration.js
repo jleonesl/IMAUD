@@ -124,7 +124,7 @@
    const names=new Map(result.properties.map(p=>[p.id,p]));
    form.reset();form.hidden=false;adjustProofRequirement();
    months.innerHTML='<div class="cashier-month-title"><div class="cashier-month-heading"><span class="cashier-calendar-icon" aria-hidden="true">▦</span><b>Selecciona los meses a cobrar</b></div><span class="cashier-month-count" id="udcPaySelectedCount">0 meses</span></div>'+
-    '<div class="payment-debt-scroll"><table><thead><tr><th>Selección</th><th>Mes</th><th>Cuenta o inmueble</th><th>Base UCD</th></tr></thead><tbody>'+
+    '<div class="payment-debt-scroll"><table><thead><tr><th>Selección</th><th>Mes</th><th>Cuenta o inmueble</th><th>Base UCD</th><th>Monto en Bs. <small>(referencia)</small></th></tr></thead><tbody>'+
     debts.map(x=>{
       const p=names.get(x.property_id)||{};
       const units=Number(x.consolidated_unit_count_snapshot||1);
@@ -132,8 +132,10 @@
       const date=new Date(x.period_start+'T12:00:00Z').toLocaleDateString('es-VE',{month:'long',year:'numeric',timeZone:'UTC'});
       return '<tr><td><input type="checkbox" class="udc-month" value="'+esc(x.id)+'"></td>'+
       '<td>'+esc(date)+'</td><td>'+esc(p.is_consolidated_master?'Cuenta matriz · '+units+' viviendas':p.address||'Inmueble')+'</td>'+
-      '<td>'+esc(ucd(base))+'</td></tr>';
-    }).join('')+'</tbody></table></div>';
+      '<td>'+esc(ucd(base))+'</td><td class="cashier-bs-cell"><strong>'+esc(bs(x.total_amount))+'</strong></td></tr>';
+    }).join('')+'</tbody></table></div>'+
+    '<div class="cashier-reference-summary"><span>Saldo de referencia de las mensualidades</span><strong>'+esc(bs(debts.reduce((sum,item)=>sum+Number(item.total_amount||0),0)))+'</strong></div>'+
+    '<p class="cashier-reference-note">Montos en bolívares registrados al generar las obligaciones. Son informativos; al seleccionar meses, el total para pagar se calcula con la tasa UCD vigente y validada.</p>';
    document.getElementById('udcPaymentQuote').innerHTML='<p class="panel-hint">Selecciona los meses para obtener el importe vigente desde el servidor.</p>';
    document.getElementById('udcPaySubmit').disabled=true;
    tell('Comprueba los meses seleccionados antes de registrar la operación.');
@@ -145,7 +147,7 @@
    const host=document.getElementById('udcPaymentQuote');
    if(!button||!host)return;
    button.disabled=true;
-   document.getElementById('udcPaySelectedCount').textContent=selected.length+' meses';
+   document.getElementById('udcPaySelectedCount').textContent=selected.length+' '+(selected.length===1?'mes':'meses');
    const notice=document.getElementById('udcRateNotice');if(notice){notice.hidden=true;notice.innerHTML='';}
    if(!selected.length){host.textContent='Selecciona uno o varios meses para calcular el pago.';return;}
    host.textContent='Consultando tasa y obligaciones oficiales…';

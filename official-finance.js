@@ -490,6 +490,9 @@
       if(tariff.error)throw tariff.error;
       const enabled=(tariff.data||[]).some(x=>x.is_approved===true);
       const permitted=canManage.data===true&&canGenerate.data===true&&!canManage.error&&!canGenerate.error;
+      // Solo el funcionario autorizado puede ver la acción administrativa
+      // de generación general: el recaudador solo consulta y cobra deudas.
+      if(!permitted){panel.hidden=true;return;}
       panel.hidden=false;
       summary.textContent=enabled
         ?'El tabulador de pruebas está habilitado. Puedes generar todas las mensualidades pendientes con un solo clic.'
@@ -503,9 +506,10 @@
        ?'La autorización se realizará expresamente desde tu sesión y quedará en bitácora. Generará obligaciones de prueba de 2026 para todos los inmuebles elegibles; no representa pago ni recaudación.'
        :'Tu usuario no tiene ambos permisos necesarios: Administrar tarifas y Generar liquidaciones. El intendente debe habilitar el tabulador desde su cuenta.';
     }catch(err){
-      panel.hidden=false;
-      summary.textContent='No se pudo consultar la habilitación: '+(err.message||String(err));
-      if(button)button.hidden=true;
+      // No exponer controles operativos de generación cuando no se
+      // pudieron verificar permisos y tabuladores.
+      panel.hidden=true;
+      console.warn('No se pudo consultar el tabulador de prueba:',err);
     }
   }
   async function generateAllTrialDebts(){

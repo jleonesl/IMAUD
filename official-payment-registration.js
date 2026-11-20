@@ -47,6 +47,7 @@
    if(!layer){window.alert('Abre la sección Recaudación y pagos antes de registrar.');return;}
    lastFocus=document.activeElement;
    layer.hidden=false;document.body.classList.add('modal-open');
+   const panel=layer.querySelector('.official-cashier-modal');if(panel)panel.scrollTop=0;
    const input=layer.querySelector('#udcPaymentLookup [name="identity"]');
    if(input){input.value=identity||'';input.focus();}
    if(identity){

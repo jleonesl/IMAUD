@@ -81,3 +81,18 @@ test('payment operators get read-only access; role checks match exact permission
  assert.match(fix,/p\.permission_code=\$1/);
  assert.doesNotMatch(fix,/^\s*and p\.permission_code=permission_code/m);
 });
+
+test('actual payment modal uses redesigned institutional structure, not the old layout',()=>{
+ assert.match(cashier,/class="cashier-header"/);
+ assert.match(cashier,/class="cashier-search-row"/);
+ assert.match(cashier,/class="cashier-contributor-card"/);
+ assert.match(cashier,/class="cashier-month-title"/);
+ assert.match(cashier,/id="udcRateNotice"/);
+ assert.match(cashier,/panel\.scrollTop=0/);
+ assert.match(styles,/\.official-cashier-modal \.cashier-header/);
+ assert.match(styles,/\.cashier-rate-alert/);
+ assert.match(styles,/\.cashier-search-row/);
+ const html=readFileSync('index.html','utf8');
+ assert.match(html,/official-payment-registration\.js\?v=20261120-cashier-redesign5/);
+ assert.match(html,/styles\.css\?v=20261120-cashier-redesign5/);
+});

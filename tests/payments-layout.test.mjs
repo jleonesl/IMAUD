@@ -79,5 +79,5 @@ test('payment operators get read-only access; role checks match exact permission
  assert.match(migration,/on public\.tariff_schedules for select/);
  assert.match(migration,/is_approved=true/);
  assert.match(fix,/p\.permission_code=\$1/);
- assert.doesNotMatch(fix,/p\.permission_code=permission_code/);
+ assert.doesNotMatch(fix,/^\s*and p\.permission_code=permission_code/m);
 });

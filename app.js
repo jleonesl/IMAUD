@@ -1298,6 +1298,23 @@ function sitmaudUpdateMenu(){
  });
  // Only show the dashboard as a landing page when its permission exists.
 }
+function sitmaudCloseMobileMenu(){
+ const nav=document.getElementById('sidebar'),backdrop=document.getElementById('mobileNavBackdrop'),trigger=document.getElementById('menuToggle');
+ nav?.classList.remove('open');
+ if(backdrop)backdrop.hidden=true;
+ if(trigger){trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-label','Abrir menú');}
+ document.body.classList.remove('sitmaud-mobile-menu-open');
+}
+function sitmaudToggleMobileMenu(){
+ const nav=document.getElementById('sidebar'),backdrop=document.getElementById('mobileNavBackdrop'),trigger=document.getElementById('menuToggle');
+ const opened=nav?.classList.toggle('open')===true;
+ if(backdrop)backdrop.hidden=!opened;
+ if(trigger){trigger.setAttribute('aria-expanded',String(opened));trigger.setAttribute('aria-label',opened?'Cerrar menú':'Abrir menú');}
+ document.body.classList.toggle('sitmaud-mobile-menu-open',opened);
+}
+document.addEventListener('click',e=>{if(e.target.id==='mobileNavBackdrop')sitmaudCloseMobileMenu();});
+window.addEventListener('resize',()=>{if(window.innerWidth>760)sitmaudCloseMobileMenu();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')sitmaudCloseMobileMenu();});
 function sitmaudApplyActionPermissions(){
  const a=window.sitmaudAccess;
  if(!a)return;
@@ -1323,10 +1340,10 @@ function render(){
  if(state.view==='__no_access'){
    $('#crumb').textContent='Acceso restringido';
    $('#content').innerHTML='<section class="card panel"><h2>Sin módulos asignados</h2><p>El superusuario debe asignar los permisos de trabajo a tu cuenta.</p></section>';
-   $('#sidebar').classList.remove('open');
+   sitmaudCloseMobileMenu();
    return;
  }
- const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:()=>window.sitmaudOfficialFinance.view('pagos'),facturacion:()=>window.sitmaudOfficialFinance.view('facturacion'),solvencias:solvencyModule,reportes:()=>window.sitmaudOfficialFinance.view('reportes'),puntos_venta:()=>window.sitmaudPosTerminals.view(),mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();sitmaudApplyActionPermissions();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));$('#sidebar').classList.remove('open');if(v==='inicio'){loadDashboardMetrics();window.sitmaudOfficialFinance.loadOverview();}if(v==='solvencias'){loadSolvencyRecords();window.sitmaudSolvencyDocuments?.load();}if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(['pagos','facturacion','reportes'].includes(v))window.sitmaudOfficialFinance.mount(v);if(v==='puntos_venta')window.sitmaudPosTerminals.mount();if(v==='condominio_registro')loadOfficialCondoCatalogs();if(v==='bitacora'){auditFilterReady=false;auditPageOffset=0;loadAuditRecords();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog();loadResidentialEngineReadiness();loadResidentialEngineProperties()}if(v==='funcionarios'){loadStaffPermissionMatrix();window.sitmaudBankAdmin.load();}}
+ const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:()=>window.sitmaudOfficialFinance.view('pagos'),facturacion:()=>window.sitmaudOfficialFinance.view('facturacion'),solvencias:solvencyModule,reportes:()=>window.sitmaudOfficialFinance.view('reportes'),puntos_venta:()=>window.sitmaudPosTerminals.view(),mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();sitmaudApplyActionPermissions();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));sitmaudCloseMobileMenu();if(v==='inicio'){loadDashboardMetrics();window.sitmaudOfficialFinance.loadOverview();}if(v==='solvencias'){loadSolvencyRecords();window.sitmaudSolvencyDocuments?.load();}if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(['pagos','facturacion','reportes'].includes(v))window.sitmaudOfficialFinance.mount(v);if(v==='puntos_venta')window.sitmaudPosTerminals.mount();if(v==='condominio_registro')loadOfficialCondoCatalogs();if(v==='bitacora'){auditFilterReady=false;auditPageOffset=0;loadAuditRecords();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog();loadResidentialEngineReadiness();loadResidentialEngineProperties()}if(v==='funcionarios'){loadStaffPermissionMatrix();window.sitmaudBankAdmin.load();}}
 function go(v){if(!sitmaudAllowed(v)){toast('No tienes permiso para abrir ese módulo.');return;}state.view=v;render();window.scrollTo(0,0);recordStaffAudit('module_opened',v);}
 function recordStaffAudit(action,module,reference=null){
  if(!window.imaudCurrentProfile)return;
@@ -1372,7 +1389,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('submit',e=>{if(e.target.id==='officialCondoForm'){e.preventDefault();saveOfficialCondo(e.target)}if(e.target.id==='demoReportForm'){e.preventDefault();runDemoReport(e.target)}});
 document.addEventListener('click',e=>{const detail=e.target.closest('[data-solvency-detail]');if(detail){showSolvencyDetail(detail.dataset.solvencyDetail);return}});
 document.addEventListener('click',e=>{const toggle=e.target.closest('#paymentBankToggle');if(toggle){const input=document.getElementById('paymentBankSearch'),list=document.getElementById('paymentBankResults');if(!input||!list)return;if(!list.hidden){list.hidden=true;input.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false')}else{input.value='';filterPaymentBanks();toggle.setAttribute('aria-expanded','true');input.focus()}return}const input=e.target.closest('#paymentBankSearch');if(input){filterPaymentBanks();return}const bank=e.target.closest('[data-bank-code]');if(bank){choosePaymentBank(bank.dataset.bankCode);return}const list=document.getElementById('paymentBankResults');if(list&&!e.target.closest('.payment-bank-combobox')){list.hidden=true;document.getElementById('paymentBankSearch')?.setAttribute('aria-expanded','false');document.getElementById('paymentBankToggle')?.setAttribute('aria-expanded','false')}});
-document.addEventListener('click',e=>{const person=e.target.closest('[data-payment-person]');if(person){const found=state.paymentDebtors.find(p=>p.id===person.dataset.paymentPerson);if(found)openPaymentModal(found);return}const page=e.target.closest('[data-payment-page]');if(page){state.paymentPage=Number(page.dataset.paymentPage);const host=document.getElementById('paymentDebtorsTable');if(host)host.innerHTML=paymentDebtorTable();return}if(e.target.closest('#menuToggle'))$('#sidebar').classList.toggle('open')});
+document.addEventListener('click',e=>{const person=e.target.closest('[data-payment-person]');if(person){const found=state.paymentDebtors.find(p=>p.id===person.dataset.paymentPerson);if(found)openPaymentModal(found);return}const page=e.target.closest('[data-payment-page]');if(page){state.paymentPage=Number(page.dataset.paymentPage);const host=document.getElementById('paymentDebtorsTable');if(host)host.innerHTML=paymentDebtorTable();return}if(e.target.closest('#menuToggle'))sitmaudToggleMobileMenu()});
 function exportCSV(){const rows=[['Referencia','Contribuyente','Periodo','Importe demo','Fecha'],...state.payments.map(p=>[p.ref,p.person,p.period,p.amount,p.date])];const csv=rows.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.download='imaud-reporte-demostracion.csv';a.click();URL.revokeObjectURL(a.href);toast('CSV demostrativo descargado')}
 document.addEventListener('click',e=>{const action=e.target.closest('[data-contributor-action]');if(!action)return;if(action.dataset.contributorAction==='close')closeContributorAction();else openContributorAction(action.dataset.contributorId,action.dataset.contributorAction)});
 document.addEventListener('submit',e=>{if(e.target.id==='contributorActionForm'){e.preventDefault();saveContributorAction(e.target)}});
@@ -1395,7 +1412,7 @@ document.addEventListener('change',e=>{
  if(['propertyParishFilter','propertySectorFilter','propertyStatusFilter'].includes(e.target.id)){state.propertyPage=1;renderPropertiesTable()}
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('contributorModal'))closeContributorModal();if(e.key==='Escape'&&document.getElementById('propertyRegistrationModal'))closePropertyRegistrationModal();if(e.key==='Escape'&&document.getElementById('propertyEditModal')){document.getElementById('propertyEditModal')?.remove();document.body.classList.remove('modal-open')}if(e.key==='Escape')document.getElementById('propertyDetailModal')?.remove();if(e.key==='Enter'&&e.target.id==='propertyContributorId'){e.preventDefault();findPropertyContributor()}});
-const originalRender=render;render=function(){if(state.view==='pago-form'&&sitmaudAllowed('pagos')){ $('#crumb').textContent='Registrar pago';$('#content').innerHTML=paymentForm();$('#sidebar').classList.remove('open');return}originalRender()};
+const originalRender=render;render=function(){if(state.view==='pago-form'&&sitmaudAllowed('pagos')){ $('#crumb').textContent='Registrar pago';$('#content').innerHTML=paymentForm();sitmaudCloseMobileMenu();return}originalRender()};
 // Register authentication handling before the first render to avoid a blank Inicio
 // if the session resolves while the application bundle is initializing.
 window.addEventListener('imaud:authenticated',()=>{

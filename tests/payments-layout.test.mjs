@@ -60,3 +60,24 @@ test('treasury actions remain per pending payment with permission gate',()=>{
  assert.match(fin,/id="officialPaymentRows"/);
  assert.match(styles,/#officialDebtsView\[hidden\],#officialPaymentsView\[hidden\]/);
 });
+
+test('cashier sees authorized September-November 2026 debts and matches V-prefixed cedula',()=>{
+ assert.match(cashier,/\.gte\('period_start','2026-09-01'\)/);
+ assert.doesNotMatch(cashier,/\.gte\('period_start','2027-01-01'\)/);
+ assert.match(cashier,/identities\.map\(value=>\['identification_number',value\]\)/);
+ assert.match(cashier,/raw\[0\]\+'-'\+bare/);
+});
+test('general billing action is hidden from officials without billing authorization',()=>{
+ assert.match(fin,/const permitted=canManage\.data===true&&canGenerate\.data===true/);
+ assert.match(fin,/if\(!permitted\)\{panel\.hidden=true;return;\}/);
+});
+test('payment operators get read-only access; role checks match exact permission codes',()=>{
+ const migration=readFileSync('supabase/migrations/20261120100000_cashier_read_official_assessments.sql','utf8');
+ const fix=readFileSync('supabase/migrations/20261120101500_fix_permission_exact_match.sql','utf8');
+ assert.match(migration,/on public\.assessments for select/);
+ assert.match(migration,/public\.has_permission\('payments\.read'\)/);
+ assert.match(migration,/on public\.tariff_schedules for select/);
+ assert.match(migration,/is_approved=true/);
+ assert.match(fix,/p\.permission_code=\$1/);
+ assert.doesNotMatch(fix,/p\.permission_code=permission_code/);
+});

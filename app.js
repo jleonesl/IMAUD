@@ -89,6 +89,9 @@ function contributorActionModal(person,mode='view'){
  '</div><div class="contributor-action-summary"><span>Tipo de contribuyente: <b>'+escapeHTML(contributorType(person.kind))+'</b></span><span>Modalidad: <b>'+(person.service_account_type==='condominio'?'Condominio · Pago único consolidado':'Individual')+'</b></span><span>'+(person.service_account_type==='condominio'?'Viviendas registradas':'Inmuebles')+': <b>'+(person.service_account_type==='condominio'?(condoUnits?condoUnits+' viviendas':'Ficha matriz pendiente'):(person.properties||[]).length)+'</b></span><span>Estado administrativo: <b>'+(person.status==='inactive'?'Inactivo':'Activo')+'</b></span><span>Cuenta: <b>'+(summary.debtStatus==='pending'?'Con deuda':summary.debtStatus==='paid'?'Al día':'Sin liquidaciones')+'</b></span></div><div class="form-actions"><button type="button" class="btn btn-light" data-contributor-action="close">Cerrar</button>'+(view?'<button type="button" class="btn btn-primary" data-contributor-action="edit" data-contributor-id="'+person.id+'">Editar</button>':'<button type="submit" class="btn btn-primary">Guardar cambios</button>')+'</div></form></section></div>';
 }
 function openContributorAction(id,mode){
+ if((mode==='edit'||mode==='more')&&!sitmaudCan('contributors.update')){
+  toast('No tienes permiso para editar contribuyentes.');return;
+ }
  const person=state.people.find(p=>p.id===id);if(!person)return;
  document.getElementById('contributorActionModal')?.remove();
  if(mode==='more'){
@@ -102,6 +105,7 @@ function openContributorAction(id,mode){
 }
 function closeContributorAction(){document.getElementById('contributorActionModal')?.remove();document.body.classList.remove('modal-open')}
 async function saveContributorAction(form){
+ if(!sitmaudCan('contributors.update')){toast('Sin permiso para editar.');return;}
  const id=form.dataset.personId,person=state.people.find(x=>x.id===id);if(!person)return;
  const f=new FormData(form);const payload={first_name:String(f.get('first_name')||'').trim()||null,last_name:String(f.get('last_name')||'').trim()||null,legal_name:String(f.get('legal_name')||'').trim()||null,identification_type:String(f.get('identification_type')||'').trim(),identification_number:String(f.get('identification_number')||'').trim(),email:String(f.get('email')||'').trim()||null,phone:String(f.get('phone')||'').trim()||null,contact_address:String(f.get('contact_address')||'').trim()||null};
  if(!payload.identification_number||!(person.kind==='juridico'?payload.legal_name:payload.first_name)){toast('Completa la identificación y el nombre del contribuyente.');return;}
@@ -148,6 +152,7 @@ function contributorModal(){
  return '<div class="contributor-modal-backdrop" id="contributorModal"><section class="contributor-modal" role="dialog" aria-modal="true" aria-labelledby="contributorModalTitle"><header class="contributor-modal-head"><div class="modal-heading-icon">＋</div><div><h2 id="contributorModalTitle">Nuevo contribuyente</h2><p>Registra al contribuyente y luego agrega el inmueble asociado.</p></div><button type="button" class="modal-close" data-action="close-contributor-modal" aria-label="Cerrar">×</button></header><div class="registration-steps"><div class="registration-step active" id="stepContributor"><b>1</b><span><strong>Registrar contribuyente</strong><small>Completa sus datos</small></span></div><div class="registration-step" id="stepProperty"><b>2</b><span><strong>Registrar inmueble</strong><small>Contrato del contribuyente y dirección</small></span></div></div><div class="registration-columns"><section class="registration-panel"><h3>♙ Registrar contribuyente</h3><p class="panel-hint">Información de la persona u organización responsable.</p><form id="personForm"><div class="form-grid"><div class="field"><label>Tipo de contribuyente *</label><select name="kind" required><option value="natural_venezolano">Persona natural</option><option value="natural_extranjero">Persona extranjera</option><option value="juridico">Persona jurídica</option></select></div><div class="field" id="contributorServiceKindField" hidden><label>Modalidad de registro jurídico *</label><select name="service_account_type" id="contributorServiceAccountType"><option value="individual">Empresa / Organización independiente</option><option value="condominio">Condominio · Pago único consolidado</option></select><small>El condominio tendrá una ficha matriz con la cantidad de viviendas, no una casa individual.</small></div><div class="field"><label>Tipo de identificación *</label><select name="identification_type" required><option value="V">V</option><option value="E">E</option><option value="J">J</option><option value="G">G</option><option value="P">P</option></select></div><div class="field"><label>Cédula / RIF *</label><input name="identification_number" required placeholder="Número de identificación"></div><div class="field"><label>Nombre y apellido / Razón social *</label><input name="name" required placeholder="Nombre completo o razón social"></div><div class="field"><label>Correo electrónico *</label><input type="email" name="email" required placeholder="correo@ejemplo.com" autocomplete="email"></div><div class="field"><label>Teléfono</label><input name="phone" placeholder="+58"></div><div class="field full"><label>Dirección de contacto</label><textarea name="contact_address" rows="2" placeholder="Dirección de residencia o domicilio fiscal"></textarea></div><div class="field"><label>Parroquia</label><select name="contact_parish_name" id="contactParishSelect"><option value="">Seleccione parroquia</option></select></div><div class="field"><label>Sector</label><select name="contact_sector_name" id="contactSectorSelect" disabled><option value="">Seleccione primero la parroquia</option></select></div><div class="field"><label>¿Es propietario?</label><select name="is_property_owner"><option value="true">Sí</option><option value="false">No</option></select></div></div><div class="form-actions"><button class="btn btn-primary" id="saveContributorButton">Guardar contribuyente</button></div></form><div class="saved-contributor-note" id="savedContributorNote" hidden></div></section><section class="registration-panel property-panel" id="propertyPanel"><div class="property-lock" id="propertyLock"><span>2</span><b>Primero guarda los datos del contribuyente para habilitar este formulario.</b></div><div id="propertyFormWrap" hidden><h3>⌂ Registrar inmueble</h3><p class="panel-hint">El inmueble quedará vinculado al contrato único del contribuyente.</p><div class="contract-preview" id="contractPreview"><small>N.º de contrato del contribuyente</small><strong>Se asignará al guardar el contribuyente</strong></div><div class="linked-contributor" id="linkedContributor"></div><form id="propertyForm"><div class="form-grid"><div class="field full"><label>Dirección del inmueble *</label><textarea name="address" rows="2" required placeholder="Avenida, calle, número, urbanización"></textarea></div><div class="field"><label>Parroquia</label><select name="parish_id" id="propertyParishSelect"><option value="">Seleccione parroquia</option></select></div><div class="field"><label>Sector</label><select name="sector_id" id="propertySectorSelect" disabled><option value="">Seleccione primero la parroquia</option></select></div><div class="field"><label>Tipo de inmueble *</label><select name="property_type" required><option value="casa">Casa</option><option value="apartamento">Apartamento</option><option value="edificio">Edificio</option><option value="terreno">Terreno</option><option value="unidad_residencial">Unidad residencial</option></select></div><div class="field"><label>Uso *</label><select name="property_use" required><option value="residencial" selected>Residencial</option></select></div><div class="field"><label>Organización residencial (opcional)</label><input name="organization_name" placeholder="Condominio, villa o urbanización"></div><div class="field"><label>Referencia</label><input name="reference" placeholder="Punto de referencia"></div><div class="field full"><label>Observaciones</label><textarea name="notes" rows="2" placeholder="Información adicional del inmueble"></textarea></div></div><div class="form-actions"><button type="button" class="btn btn-light" data-action="close-contributor-modal">Volver a contribuyentes</button><button class="btn btn-primary" id="savePropertyButton">Registrar inmueble</button></div></form><div class="property-success" id="propertySuccess" hidden></div></div></section></div></section></div>';
 }
 function openContributorModal(){
+ if(!sitmaudCan('contributors.create')){toast('No tienes permiso para registrar contribuyentes.');return;}
  if(!document.getElementById('contributorModal'))document.body.insertAdjacentHTML('beforeend',contributorModal());
  const modal=document.getElementById('contributorModal');modal.classList.add('open');document.body.classList.add('modal-open');const condoOption=modal.querySelector('#contributorServiceAccountType option[value="condominio"]');if(condoOption)condoOption.hidden=true;loadGeographyCatalogs();
 }
@@ -1269,6 +1274,10 @@ const sitmaudViewPermissions={
  funcionarios:['staff.manage','permissions.manage'],
  bitacora:['audit.read']
 };
+function sitmaudCan(permission){
+ const access=window.sitmaudAccess;
+ return !!access&&(access.master||access.grants.has(permission));
+}
 function sitmaudAllowed(view){
  const access=window.sitmaudAccess;
  if(!access)return false;
@@ -1329,6 +1338,15 @@ function sitmaudApplyActionPermissions(){
  document.querySelectorAll('[data-action]').forEach(button=>{
    const permission=rules[button.dataset.action];
    if(permission&&!can(permission))button.hidden=true;
+ });
+ document.querySelectorAll('[data-contributor-action="edit"],[data-contributor-action="more"]').forEach(el=>{
+  if(!can('contributors.update'))el.hidden=true;
+ });
+ document.querySelectorAll('[data-property-action="edit"],[data-property-action="more"]').forEach(el=>{
+  if(!can('properties.update'))el.hidden=true;
+ });
+ document.querySelectorAll('[data-go="condominio_registro"]').forEach(el=>{
+  if(!can('organizations.manage'))el.hidden=true;
  });
  // A rendered view is still protected by the same permission gate as the sidebar.
 }

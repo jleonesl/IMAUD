@@ -9,10 +9,10 @@
  const root=()=>document.getElementById('officialRegisterUdcPanel');
  function markup(){
   return '<div class="official-cashier-backdrop" id="officialCashierBackdrop" hidden><section class="card panel official-cashier-modal" id="officialRegisterUdcPanel" role="dialog" aria-modal="true" aria-labelledby="officialCashierTitle">'+
-    '<div class="panel-head"><div><h3 id="officialCashierTitle">Registrar pago</h3><p>Localiza el expediente, selecciona uno o varios meses y carga los datos bancarios. La confirmación del pago se realiza por separado.</p></div><button type="button" class="btn btn-light" data-official-close-register aria-label="Cerrar registro de pago">✕ Cerrar</button></div>'+
+    '<header class="cashier-header"><div class="cashier-title-wrap"><span class="cashier-title-icon" aria-hidden="true">▤</span><div><span class="cashier-eyebrow">SITMAUD · RECAUDACIÓN</span><h3 id="officialCashierTitle">Registrar pago</h3><p>Consulta el expediente, selecciona las mensualidades y registra el comprobante.</p></div></div><button type="button" class="cashier-close" data-official-close-register aria-label="Cerrar registro de pago">✕</button></header>'+
     '<div id="udcCashierMessage" role="status">Verificando permiso de recaudación…</div>'+
-    '<form id="udcPaymentLookup" hidden><div class="form-grid"><div class="field"><label>Contrato, cédula o RIF del contribuyente</label><input name="identity" minlength="3" required placeholder="Ej. CD-2027-000001"></div></div><div class="form-actions"><button type="submit" class="btn btn-light">Consultar obligaciones</button></div></form>'+
-    '<div id="udcPaymentContributor"></div>'+
+    '<form id="udcPaymentLookup" class="cashier-search" hidden><label for="udcLookupIdentity">Contrato, cédula o RIF del contribuyente</label><div class="cashier-search-row"><div class="cashier-search-input"><span aria-hidden="true">⌕</span><input id="udcLookupIdentity" name="identity" minlength="3" required autocomplete="off" placeholder="Ej. CT-2026-000001"></div><button type="submit" class="btn btn-primary">⌕ &nbsp; Consultar obligaciones</button></div></form>'+
+    '<div id="udcPaymentContributor" aria-live="polite"></div><div id="udcRateNotice" role="status" hidden></div>'+
     '<form id="udcPaymentRegister" hidden>'+
     '<div id="udcPaymentMonths" class="payment-debt-table"></div>'+
     '<div id="udcPaymentQuote"></div>'+
@@ -115,13 +115,14 @@
    const result=await lookup(identity);
    contributor=result.found;debts=result.items;quote=null;
    const name=contributor.legal_name||[contributor.first_name,contributor.last_name].filter(Boolean).join(' ');
-   document.getElementById('udcPaymentContributor').innerHTML='<div class="notice"><b>'+esc(name)+'</b> · '+esc(contributor.contract_number)+'<p>Obligaciones oficiales pendientes: '+debts.length+'</p></div>';
+   document.getElementById('udcPaymentContributor').innerHTML='<section class="cashier-contributor-card"><span class="cashier-person-icon" aria-hidden="true">♙</span><div class="cashier-person-details"><strong>'+esc(name)+'</strong><span>Contrato: '+esc(contributor.contract_number||'—')+'</span></div><span class="cashier-debt-count">'+debts.length+' '+(debts.length===1?'obligación pendiente':'obligaciones pendientes')+'</span></section>';
    const form=document.getElementById('udcPaymentRegister'),months=document.getElementById('udcPaymentMonths');
+   const notice=document.getElementById('udcRateNotice');if(notice){notice.hidden=true;notice.innerHTML='';}
    document.getElementById('udcPaymentConfirmation').textContent='';
    if(!debts.length){form.hidden=true;tell('No existen obligaciones oficiales pendientes para este contribuyente.');return;}
    const names=new Map(result.properties.map(p=>[p.id,p]));
    form.reset();form.hidden=false;adjustProofRequirement();
-   months.innerHTML='<div class="table-toolbar"><b>Selecciona los meses a cobrar</b><span id="udcPaySelectedCount">0 meses</span></div>'+
+   months.innerHTML='<div class="cashier-month-title"><div class="cashier-month-heading"><span class="cashier-calendar-icon" aria-hidden="true">▦</span><b>Selecciona los meses a cobrar</b></div><span class="cashier-month-count" id="udcPaySelectedCount">0 meses</span></div>'+
     '<div class="payment-debt-scroll"><table><thead><tr><th>Selección</th><th>Mes</th><th>Cuenta o inmueble</th><th>Base UCD</th></tr></thead><tbody>'+
     debts.map(x=>{
       const p=names.get(x.property_id)||{};
@@ -144,6 +145,7 @@
    if(!button||!host)return;
    button.disabled=true;
    document.getElementById('udcPaySelectedCount').textContent=selected.length+' meses';
+   const notice=document.getElementById('udcRateNotice');if(notice){notice.hidden=true;notice.innerHTML='';}
    if(!selected.length){host.textContent='Selecciona uno o varios meses para calcular el pago.';return;}
    host.textContent='Consultando tasa y obligaciones oficiales…';
    const r=await imaudClient.rpc('quote_official_udc_payment',{
@@ -153,11 +155,9 @@
    if(r.error){
      const noOfficialRate=/No hay tasa UCD válida para el pago de hoy/i.test(r.error.message||'');
      if(noOfficialRate){
-       host.innerHTML='<section class="notice" role="alert" style="padding:14px;border:1px solid #e7d9ad;border-radius:10px;background:#fffaf0">'+
-       '<b>Tasa UCD pendiente de verificación oficial</b>'+
-       '<p>Las mensualidades seleccionadas sí existen. El registro de pago está temporalmente bloqueado porque no se dispone de una tasa del euro verificable directamente desde el BCV para la fecha vigente.</p>'+
-       '<p>La administración debe incorporar una tasa con respaldo verificable del BCV antes de habilitar el cobro. No es necesario volver a generar las deudas ni modificar el expediente.</p>'+
-       '</section>';
+       const warning='<section class="cashier-rate-alert" role="alert"><span class="cashier-alert-icon" aria-hidden="true">▤</span><div><strong>Tasa UCD no disponible para el cobro</strong><p>Las deudas están registradas correctamente. El pago se habilitará cuando el sistema disponga de una tasa oficial del BCV comprobada para la fecha vigente.</p></div></section>';
+       if(notice){notice.innerHTML=warning;notice.hidden=false;}
+       host.innerHTML='';
      }else host.textContent='No se pudo cotizar: '+r.error.message;
      return;
    }

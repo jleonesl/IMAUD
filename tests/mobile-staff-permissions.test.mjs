@@ -19,7 +19,7 @@ test('per-contributor-only account can see its module and is denied other module
  assert.match(app,/el\.hidden=!visible/);
  assert.match(app,/if\(!sitmaudAllowed\(v\)\)/);
  assert.match(app,/state\.view=sitmaudFirstView\(\)\|\|'__no_access'/);
- assert.match(app,/if\(!permitted\)/m);
+ assert.match(app,/if\(window\.sitmaudAccess&&!sitmaudAllowed\(state\.view\)\)/);
 });
 test('contributor create and edit controls respect their own permissions',()=>{
  assert.match(app,/if\(!sitmaudCan\('contributors\.create'\)\)/);

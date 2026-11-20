@@ -76,13 +76,19 @@
  }
  async function lookup(identity){
    const val=identity.trim();const raw=val.replace(/[^A-Za-z0-9]/g,'').toUpperCase();
+   const normalized=val.toUpperCase().replace(/\s+/g,'');
+   const bare=raw.replace(/^[VEJGP]/,'');
+   const identities=[normalized,raw,bare,/^[VEJGP]/.test(raw)?raw[0]+'-'+bare:''].filter(Boolean);
    const possibilities=[
-     ['contract_number',val],['rif',val.toUpperCase()],
-     ['identification_number',raw.replace(/^[VEJGP]/,'')]
+     ['contract_number',val],['contract_number',normalized],
+     ['rif',normalized],['rif',raw],
+     ...identities.map(value=>['identification_number',value])
    ];
+   const seen=new Set();
    let found=null;
    for(const [field,value] of possibilities){
-     if(!value)continue;
+     if(!value||seen.has(field+':'+value))continue;
+     seen.add(field+':'+value);
      const res=await imaudClient.from('contributors')
        .select('id,contract_number,legal_name,first_name,last_name,identification_type,identification_number,service_account_type,status')
        .eq(field,value).limit(1).maybeSingle();
@@ -100,7 +106,7 @@
    const r=await imaudClient.from('assessments')
      .select('id,property_id,period_start,total_amount,status,is_demo,coefficient_snapshot,consolidated_unit_count_snapshot')
      .in('property_id',ids).eq('is_demo',false).eq('status','pending')
-     .gte('period_start','2027-01-01').order('period_start').limit(101);
+     .gte('period_start','2026-09-01').order('period_start').limit(101);
    if(r.error)throw r.error;
    if(r.data.length>100)throw Error('Se encontraron más de 100 obligaciones; requiere atención administrativa.');
    return {found,properties:props.data||[],items:r.data||[]};

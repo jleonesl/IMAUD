@@ -96,3 +96,13 @@ test('actual payment modal uses redesigned institutional structure, not the old 
  assert.match(html,/official-payment-registration\.js\?v=20261120-cashier-redesign5/);
  assert.match(html,/styles\.css\?v=20261120-cashier-redesign5/);
 });
+
+test('monthly debt table displays Bs snapshots alongside UCD without treating them as current payable quotes',()=>{
+ assert.match(cashier,/<th>Monto en Bs\. <small>\(referencia\)<\/small><\/th>/);
+ assert.match(cashier,/bs\(x\.total_amount\)/);
+ assert.match(cashier,/cashier-reference-summary/);
+ assert.match(cashier,/debts\.reduce/);
+ assert.match(cashier,/Montos en bolívares registrados al generar las obligaciones/);
+ assert.match(cashier,/quote_official_udc_payment/);
+ assert.match(styles,/\.cashier-bs-cell strong/);
+});

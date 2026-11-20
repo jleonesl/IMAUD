@@ -25,13 +25,28 @@ const imaudClient = window.supabase.createClient(IMAUD_SUPABASE_URL, IMAUD_SUPAB
      msg.textContent='Tu cuenta aún no tiene un perfil administrativo habilitado. Solicita la activación al intendente principal.';
      return;
    }
-   document.body.classList.add('sitmaud-authenticated'); root.hidden=true; root.style.setProperty('display','none','important'); if(landing){landing.hidden=true; landing.style.setProperty('display','none','important');} app.hidden=false; app.style.setProperty('display','block','important');
+   // The authenticated shell remains hidden until permission verification succeeds.
    const name=document.querySelector('.user-chip b'); const role=document.querySelector('.user-chip small');
    if(name) name.textContent=profile.display_name;
    if(role) role.textContent=profile.role.replaceAll('_',' ');
    document.querySelector('.demo-pill')?.remove();
    const banner=document.querySelector('.demo-banner');
    if(banner){banner.innerHTML='<b>PREPARACIÓN INSTITUCIONAL</b><span>Fase de pruebas 2026: para generar deudas debe habilitarse el tabulador; para registrar cobros oficiales se requiere tasa BCV verificada. Tesorería valida los pagos posteriormente.</span>'}
+   // Each staff account receives its own verified permission list.
+   // Do not render all modules before this request finishes.
+   const {data:masterAllowed,error:masterError}=await imaudClient.rpc('is_sitmaud_master');
+   if(masterError){msg.textContent='No se pudieron verificar los permisos de acceso.';return;}
+   const isMaster=masterAllowed===true;
+   const {data:grantRows,error:grantError}=isMaster
+     ?{data:[],error:null}
+     :await imaudClient.from('staff_permissions').select('permission_code').eq('user_id',user.id);
+   if(grantError){
+     app.hidden=true;app.style.setProperty('display','none','important');
+     msg.textContent='No se pudieron cargar los permisos asignados. Inicia sesión nuevamente.';
+     return;
+   }
+   window.sitmaudAccess={master:isMaster,grants:new Set((grantRows||[]).map(x=>x.permission_code))};
+   document.body.classList.add('sitmaud-authenticated'); root.hidden=true; if(landing){landing.hidden=true;landing.style.setProperty('display','none','important');} app.hidden=false;app.style.setProperty('display','block','important');
    window.imaudCurrentProfile=profile;
    // Identity is derived from the authenticated session by the server; no user-supplied actor ID.
    imaudClient.rpc('record_staff_activity',{p_action:'session_started',p_module:'authentication',p_reference:null})

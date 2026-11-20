@@ -150,7 +150,17 @@
      p_contributor_id:contributor.id,p_assessment_ids:selected
    });
    if(!host.isConnected)return;
-   if(r.error){host.textContent='No se pudo cotizar: '+r.error.message;return;}
+   if(r.error){
+     const noOfficialRate=/No hay tasa UCD válida para el pago de hoy/i.test(r.error.message||'');
+     if(noOfficialRate){
+       host.innerHTML='<section class="notice" role="alert" style="padding:14px;border:1px solid #e7d9ad;border-radius:10px;background:#fffaf0">'+
+       '<b>Tasa UCD pendiente de verificación oficial</b>'+
+       '<p>Las mensualidades seleccionadas sí existen. El registro de pago está temporalmente bloqueado porque no se dispone de una tasa del euro verificable directamente desde el BCV para la fecha vigente.</p>'+
+       '<p>El superusuario debe verificar y registrar una tasa con respaldo oficial en Ordenanza y tarifas. No es necesario volver a generar las deudas ni modificar el expediente.</p>'+
+       '</section>';
+     }else host.textContent='No se pudo cotizar: '+r.error.message;
+     return;
+   }
    quote=r.data;
    host.innerHTML='<div class="card" style="padding:14px;margin:12px 0"><div><b>Total: '+bs(quote.total_bs)+'</b> · '+esc(ucd(quote.total_udc))+'</div>'+
    '<p>Tasa '+esc(quote.currency)+' / UCD: '+esc(quote.rate)+' Bs. · Fecha valor: '+esc(quote.effective_date)+

@@ -106,3 +106,12 @@ test('monthly debt table displays Bs snapshots alongside UCD without treating th
  assert.match(cashier,/quote_official_udc_payment/);
  assert.match(styles,/\.cashier-bs-cell strong/);
 });
+
+test('selecting one or several debts instantly updates Bs total even when official rate is unavailable',()=>{
+ assert.match(cashier,/id="udcSelectedTotalBs"/);
+ assert.match(cashier,/new Set\(selected\)/);
+ assert.match(cashier,/debts\.reduce\(\(sum,item\)=>selectedSet\.has\(item\.id\)/);
+ assert.match(cashier,/refTotal\.textContent=bs\(selectedReferenceBs\)/);
+ assert.match(cashier,/if\(noOfficialRate\)/);
+ assert.match(cashier,/Tasa UCD no disponible para el cobro/);
+});

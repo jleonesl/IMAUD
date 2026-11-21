@@ -1,6 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const allowedOrigins = new Set(["https://jleonesl.github.io"]);
+const portalBase = (Deno.env.get("SITMAUD_PUBLIC_BASE_URL") || "https://jleonesl.github.io/IMAUD").replace(/\/$/,"");
+if (!portalBase.startsWith("https://")) throw new Error("SITMAUD_PUBLIC_BASE_URL debe ser HTTPS");
+const portalOrigin = new URL(portalBase).origin;
+const allowedOrigins = new Set(["https://jleonesl.github.io", portalOrigin]);
 function cors(origin: string | null) {
   return {
     "Access-Control-Allow-Origin": allowedOrigins.has(origin || "") ? origin! : "https://jleonesl.github.io",
@@ -73,7 +76,7 @@ Deno.serve(async (request) => {
   const mailFrom = Deno.env.get("SITMAUD_MAIL_FROM");
   if (mailApiKey && mailFrom) {
     const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#%";
-    const bytes = new Uint8Array(24);
+    const bytes = new Uint8Array(12);
     crypto.getRandomValues(bytes);
     const temporaryPassword = [...bytes].map(x => alphabet[x % alphabet.length]).join("");
     const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -97,14 +100,18 @@ Deno.serve(async (request) => {
     const escapeHTML = (x:string)=>x.replace(/[&<>"']/g,c=>({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
     }[c] || c));
+    const loginLink = portalBase + "/funcionario.html";
     const messageHTML = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#173348">
       <h2 style="color:#0c4666">SITMAUD · Acceso institucional</h2>
       <p>Hola, <strong>${escapeHTML(first)} ${escapeHTML(last)}</strong>.</p>
       <p>Tu cuenta de funcionario ha sido registrada por la administración de SITMAUD.</p>
       <p><strong>Usuario:</strong> ${escapeHTML(email)}</p>
       <p><strong>Clave provisional:</strong> <code style="font-size:16px">${escapeHTML(temporaryPassword)}</code></p>
-      <p>Acceso: <a href="https://jleonesl.github.io/IMAUD/funcionario.html">Portal del Funcionario</a></p>
-      <p>Esta clave permite el ingreso inicial. Por seguridad, recomendamos cambiarla al iniciar sesión.
+      <p><a href="${escapeHTML(loginLink)}" style="display:inline-block;background:#114c69;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none">Ingresar a SITMAUD</a></p>
+      <p>Enlace directo: <a href="${escapeHTML(loginLink)}">${escapeHTML(loginLink)}</a></p>
+      <p>Esta clave es individual y permanece válida hasta que tú decidas cambiarla o recuperarla.
+      El cambio de contraseña es voluntario; no tienes que hacerlo para entrar.</p>
+      <p>Si deseas modificarla más adelante, utiliza la opción «Cambiar contraseña» de tu cuenta.
       No compartas este correo ni tus credenciales.</p>
       <p>Los permisos de trabajo son asignados de forma independiente por el superusuario.</p></div>`;
     let mailSent=false;
@@ -137,7 +144,7 @@ Deno.serve(async (request) => {
   // El envío de la invitación se realiza en Supabase Auth, nunca desde el navegador.
   const { data: invitation, error: invitationError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: first+" "+last, staff_pending_activation: true },
-    redirectTo: "https://jleonesl.github.io/IMAUD/funcionario.html?setup=invite"
+    redirectTo: portalBase + "/funcionario.html?setup=invite"
   });
   if (invitationError || !invitation.user) {
     return response({ error: "No se pudo enviar la invitación. Verifica el correo y la configuración de Auth." }, 409, origin);

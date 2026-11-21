@@ -1260,9 +1260,70 @@ async function loadAuditRecords(reset=false){
  if(prev)prev.disabled=auditPageOffset===0;if(next)next.disabled=auditPageOffset+rows.length>=total;
  if(page)page.textContent='Página '+(Math.floor(auditPageOffset/100)+1);
  if(!rows.length){host.innerHTML='<div class="contributors-empty">No se encontraron eventos para estos filtros.</div>';return;}
- const displayDetails=(x)=>{const value=x.details||{};return (typeof value==='object'?JSON.stringify(value):String(value)).slice(0,240);};
- host.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Fecha y hora</th><th>Funcionario</th><th>Correo</th><th>Acción</th><th>Módulo</th><th>Registro</th><th>Detalle</th></tr></thead><tbody>'+
- rows.map(x=>'<tr><td>'+escapeHTML(new Date(x.occurred_at).toLocaleString('es-VE',{timeZone:'America/Caracas'}))+'</td><td><strong>'+escapeHTML(x.display_name||'Sistema')+'</strong>'+(x.job_title?'<div>'+escapeHTML(x.job_title)+'</div>':'')+'</td><td>'+escapeHTML(x.email||'—')+'</td><td>'+escapeHTML(x.action||'—')+'</td><td>'+escapeHTML(x.module||'—')+'</td><td>'+escapeHTML(x.entity_id||'—')+'</td><td>'+escapeHTML(displayDetails(x))+'</td></tr>').join('')+'</tbody></table></div>';
+ const auditModuleLabels={
+  authentication:'Acceso al sistema',inicio:'Inicio',pagos:'Recaudación y pagos',
+  contribuyentes:'Contribuyentes',inmuebles:'Inmuebles',organizaciones:'Condominios',
+  condominio_registro:'Condominios',facturacion:'Facturación',solvencias:'Solvencias',
+  reportes:'Reportes',puntos_venta:'Puntos de venta',mapa:'Mapa territorial',
+  ordenanza:'Ordenanza y tarifas',funcionarios:'Funcionarios y permisos',
+  bitacora:'Bitácora',assessments:'Obligaciones tributarias',
+  staff_profiles:'Funcionarios',staff_permissions:'Permisos de funcionarios',
+  pos_terminals:'Puntos de venta',tariff_schedules:'Ordenanza y tarifas',
+  citizen_accounts:'Portal del contribuyente',payments:'Pagos',
+  demo_payments:'Pagos de prueba',udc_rates:'Tasas UCD'
+ };
+ const auditActionLabels={
+  session_started:'Inició sesión en SITMAUD',
+  session_finished:'Cerró sesión en SITMAUD',
+  module_opened:'Accedió al módulo',
+  search_executed:'Realizó una búsqueda',
+  receipt_opened:'Consultó un recibo',
+  report_exported:'Exportó un reporte',
+  staff_permission_granted:'Asignó un permiso a un funcionario',
+  staff_permission_revoked:'Revocó un permiso de un funcionario',
+  staff_user_invited:'Invitó a un funcionario al sistema',
+  citizen_invited:'Invitó a un contribuyente al portal',
+  citizen_access_resent:'Reenvió las instrucciones de acceso a un contribuyente',
+  pos_terminal_registered:'Registró un punto de venta',
+  residential_tariff_approved:'Aprobó una tarifa residencial',
+  trial_tariff_2026_enabled:'Habilitó las tarifas de prueba de 2026',
+  udc_rate_contingency_verified:'Verificó institucionalmente una tasa UCD',
+  official_payment_udc_registered:'Registró un pago',
+  official_payment_liquidated:'Validó y liquidó un pago',
+  official_payment_rejected:'Rechazó un pago',
+  demo_payment_registered:'Registró un pago de prueba',
+  demo_test_record_retired_by_user_request:'Retiró un registro de prueba',
+  SUPERUSER_INITIALIZED:'Se configuró el superusuario',
+  insert:'Registró información',
+  update:'Actualizó información',
+  delete:'Eliminó información'
+ };
+ const auditDescribe=(x)=>{
+  const d=x.details&&typeof x.details==='object'?x.details:{};
+  const moduleCode=x.module==='staff_activity'?d.module:x.module;
+  const moduleLabel=auditModuleLabels[moduleCode]||'';
+  const action=auditActionLabels[x.action]||'Operación registrada';
+  const phrase=x.action==='module_opened'
+    ?action+(moduleLabel?' '+moduleLabel:'')
+    :action;
+  let note='';
+  if(x.action==='module_opened'&&moduleCode==='pagos')note='Acceso a la sección de Recaudación y pagos; no significa que haya registrado un cobro.';
+  if(x.action==='session_started')note='Acceso autenticado al sistema.';
+  if(x.action==='session_finished')note='Salida de la sesión institucional.';
+  return {phrase,moduleLabel:moduleLabel||'Gestión institucional',note};
+ };
+ host.innerHTML='<div class="payment-debt-scroll"><table class="sit-audit-table"><thead><tr><th>Fecha y hora (Coro)</th><th>Funcionario</th><th>Actividad realizada</th><th>Módulo</th><th>Información</th></tr></thead><tbody>'+
+ rows.map(x=>{
+  const description=auditDescribe(x);
+  const raw=JSON.stringify({accion:x.action,modulo:x.module,registro:x.entity_id,datos:x.details||{}},null,2);
+  const email=x.email?'<div class="sit-audit-subtle">'+escapeHTML(x.email)+'</div>':'';
+  const detail=description.note?'<span class="sit-audit-note">'+escapeHTML(description.note)+'</span>':'<span class="sit-audit-subtle">Actividad almacenada en la bitácora.</span>';
+  return '<tr><td>'+escapeHTML(new Date(x.occurred_at).toLocaleString('es-VE',{timeZone:'America/Caracas',dateStyle:'short',timeStyle:'short'}))+
+    '</td><td><strong>'+escapeHTML(x.display_name||'Sistema / usuario no registrado')+'</strong>'+
+    (x.job_title?'<div class="sit-audit-subtle">'+escapeHTML(x.job_title)+'</div>':'')+email+
+    '</td><td><strong>'+escapeHTML(description.phrase)+'</strong></td><td>'+escapeHTML(description.moduleLabel)+
+    '</td><td>'+detail+'<details class="sit-audit-technical"><summary>Ver datos técnicos</summary><pre>'+escapeHTML(raw)+'</pre></details></td></tr>';
+ }).join('')+'</tbody></table></div>';
 }
 
 

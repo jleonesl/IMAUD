@@ -33,6 +33,13 @@
    // replace evita volver a la página privada mediante el botón Atrás.
    location.replace('./funcionario.html?sesion=cerrada');
  }
+ window.addEventListener('pageshow',async event=>{
+   if(!event.persisted||closing||!document.body.classList.contains('sitmaud-authenticated'))return;
+   try{
+     const {data,error}=await imaudClient.auth.getUser();
+     if(error||!data.user)location.replace('./funcionario.html?sesion=cerrada');
+   }catch(_){location.replace('./funcionario.html?sesion=cerrada');}
+ });
  document.addEventListener('click',event=>{
    if(event.target.closest('[data-staff-signout]'))logout();
  });

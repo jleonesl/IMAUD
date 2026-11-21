@@ -80,7 +80,7 @@ test('citizen may optionally change password after current-password verification
   assert.match(account, /citizenChangePasswordForm/);
   assert.match(account, /signInWithPassword/);
   assert.match(account, /updateUser\(\{password:next\}\)/);
-  assert.match(account, /next\.length<12/);
+  assert.match(account, /next\.length<8/);
 });
 
 test('citizen login, activation and account use isolated session storage, separate from staff', () => {

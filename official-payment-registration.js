@@ -19,7 +19,7 @@
     '<div class="cashier-received-block"><label for="udcPayReceivedBs">Monto realmente recibido en Bs. *</label><input id="udcPayReceivedBs" name="received_bs" type="number" min="0.01" step="0.01" inputmode="decimal" required disabled placeholder="Primero selecciona las mensualidades"><small>El valor se propone automáticamente según la cotización. Si el banco acredita unos céntimos de más, escribe el importe exacto. Se admitirán hasta Bs. 0,99 adicionales; una diferencia mayor requiere conciliación.</small><div class="cashier-received-difference" id="udcPayDifference" role="status"></div></div>'+
     '<div class="form-grid">'+
     '<div class="field"><label>Método bancario *</label><select name="method" required><option value="transferencia">Transferencia</option><option value="pago_movil">Pago móvil</option><option value="punto_venta">Punto de venta</option></select></div>'+
-    '<div class="field" id="udcPosTerminalField" hidden><label>Punto de venta municipal *</label><select name="pos_terminal_id" id="udcPosTerminal"><option value="">Seleccione el terminal</option></select><small>El código del terminal quedará registrado en el reporte.</small></div><div class="field"><label>Banco *</label><select id="udcPayBank" name="bank" required><option value="">Cargando bancos…</option></select></div>'+
+    '<div class="field" id="udcPosTerminalField" hidden><label>Punto de venta municipal *</label><select name="pos_terminal_id" id="udcPosTerminal"><option value="">Seleccione el terminal</option></select><small id="udcTerminalBankLabel">El banco del terminal se obtiene del registro institucional del punto de venta y no se selecciona manualmente.</small></div><div class="field"><label id="udcPayBankLabel">Banco desde el que paga el contribuyente *</label><select id="udcPayBank" name="bank" required><option value="">Cargando bancos…</option></select><small id="udcPayBankHelp">Selecciona el banco del contribuyente, no el banco del terminal.</small></div>'+
     '<div class="field"><label>Referencia de la operación *</label><input name="reference" required minlength="3" maxlength="110" autocomplete="off" placeholder="Referencia bancaria"></div>'+
     '<div class="field"><label id="udcProofLabel">Comprobante (PDF o imagen) *</label><input id="udcProofFile" name="proof" type="file" accept="application/pdf,image/jpeg,image/png,image/webp" required><small id="udcProofHelp">Obligatorio para transferencias y pago móvil. Opcional para punto de venta.</small></div>'+
     '</div><div class="form-actions"><button class="btn btn-primary" id="udcPaySubmit" type="submit" disabled>Registrar pago y emitir factura</button></div>'+
@@ -204,6 +204,11 @@
    proof.required=required;
    const field=document.getElementById('udcPosTerminalField');if(field)field.hidden=!isPos;
    const terminal=form.elements.pos_terminal_id;if(terminal)terminal.required=isPos;
+   const bankLabel=document.getElementById('udcPayBankLabel'),bankHelp=document.getElementById('udcPayBankHelp');
+   if(bankLabel)bankLabel.textContent=isPos?'Banco emisor de la tarjeta del contribuyente *':'Banco desde el que paga el contribuyente *';
+   if(bankHelp)bankHelp.textContent=isPos?'Selecciona el banco de la tarjeta que utiliza la persona. El banco asociado al punto de venta ya está registrado automáticamente.':'Selecciona el banco de origen del pago del contribuyente.';
+   const terminalBank=document.getElementById('udcTerminalBankLabel');
+   if(terminalBank&&!isPos)terminalBank.textContent='El banco adquirente está vinculado al terminal en SITMAUD.';
    const lbl=document.getElementById('udcProofLabel');
    if(lbl)lbl.textContent=required?'Comprobante (PDF o imagen) *':'Comprobante (opcional para punto de venta)';
  }
@@ -280,6 +285,10 @@
  document.addEventListener('change',e=>{
    if(e.target.matches('#udcPaymentRegister .udc-month'))updateQuote();
    if(e.target.matches('#udcPaymentRegister [name="method"]'))adjustProofRequirement();
-    if(e.target.id==='udcPosTerminal'){const code=e.target.selectedOptions[0]?.dataset.bank;if(code){const bank=document.getElementById('udcPayBank');if(bank)bank.value=code;}}
+   if(e.target.id==='udcPosTerminal'){
+     const option=e.target.selectedOptions[0];
+     const help=document.getElementById('udcTerminalBankLabel');
+     if(help)help.textContent=option?.dataset.bank?'Banco del terminal: '+option.dataset.bank+' (asociado automáticamente por SITMAUD).':'El banco del terminal se obtiene del registro institucional del punto de venta.';
+   }
  });
 })();

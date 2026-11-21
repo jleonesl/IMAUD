@@ -60,6 +60,7 @@ jobs:
           node --test tests/mobile-staff-permissions.test.mjs
           node --test tests/logout-all-users.test.mjs
           node --test tests/udc-contingency.test.mjs
+          node --test tests/audit-readable.test.mjs
           node --test tests/staff-invitation-password.test.mjs
           node --test tests/payments-layout.test.mjs
           node --test tests/billing-engine-regression.test.mjs

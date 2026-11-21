@@ -34,9 +34,9 @@ test('financial payment path preserves invoice before treasury validation',()=>{
   const cashier=read('official-payment-registration.js');
   const pos=read('supabase/migrations/20261119150000_pos_terminal_registry_and_reporting.sql');
   assert.match(cashier,/Registrar pago y emitir factura/);
-  assert.match(cashier,/register_official_pos_payment/);
-  assert.match(cashier,/register_official_udc_payment/);
-  assert.match(pos,/register_official_pos_payment/);
+  assert.match(cashier,/register_official_pos_received_payment/);
+  assert.match(cashier,/register_official_udc_received_payment/);
+  assert.match(pos,/register_official_pos_received_payment/);
   assert.match(pos,/pos_terminal_id/);
 });
 

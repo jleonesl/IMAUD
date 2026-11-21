@@ -40,7 +40,7 @@ test('registration opens existing server-backed official cashier instead of lega
  assert.match(cashier,/window\.sitmaudUdcPayment=\{open,close\}/);
  assert.match(cashier,/showLookup\(identity\)/);
  assert.match(cashier,/quote_official_udc_payment/);
- assert.match(cashier,/register_official_udc_payment/);
+ assert.match(cashier,/register_official_udc_received_payment/);
  assert.doesNotMatch(cashier,/register_demo_payment_with_proof/);
  assert.match(styles,/\.official-cashier-backdrop\[hidden\]\{display:none!important\}/);
 });

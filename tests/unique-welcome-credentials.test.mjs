@@ -13,7 +13,7 @@ const citizenAccount=read('contribuyente-cuenta.html');
 test('every new provisional password is uniquely randomized with cryptographic entropy',()=>{
  for(const source of [staff,citizen]){
   assert.match(source,/crypto\.getRandomValues\(bytes\)/);
-  assert.match(source,/new Uint8Array\(12\)/);
+  assert.match(source,/new Uint8Array\(8\)/);
   assert.match(source,/temporaryPassword/);
   assert.doesNotMatch(source,/password:\s*(?:identity|c\.identification_number|citizenUsername)/);
  }

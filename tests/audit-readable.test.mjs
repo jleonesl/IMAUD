@@ -23,6 +23,12 @@ test('details are disclosed explicitly and no raw JSON appears in primary activi
  assert.doesNotMatch(app,/const displayDetails=\(x\)=>/);
 });
 test('browser receives refreshed audit presentation',()=>{
- assert.match(index,/app\.js\?v=20261120-audit-readable1/);
+ assert.match(index,/app\.js\?v=20261120-treasury-audit2/);
  assert.match(index,/styles\.css\?v=20261120-audit-readable1/);
+});
+
+test('Treasury records are displayed as real Spanish financial operations',()=>{
+ assert.match(app,/treasury_payment_liquidated:'Tesorería validó y liquidó un pago'/);
+ assert.match(app,/treasury_payment_rejected:'Tesorería rechazó un pago'/);
+ assert.match(app,/citizen_payment_udc_submitted:'Un contribuyente presentó un pago para validación'/);
 });

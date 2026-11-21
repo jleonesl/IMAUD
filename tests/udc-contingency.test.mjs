@@ -38,3 +38,17 @@ test('institutional UI never auto-approves third-party values',()=>{
  assert.match(html,/udc-contingency\.js\?v=20261120-contingency1/);
  assert.match(workflow,/app\.js udc-contingency\.js territorial-map\.js/);
 });
+
+test('institutional rate verification uses auditable financial log, not navigation events',()=>{
+ const patch=read('supabase/migrations/20261120210000_udc_contingency_financial_audit_fix.sql');
+ assert.match(patch,/insert into public\.audit_log/);
+ assert.match(patch,/udc_rate_contingency_verified/);
+ assert.match(patch,/evidence_notes/);
+});
+test('receipts use local Caracas date for citizen and staff flows',()=>{
+ const patch=read('supabase/migrations/20261120212000_receipts_use_caracas_local_date.sql');
+ assert.match(patch,/America\/Caracas/);
+ assert.match(patch,/register_official_udc_payment_core/);
+ assert.match(patch,/register_citizen_udc_payment_core/);
+ assert.match(patch,/register_official_payment/);
+});

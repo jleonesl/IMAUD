@@ -86,7 +86,7 @@ Deno.serve(async request=>{
  // No hay vencimiento programado ni obligación de cambiarla al iniciar sesión.
  const canSendCredentials=Boolean(MAIL_API_KEY&&MAIL_FROM);
  const alphabet="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
- const bytes=new Uint8Array(12);
+ const bytes=new Uint8Array(8);
  crypto.getRandomValues(bytes);
  const temporaryPassword=[...bytes].map(value=>alphabet[value%alphabet.length]).join("");
  const metadata={citizen_portal:true,citizen_username:citizenUsername,citizen_contract:c.contract_number};

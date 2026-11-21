@@ -1290,3 +1290,18 @@ body.modal-open{overflow:hidden}
  .udc-manual-verify{padding:12px}
  .udc-contingency-data{flex-direction:column;align-items:flex-start}
 }
+
+/* Bitácora administrativa: lectura humana con respaldo técnico desplegable. */
+.sit-audit-table{min-width:860px}
+.sit-audit-table th{font-size:10px}
+.sit-audit-table td{font-size:11px;line-height:1.55;vertical-align:top}
+.sit-audit-table td:nth-child(2){min-width:190px}
+.sit-audit-table td:nth-child(3){min-width:190px}
+.sit-audit-table td:nth-child(5){min-width:245px}
+.sit-audit-table td strong{font-size:12px;color:#173d5a}
+.sit-audit-subtle{font-size:10px;color:#8092a0;overflow-wrap:anywhere}
+.sit-audit-note{font-size:10px;color:#587486;line-height:1.55}
+.sit-audit-technical{margin:8px 0 0;font-size:10px;color:#38667a}
+.sit-audit-technical summary{cursor:pointer;display:list-item;font-weight:700;user-select:none}
+.sit-audit-technical pre{font:10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;background:#f3f7f9;border:1px solid #e0eaf0;border-radius:8px;padding:12px;max-width:320px;max-height:180px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;color:#496477}
+@media(max-width:760px){.sit-audit-table{min-width:820px}.sit-audit-table td{padding:12px 10px}}

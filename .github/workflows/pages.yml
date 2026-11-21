@@ -28,7 +28,7 @@ jobs:
           for file in index.html funcionario.html contribuyente-v2.html contribuyente-cuenta.html activar-contribuyente.html verificar-solvencia.html \
             styles.css auth.css billing.css territorial-map.css citizen-dashboard.css \
             auth.js staff-password-setup.js staff-logout.js official-finance.js official-payment-registration.js pos-terminals.js solvency-documents.js \
-            condominium-assessments.js municipal-bank-admin.js official-receipt-template.js citizen-receipts.js citizen-payment-registration.js citizen-dashboard.js app.js territorial-map.js contributor-documents.js; do
+            condominium-assessments.js municipal-bank-admin.js official-receipt-template.js citizen-receipts.js citizen-payment-registration.js citizen-dashboard.js app.js udc-contingency.js territorial-map.js contributor-documents.js; do
             test -f "$file"
             cp "$file" dist/"$file"
           done
@@ -59,6 +59,7 @@ jobs:
           node --test tests/staff-profiles.test.mjs
           node --test tests/mobile-staff-permissions.test.mjs
           node --test tests/logout-all-users.test.mjs
+          node --test tests/udc-contingency.test.mjs
           node --test tests/staff-invitation-password.test.mjs
           node --test tests/payments-layout.test.mjs
           node --test tests/billing-engine-regression.test.mjs
@@ -77,6 +78,7 @@ jobs:
           node --check dist/auth.js
           node --check dist/staff-password-setup.js
           node --check dist/staff-logout.js
+          node --check dist/udc-contingency.js
           echo "Public site contains only approved website assets; no migrations, archives or demo pages."
       - name: Check public package for server secrets
         shell: bash

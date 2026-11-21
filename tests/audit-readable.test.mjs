@@ -24,7 +24,7 @@ test('details are disclosed explicitly and no raw JSON appears in primary activi
 });
 test('browser receives refreshed audit presentation',()=>{
  assert.match(index,/app\.js\?v=20261121-bank-verified1/);
- assert.match(index,/styles\.css\?v=20261120-ves-ledger1/);
+ assert.match(index,/styles\.css\?v=20261121-sidebar-scroll1/);
 });
 
 test('Treasury records are displayed as real Spanish financial operations',()=>{

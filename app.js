@@ -1291,6 +1291,7 @@ async function loadAuditRecords(reset=false){
   official_payment_udc_registered:'Registró un pago',
   treasury_payment_liquidated:'Tesorería validó y liquidó un pago',
   treasury_payment_rejected:'Tesorería rechazó un pago',
+  payment_actual_ves_recorded:'Registró el monto realmente recibido en bolívares',
   citizen_payment_udc_submitted:'Un contribuyente presentó un pago para validación',
   official_payment_liquidated:'Validó y liquidó un pago',
   official_payment_rejected:'Rechazó un pago',

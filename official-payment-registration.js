@@ -16,6 +16,7 @@
     '<form id="udcPaymentRegister" hidden>'+
     '<div id="udcPaymentMonths" class="payment-debt-table"></div>'+
     '<div id="udcPaymentQuote"></div>'+
+    '<div class="cashier-received-block"><label for="udcPayReceivedBs">Monto realmente recibido en Bs. *</label><input id="udcPayReceivedBs" name="received_bs" type="number" min="0.01" step="0.01" inputmode="decimal" required disabled placeholder="Primero selecciona las mensualidades"><small>El valor se propone automáticamente según la cotización. Si el banco acredita unos céntimos de más, escribe el importe exacto. Se admitirán hasta Bs. 0,99 adicionales; una diferencia mayor requiere conciliación.</small><div class="cashier-received-difference" id="udcPayDifference" role="status"></div></div>'+
     '<div class="form-grid">'+
     '<div class="field"><label>Método bancario *</label><select name="method" required><option value="transferencia">Transferencia</option><option value="pago_movil">Pago móvil</option><option value="punto_venta">Punto de venta</option></select></div>'+
     '<div class="field" id="udcPosTerminalField" hidden><label>Punto de venta municipal *</label><select name="pos_terminal_id" id="udcPosTerminal"><option value="">Seleccione el terminal</option></select><small>El código del terminal quedará registrado en el reporte.</small></div><div class="field"><label>Banco *</label><select id="udcPayBank" name="bank" required><option value="">Cargando bancos…</option></select></div>'+
@@ -138,6 +139,7 @@
     '<p class="cashier-reference-note">Montos en bolívares registrados al generar las obligaciones. Son informativos; al seleccionar meses, el total para pagar se calcula con la tasa UCD vigente y validada.</p>';
    document.getElementById('udcPaymentQuote').innerHTML='<p class="panel-hint">Al marcar los meses verás su saldo en Bs. como referencia. El monto definitivo del cobro se verificará con la tasa oficial vigente.</p>';
    document.getElementById('udcPaySubmit').disabled=true;
+   const received=form.elements.received_bs;if(received){received.value='';received.disabled=true;}
    tell('Comprueba los meses seleccionados antes de registrar la operación.');
  }
  async function updateQuote(){
@@ -147,6 +149,9 @@
    const host=document.getElementById('udcPaymentQuote');
    if(!button||!host)return;
    button.disabled=true;
+   const input=document.getElementById('udcPayReceivedBs');
+   if(input){input.disabled=true;input.value='';}
+   const difference=document.getElementById('udcPayDifference');if(difference)difference.textContent='';
    document.getElementById('udcPaySelectedCount').textContent=selected.length+' '+(selected.length===1?'mes':'meses');
    const selectedSet=new Set(selected);
    const selectedReferenceBs=debts.reduce((sum,item)=>selectedSet.has(item.id)?sum+Number(item.total_amount||0):sum,0);
@@ -174,10 +179,21 @@
      return;
    }
    quote=r.data;
+   if(input){input.disabled=false;input.min=String(Number(quote.total_bs).toFixed(2));input.max=String((Number(quote.total_bs)+0.99).toFixed(2));input.value=Number(quote.total_bs).toFixed(2);}
+   if(difference)difference.textContent='Importe aplicado a la deuda: '+bs(quote.total_bs)+' · Diferencia: Bs. 0,00';
    host.innerHTML='<div class="card" style="padding:14px;margin:12px 0"><div><b>Total: '+bs(quote.total_bs)+'</b> · '+esc(ucd(quote.total_udc))+'</div>'+
    '<p>Tasa '+esc(quote.currency)+' / UCD: '+esc(quote.rate)+' Bs. · Fecha valor: '+esc(quote.effective_date)+
    '</p><p>Origen: '+esc(quote.source_url)+'</p><small>El servidor recalcula al registrar; si la tasa cambia, no se guardará un importe elegido manualmente.</small></div>';
    button.disabled=false;
+ }
+ function updateReceivedDifference(){
+   const input=document.getElementById('udcPayReceivedBs'),msg=document.getElementById('udcPayDifference');
+   const submit=document.getElementById('udcPaySubmit');
+   if(!quote||!input||!submit)return;
+   const actual=Number(input.value),due=Number(quote.total_bs);
+   const valid=input.value.trim()!==''&&Number.isFinite(actual)&&Math.abs(actual*100-Math.round(actual*100))<0.00001&&actual>=due-0.000001&&actual<=due+0.990001;
+   submit.disabled=!valid;
+   if(msg)msg.textContent=valid?'Aplicado a la deuda: '+bs(due)+' · Recibido: '+bs(actual)+' · Diferencia: '+bs(Math.max(0,actual-due)):'El monto recibido debe estar entre '+bs(due)+' y '+bs(due+0.99)+' (dos decimales).';
  }
  function adjustProofRequirement(){
    const form=document.getElementById('udcPaymentRegister');
@@ -204,12 +220,14 @@
      if(!event.target.reportValidity())return;
      const selected=[...event.target.querySelectorAll('.udc-month:checked')].map(x=>x.value);
      if(!selected.length)return;
+     const receivedBs=Number(event.target.elements.received_bs.value),dueBs=Number(quote.total_bs);
+     if(!Number.isFinite(receivedBs)||receivedBs<dueBs-0.000001||receivedBs>dueBs+0.990001||Math.abs(receivedBs*100-Math.round(receivedBs*100))>0.00001){tell('Verifica el importe efectivamente recibido en bolívares antes de registrar.');return;}
      const form=event.target,b=document.getElementById('udcPaySubmit');
      const file=form.elements.proof.files?.[0];
      if((form.elements.method.value!=='punto_venta'&&!file)||(file&&(file.size>10*1024*1024||!['image/png','image/jpeg','image/webp','application/pdf'].includes(file.type)))){
        tell('Comprobante inválido. Se admite PDF, JPG, PNG o WebP, hasta 10 MB.');return;
      }
-     if(!window.confirm('Registrar '+selected.length+' mes(es) por '+bs(quote.total_bs)+
+     if(!window.confirm('Registrar '+selected.length+' mes(es) por '+bs(quote.total_bs)+' de deuda, con '+bs(receivedBs)+' efectivamente recibidos,'+
        ' como pago PENDIENTE de Tesorería? La acreditación bancaria se verificará posteriormente.'))return;
      busy=true;b.disabled=true;b.textContent='Registrando y guardando comprobante…';
      let path='',saved=false;
@@ -224,13 +242,13 @@
        }
        const isPos=form.elements.method.value==='punto_venta';
         if(isPos&&!form.elements.pos_terminal_id.value)throw Error('Selecciona el terminal que está utilizando el recaudador.');
-        const rpc=await imaudClient.rpc(isPos?'register_official_pos_payment':'register_official_udc_payment',{
+        const rpc=await imaudClient.rpc(isPos?'register_official_pos_received_payment':'register_official_udc_received_payment',{
          p_contributor_id:contributor.id,p_assessment_ids:selected,
          p_payment_method:form.elements.method.value,
          p_external_reference:form.elements.reference.value.trim(),
          p_bank_code:form.elements.bank.value,
          p_evidence_path:path||null,p_paid_at:new Date().toISOString(),
-         p_expected_rate_id:quote.rate_id,p_expected_total_bs:Number(quote.total_bs),
+         p_expected_rate_id:quote.rate_id,p_expected_total_bs:Number(quote.total_bs),p_received_bs:receivedBs,
           ...(isPos?{p_pos_terminal_id:form.elements.pos_terminal_id.value}:{})
        });
        if(rpc.error)throw rpc.error;
@@ -239,7 +257,7 @@
        form.hidden=true;
        document.getElementById('udcPaymentConfirmation').innerHTML=
         '<div class="notice"><b>Pago registrado correctamente · '+esc(data.receipt_number)+'</b>'+
-        '<p>Total: '+bs(data.amount_bs)+' · '+esc(ucd(data.udc_total))+
+        '<p>Deuda aplicada: '+bs(data.assessed_bs)+' · Recibido: '+bs(data.received_bs)+' · Diferencia: '+bs(data.excess_bs)+' · '+esc(ucd(data.udc_total))+
         ' · Fecha de la tasa: '+esc(data.rate_date)+
         '</p><p><strong>PENDIENTE de validación y liquidación por Tesorería.</strong></p></div>';
        tell('Pago registrado y factura emitida. Tesorería verificará el ingreso para efectos de solvencia.');
@@ -258,6 +276,7 @@
      }
    }
  });
+ document.addEventListener('input',e=>{if(e.target.id==='udcPayReceivedBs')updateReceivedDifference();});
  document.addEventListener('change',e=>{
    if(e.target.matches('#udcPaymentRegister .udc-month'))updateQuote();
    if(e.target.matches('#udcPaymentRegister [name="method"]'))adjustProofRequirement();

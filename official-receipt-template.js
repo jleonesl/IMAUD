@@ -16,7 +16,7 @@ if(!allocations?.length)throw Error('Factura sin obligaciones oficiales');
     const parish=property.parish_name||'No registrada';
     const sector=property.sector_name||'No registrado';
     const isVES=p.currency_code==='VES',paid=!preview&&p.status==='confirmed',pending=!preview&&p.status==='pending';
-    const actualBs=Number(p.received_amount_bs??p.amount||0), appliedBs=Number(p.amount||0);
+    const actualBs=Number((p.received_amount_bs??p.amount)||0), appliedBs=Number(p.amount||0);
     const extraBs=Math.max(0,Math.round((actualBs-appliedBs)*100)/100);
     const title=preview?'RECIBO DE PAGO':paid||pending?'RECIBO DE PAGO':'RECIBO ANULADO';
     const status=preview?'PLANTILLA SIN DATOS · NO ES UN RECIBO EMITIDO':paid?'PAGO CONFIRMADO':pending?'PAGO REGISTRADO · EN VERIFICACIÓN':'ANULADO · PAGO NO ACREDITADO';

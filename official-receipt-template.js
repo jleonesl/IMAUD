@@ -16,6 +16,8 @@ if(!allocations?.length)throw Error('Factura sin obligaciones oficiales');
     const parish=property.parish_name||'No registrada';
     const sector=property.sector_name||'No registrado';
     const isVES=p.currency_code==='VES',paid=!preview&&p.status==='confirmed',pending=!preview&&p.status==='pending';
+    const actualBs=Number(p.received_amount_bs??p.amount||0), appliedBs=Number(p.amount||0);
+    const extraBs=Math.max(0,Math.round((actualBs-appliedBs)*100)/100);
     const title=preview?'RECIBO DE PAGO':paid||pending?'RECIBO DE PAGO':'RECIBO ANULADO';
     const status=preview?'PLANTILLA SIN DATOS · NO ES UN RECIBO EMITIDO':paid?'PAGO CONFIRMADO':pending?'PAGO REGISTRADO · EN VERIFICACIÓN':'ANULADO · PAGO NO ACREDITADO';
     const doc='<article class="bill-paper sit-receipt" role="document">'+
@@ -34,7 +36,8 @@ if(!allocations?.length)throw Error('Factura sin obligaciones oficiales');
         '<div><span>Tipología:</span><b>'+safe(typology)+'</b></div>'+
       '</div><div class="sit-receipt-side"><div class="sit-receipt-period"><strong>PERÍODO FACTURADO</strong><span>'+safe(billedPeriod||'No definido')+'</span></div>'+
         '<div class="sit-receipt-verification"><strong>Identificación del documento</strong><span>'+safe(p.receipt_number)+'</span><small>Consultar en SITMAUD. La verificación digital mediante QR todavía no está habilitada.</small></div></div></div>'+
-      '<div class="sit-receipt-charge"><div><strong>Concepto</strong><span>Servicio de aseo urbano y domiciliario</span></div><div><strong>'+(paid||pending?'Monto pagado (Bs.)':'Monto anulado (Bs.)')+'</strong><b>'+safe(preview?'—':isVES?receiptMoney(p.amount):'Sin conversión a bolívares')+'</b></div></div>'+
+      '<div class="sit-receipt-charge"><div><strong>Concepto</strong><span>Servicio de aseo urbano y domiciliario</span></div><div><strong>'+(paid||pending?'Monto aplicado a mensualidades (Bs.)':'Monto anulado (Bs.)')+'</strong><b>'+safe(preview?'—':isVES?receiptMoney(p.amount):'Sin conversión a bolívares')+'</b></div></div>'+
+      (!preview&&isVES?'<div class="sit-receipt-payment"><div><span>MONTO REALMENTE RECIBIDO</span><b>'+safe(receiptMoney(actualBs))+'</b></div><div><span>DIFERENCIA NO APLICADA A DEUDA</span><b>'+safe(receiptMoney(extraBs))+'</b></div></div>':'')+
       '<div class="sit-receipt-payment"><div><span>MÉTODO DE PAGO</span><b>'+safe(p.payment_method||'No registrado')+'</b></div><div><span>BANCO</span><b>'+safe(p.bank_code||'No consignado')+'</b></div><div><span>REFERENCIA</span><b>'+safe(p.external_reference||'No registrada')+'</b></div></div>'+
       '<div class="sit-receipt-payment"><div><span>MONTO UCD</span><b>'+safe(p.payment_udc_total==null?'—':String(p.payment_udc_total)+' UCD')+'</b></div><div><span>TASA BCV/UCD</span><b>'+safe(p.rate?String(p.rate.udc_value)+' · '+p.rate.effective_date:'No registrada')+'</b></div><div><span>ORIGEN DE LA TASA</span><b>'+safe(p.rate?.source_url||'No registrado')+'</b></div></div>'+
       '<footer class="sit-receipt-footer">Cuida la ciudad, cumple con tu servicio de aseo.</footer>'+

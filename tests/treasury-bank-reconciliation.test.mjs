@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=p=>readFileSync(p,'utf8');
+const reconciliation=read('supabase/migrations/20261121012500_treasury_bank_reconciliation.sql');
+const restrictions=read('supabase/migrations/20261121013500_require_bank_reconciliation_before_liquidation.sql');
+const finance=read('official-finance.js');
+const index=read('index.html');
+const audit=read('app.js');
+test('Treasury reconciliation requires matching bank, reference, VES amount and distinct actor',()=>{
+ assert.match(reconciliation,/public\.has_permission\('payments\.validate'\)/);
+ assert.match(reconciliation,/p\.registered_by=auth\.uid\(\)/);
+ assert.match(reconciliation,/btrim\(p_bank_code\)<>btrim\(p\.bank_code\)/);
+ assert.match(reconciliation,/upper\(btrim\(coalesce\(p_external_reference,''\)\)\)<>upper\(btrim\(coalesce\(p\.external_reference,''\)\)\)/);
+ assert.match(reconciliation,/p_confirmed_received_bs<>actual/);
+ assert.match(reconciliation,/actual:=coalesce\(p\.received_amount_bs,p\.amount\)/);
+ assert.match(reconciliation,/private\.payment_bank_reconciliations/);
+ assert.match(reconciliation,/treasury_bank_reconciled/);
+ assert.match(reconciliation,/public\.liquidate_official_payment\(p_payment_id,p_treasury_note\)/);
+ assert.match(reconciliation,/enable row level security/);
+ assert.match(restrictions,/revoke execute on function public\.liquidate_official_payment\(uuid,text\)/);
+});
+test('Treasury screen asks operator to supply independently verified values before liquidating',()=>{
+ assert.match(finance,/liquidate_official_payment_reconciled/);
+ assert.match(finance,/p_bank_code:verifiedBank\.trim\(\)/);
+ assert.match(finance,/p_external_reference:verifiedRef\.trim\(\)/);
+ assert.match(finance,/p_confirmed_received_bs:actualAmount/);
+ assert.match(finance,/p_treasury_note:note\.trim\(\)/);
+ assert.match(finance,/No se completa automáticamente|no se completa automáticamente/);
+ assert.match(audit,/treasury_bank_reconciled:'Tesorería concilió banco, referencia y monto recibido'/);
+ assert.match(index,/official-finance\.js\?v=20261121-bank-verified1/);
+});

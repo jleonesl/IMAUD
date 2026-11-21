@@ -267,13 +267,26 @@
   }
   async function liquidate(id,btn){
     const p=payments.find(p=>p.id===id);if(!p||p.status!=='pending')return;
-    const ok=window.confirm('¿Has verificado en el banco un ingreso de '+money(p.received_amount_bs??p.amount,'VES')+' para el recibo '+p.receipt_number+' (deuda tributaria: '+money(p.amount,'VES')+') y la referencia '+(p.external_reference||'SIN REFERENCIA')+'? Esta operación reconocerá el importe realmente recibido como recaudación.');
+    const ok=window.confirm('CONCILIACIÓN BANCARIA · Recibo '+p.receipt_number+'\\nBanco registrado: '+(p.bank_code||'—')+'\\nReferencia registrada: '+(p.external_reference||'—')+'\\nImporte que debe constar acreditado: '+money(p.received_amount_bs??p.amount,'VES')+'\\nDeuda tributaria aplicada: '+money(p.amount,'VES')+'\\n\\nAntes de continuar, verifica estos datos contra el movimiento bancario real.');
     if(!ok)return;
-    const note=window.prompt('Indica banco, fecha de verificación y observación de Tesorería (obligatorio):','');
+    const verifiedBank=window.prompt('Escribe el código del banco que verificaste en el movimiento bancario (no se completa automáticamente):','');
+    if(verifiedBank===null)return;
+    const verifiedRef=window.prompt('Escribe la referencia bancaria que verificaste (no se completa automáticamente):','');
+    if(verifiedRef===null)return;
+    const enteredAmount=window.prompt('Escribe el importe EXACTO acreditado en Bs. (ejemplo: 504.75):','');
+    if(enteredAmount===null)return;
+    const normalizedAmount=enteredAmount.trim().replace(',','.');
+    if(!/^\\d+(?:\\.\\d{1,2})?$/.test(normalizedAmount)){window.alert('Introduce el importe en bolívares con hasta dos decimales.');return;}
+    const actualAmount=Number(normalizedAmount);
+    const note=window.prompt('Indica fecha de acreditación, cuenta bancaria revisada y observación de Tesorería (mínimo 20 caracteres):','');
     if(!note||note.trim().length<20){window.alert('Debes documentar la verificación bancaria con al menos 20 caracteres.');return;}
     btn.disabled=true;
     try{
-      const {error}=await imaudClient.rpc('liquidate_official_payment',{p_payment_id:id,p_treasury_note:note.trim()});
+      const {error}=await imaudClient.rpc('liquidate_official_payment_reconciled',{
+        p_payment_id:id,p_bank_code:verifiedBank.trim(),
+        p_external_reference:verifiedRef.trim(),
+        p_confirmed_received_bs:actualAmount,p_treasury_note:note.trim()
+      });
       if(error)throw error;
       window.alert('Operación liquidada. Se actualizarán los indicadores.');
       await Promise.all([loadPayments(),loadOverview()]);

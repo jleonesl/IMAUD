@@ -49,6 +49,6 @@ test('receipts and Treasury reconcile received cash without changing monthly all
 
 test('production HTML refreshes all financial assets',()=>{
  for(const path of ['styles.css','official-finance.js','official-payment-registration.js','official-receipt-template.js','app.js']){
-  assert.ok(index.includes(path+'?v='+(path==='app.js'?'20261121-bank-verified1':'20261121-issuer-bank1')),path);
+  assert.ok(index.includes(path+'?v='+(path==='app.js'?'20261121-bank-verified1':path==='styles.css'?'20261120-ves-ledger1':'20261121-issuer-bank1')),path);
  }
 });

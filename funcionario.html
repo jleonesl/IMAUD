@@ -26,10 +26,10 @@ body{font-family:Inter,Manrope,Arial,sans-serif;color:#102d46;background:#fff;ov
 <form id="staffLogin"><label class="field" for="staffEmail">Usuario o correo institucional</label><input id="staffEmail" type="email" autocomplete="username" placeholder="usuario@institucion.gob.ve" required><label class="field" for="staffPassword">Contraseña</label><input id="staffPassword" type="password" autocomplete="current-password" placeholder="Ingresa tu contraseña" required><button class="submit" id="staffSubmit" type="submit">Ingresar al sistema</button></form>
 <form id="staffSetPassword" hidden>
 <label class="field" for="staffNewPassword">Crea tu contraseña *</label>
-<input id="staffNewPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Mínimo 12 caracteres">
+<input id="staffNewPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="Mínimo 8 caracteres">
 <label class="field" for="staffConfirmPassword">Confirma tu contraseña *</label>
-<input id="staffConfirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required placeholder="Repite tu contraseña">
-<p class="sub">Elige una contraseña de al menos 12 caracteres. Nadie en la Alcaldía necesita conocerla, ni siquiera el superusuario.</p>
+<input id="staffConfirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="Repite tu contraseña">
+<p class="sub">Elige una contraseña de al menos 8 caracteres. Nadie en la Alcaldía necesita conocerla, ni siquiera el superusuario.</p>
 <button class="submit" id="staffPasswordSubmit" type="submit">Guardar contraseña y activar acceso</button>
 </form>
 <a class="forgot" href="#" id="staffForgot">¿Olvidaste tu contraseña?</a><div class="message" id="staffMessage" role="status"></div>

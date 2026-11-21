@@ -62,6 +62,7 @@ jobs:
           node --test tests/udc-contingency.test.mjs
           node --test tests/audit-readable.test.mjs
           node --test tests/treasury-debt-restoration.test.mjs
+          node --test tests/ves-reconciliation.test.mjs
           node --test tests/staff-invitation-password.test.mjs
           node --test tests/payments-layout.test.mjs
           node --test tests/billing-engine-regression.test.mjs

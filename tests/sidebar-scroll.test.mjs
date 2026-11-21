@@ -7,7 +7,7 @@ const styles=readFileSync('styles.css','utf8');
 const app=readFileSync('app.js','utf8');
 
 test('Bitácora exists in the staff sidebar, and is mapped to an accessible view',()=>{
- assert.match(html,/<nav id="mainNav">/);
+ assert.match(html,/<nav id="mainNav" aria-label="Opciones institucionales desplazables" tabindex="0">/);
  assert.match(html,/data-view="bitacora"/);
  assert.match(html,/Bitácora<\/button>/);
  assert.match(app,/bitacora:officialAudit/);

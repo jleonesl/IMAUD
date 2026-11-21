@@ -1290,6 +1290,7 @@ async function loadAuditRecords(reset=false){
   udc_rate_contingency_verified:'Verificó institucionalmente una tasa UCD',
   official_payment_udc_registered:'Registró un pago',
   treasury_payment_liquidated:'Tesorería validó y liquidó un pago',
+  treasury_bank_reconciled:'Tesorería concilió banco, referencia y monto recibido',
   treasury_payment_rejected:'Tesorería rechazó un pago',
   payment_actual_ves_recorded:'Registró el monto realmente recibido en bolívares',
   citizen_payment_udc_submitted:'Un contribuyente presentó un pago para validación',

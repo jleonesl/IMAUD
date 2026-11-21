@@ -65,6 +65,7 @@ jobs:
           node --test tests/ves-reconciliation.test.mjs
           node --test tests/treasury-bank-reconciliation.test.mjs
           node --test tests/pos-card-issuer-bank.test.mjs
+          node --test tests/sidebar-scroll.test.mjs
           node --test tests/staff-invitation-password.test.mjs
           node --test tests/payments-layout.test.mjs
           node --test tests/billing-engine-regression.test.mjs

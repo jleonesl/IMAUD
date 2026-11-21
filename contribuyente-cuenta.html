@@ -449,10 +449,28 @@ document.getElementById('citizenChangePasswordForm').addEventListener('submit',a
  }catch(err){feedback.textContent=err.message||'No se pudo cambiar la contraseña.';}
  finally{submit.disabled=false;}
 });
+let citizenIsLoggingOut=false;
 document.getElementById('exit').addEventListener('click',async()=>{
- sessionStorage.removeItem('sitmaud_citizen_view');
- await client.auth.signOut();
- location.replace('./contribuyente-v2.html');
+ if(citizenIsLoggingOut)return;
+ citizenIsLoggingOut=true;
+ const button=document.getElementById('exit');
+ button.disabled=true;button.textContent='Cerrando sesión…';
+ try{
+  const {error}=await client.auth.signOut({scope:'local'});
+  if(error)throw error;
+  sessionStorage.removeItem('sitmaud_citizen_view');
+  location.replace('./contribuyente-v2.html?sesion=cerrada');
+ }catch(error){
+  citizenIsLoggingOut=false;
+  button.disabled=false;button.textContent='Cerrar sesión';
+  document.getElementById('sessionStatus').textContent='No se pudo cerrar sesión. Comprueba tu conexión e inténtalo de nuevo.';
+ }
+});
+// Evita presentar datos anteriores si una pestaña privada vuelve del historial del navegador.
+window.addEventListener('pageshow',async event=>{
+ if(!event.persisted||citizenIsLoggingOut)return;
+ const {data,error}=await client.auth.getUser();
+ if(error||!data.user)location.replace('./contribuyente-v2.html?sesion=cerrada');
 });
 </script>
 </body></html>

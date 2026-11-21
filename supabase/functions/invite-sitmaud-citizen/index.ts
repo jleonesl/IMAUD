@@ -1,5 +1,9 @@
 import {createClient} from "npm:@supabase/supabase-js@2";
-const ORIGIN="https://jleonesl.github.io";
+const PORTAL_BASE=(Deno.env.get("SITMAUD_PUBLIC_BASE_URL")||"https://jleonesl.github.io/IMAUD").replace(/\/$/,"");
+if(!PORTAL_BASE.startsWith("https://"))throw new Error("El acceso institucional requiere HTTPS");
+const ORIGIN=new URL(PORTAL_BASE).origin;
+const MAIL_API_KEY=Deno.env.get("RESEND_API_KEY");
+const MAIL_FROM=Deno.env.get("SITMAUD_MAIL_FROM");
 function respond(data:unknown,status=200,origin:string|null=null){
  return new Response(JSON.stringify(data),{status,headers:{
  "Content-Type":"application/json","Cache-Control":"no-store",
@@ -36,7 +40,7 @@ Deno.serve(async request=>{
  const {data:linked,error:linkedError}=await admin.from("citizen_accounts")
  .select("auth_user_id,is_active").eq("contributor_id",id).maybeSingle();
  if(linkedError)return respond({error:"No se pudo verificar la cuenta ciudadana"},503,origin);
- const redirectTo=ORIGIN+"/IMAUD/activar-contribuyente.html";
+ const redirectTo=PORTAL_BASE+"/activar-contribuyente.html";
  const identityTypeForEmail=c.service_account_type==="condominio"?"J":String(c.identification_type||"");
  const identityDigits=String(c.identification_number).replace(/[^0-9A-Za-z]/g,"").toUpperCase().replace(/^[VEJ]/,"");
  const citizenUsername=identityTypeForEmail+"-"+identityDigits;
@@ -78,10 +82,22 @@ Deno.serve(async request=>{
  const {data:permitted,error:limitError}=await admin.rpc("allow_citizen_access_email",{p_contributor_id:id});
  if(limitError)return respond({error:"No se pudo verificar la autorización de correo"},503,origin);
  if(!permitted)return respond({error:"Se intentó enviar este acceso recientemente. Evita registrar el expediente nuevamente."},429,origin);
- const {data:invitation,error:invitationError}=await admin.auth.admin.inviteUserByEmail(email,{
-  data:{citizen_portal:true,citizen_username:citizenUsername,citizen_contract:c.contract_number},redirectTo
- });
- if(invitationError||!invitation.user)return respond({error:"No se pudo emitir la invitación. Si el correo ya tiene una cuenta de acceso, verifica su titularidad y utiliza la activación institucional existente."},409,origin);
+ // Un correo institucional configurado permite acceso inmediato con una clave individual.
+ // No hay vencimiento programado ni obligación de cambiarla al iniciar sesión.
+ const canSendCredentials=Boolean(MAIL_API_KEY&&MAIL_FROM);
+ const alphabet="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+ const bytes=new Uint8Array(12);
+ crypto.getRandomValues(bytes);
+ const temporaryPassword=[...bytes].map(value=>alphabet[value%alphabet.length]).join("");
+ const metadata={citizen_portal:true,citizen_username:citizenUsername,citizen_contract:c.contract_number};
+ const {data:invitation,error:invitationError}=canSendCredentials
+   ?await admin.auth.admin.createUser({
+     email,password:temporaryPassword,email_confirm:true,user_metadata:metadata
+   })
+   :await admin.auth.admin.inviteUserByEmail(email,{data:metadata,redirectTo});
+ if(invitationError||!invitation.user)return respond({
+   error:"No se pudo habilitar el acceso. Si el correo ya tiene una cuenta, verifica su titularidad y utiliza la cuenta existente."
+ },409,origin);
  const newId=invitation.user.id;
  const {data:staffAccount}=await admin.from("staff_profiles").select("user_id").eq("user_id",newId).maybeSingle();
  const {data:linkedElsewhere}=await admin.from("citizen_accounts").select("contributor_id").eq("auth_user_id",newId).maybeSingle();
@@ -92,9 +108,49 @@ Deno.serve(async request=>{
   auth_user_id:newId,contributor_id:id,identity_type:identityType,
   activated_by:user.user.id,is_active:true
  },{onConflict:"auth_user_id"});
- if(linkError)return respond({error:"Invitación enviada, pero no se vinculó el expediente. Se requiere revisión institucional."},503,origin);
+ if(linkError){
+   if(canSendCredentials)await admin.auth.admin.deleteUser(newId);
+   return respond({error:"La cuenta fue creada pero no se pudo vincular el expediente. Se requiere revisión institucional."},503,origin);
+ }
+ if(canSendCredentials){
+   const escapeHTML=(value:string)=>value.replace(/[&<>"']/g,ch=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#39;"
+   }[ch]||ch));
+   const loginLink=PORTAL_BASE+"/contribuyente-v2.html";
+   const citizenName=String(c.kind==="juridico"?c.legal_name:
+     [c.first_name,c.last_name].filter(Boolean).join(" ")||"contribuyente");
+   const emailHTML=`<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#173348">
+     <h2 style="color:#0c4666">SITMAUD · Acceso del contribuyente</h2>
+     <p>Hola, <strong>${escapeHTML(citizenName)}</strong>.</p>
+     <p>Ya puedes ingresar al Sistema Integral Tributario Municipal de Aseo Urbano y Domiciliario.</p>
+     <p><strong>Usuario (cédula o RIF):</strong> ${escapeHTML(citizenUsername)}</p>
+     <p><strong>Clave provisional individual:</strong>
+       <code style="font-size:17px;letter-spacing:1px">${escapeHTML(temporaryPassword)}</code></p>
+     <p><a href="${escapeHTML(loginLink)}" style="display:inline-block;background:#114c69;color:white;padding:12px 18px;border-radius:8px;text-decoration:none">Ingresar a SITMAUD</a></p>
+     <p>Enlace directo: <a href="${escapeHTML(loginLink)}">${escapeHTML(loginLink)}</a></p>
+     <p>Tu clave sigue siendo válida hasta que decidas cambiarla. No estás obligado a modificarla en tu primer ingreso.
+       Cuando quieras, podrás cambiarla desde tu cuenta o utilizar la recuperación si la pierdes.</p>
+     <p>Por seguridad, no compartas esta clave ni el correo.</p>
+   </div>`;
+   let delivered=false;
+   try{
+     const result=await fetch("https://api.resend.com/emails",{
+       method:"POST",headers:{"Authorization":"Bearer "+MAIL_API_KEY,"Content-Type":"application/json"},
+       body:JSON.stringify({from:MAIL_FROM,to:[email],subject:"SITMAUD · Tu usuario y clave de acceso",
+         html:emailHTML})
+     });
+     delivered=result.ok;
+   }catch(_error){delivered=false;}
+   if(!delivered){
+     await admin.from("citizen_accounts").delete().eq("auth_user_id",newId).eq("contributor_id",id);
+     await admin.auth.admin.deleteUser(newId);
+     return respond({error:"El correo no pudo entregar las credenciales. No se ha habilitado una cuenta con clave desconocida; revisa el remitente institucional y vuelve a intentar."},503,origin);
+   }
+ }
  await admin.from("audit_log").insert({actor_user_id:user.user.id,action:"citizen_invited",
   entity_table:"citizen_accounts",entity_id:id,
-  after_data:{auth_user_id:newId,contract_number:c.contract_number,channel:"email_activation"}});
- return respond({ok:true,invited:true,status:"invitation_accepted",email_requested:true,contract_number:c.contract_number},200,origin);
+  after_data:{auth_user_id:newId,contract_number:c.contract_number,channel:canSendCredentials?"credential_email":"email_activation"}});
+ return respond({ok:true,invited:true,status:"invitation_accepted",email_requested:true,
+   delivery_mode:canSendCredentials?"temporary_password_email":"activation_link",
+   contract_number:c.contract_number},200,origin);
 });

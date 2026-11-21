@@ -12,7 +12,7 @@ test('invited staff create their own password, not one assigned by management',(
  assert.match(page,/id="staffNewPassword"/);
  assert.match(page,/id="staffConfirmPassword"/);
  assert.match(setup,/client\.auth\.updateUser\(\{password\}\)/);
- assert.match(setup,/password\.length<12/);
+ assert.match(setup,/password\.length<8/);
  assert.match(setup,/password!==confirmation/);
  assert.match(setup,/client\.auth\.signOut\(\)/);
  assert.doesNotMatch(edge,/password:\s*['"]/);

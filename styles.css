@@ -1251,3 +1251,19 @@ body.modal-open{overflow:hidden}
  .official-cashier-modal .cashier-reference-summary strong{font-size:16px}
  .official-cashier-modal .payment-debt-scroll table{min-width:710px}
 }
+
+/* SITMAUD - salida institucional visible en escritorio, tablet y teléfono */
+.sidebar-bottom{display:flex;flex-direction:column;align-items:stretch;gap:9px}
+.sidebar-session-status{display:flex;align-items:center;gap:8px;width:100%}
+.sidebar-signout{display:flex;align-items:center;gap:11px;width:100%;min-height:43px;padding:10px 13px;margin-top:3px;border:1px solid rgba(213,232,240,.22);border-radius:10px;background:rgba(255,255,255,.085);color:#eaf7fc;font:700 12px 'DM Sans',sans-serif;text-align:left;cursor:pointer}
+.sidebar-signout:hover,.sidebar-signout:focus-visible{background:rgba(255,255,255,.17);border-color:rgba(255,255,255,.36)}
+.staff-signout-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;min-height:39px;padding:8px 12px;border:1px solid #dce7ec;border-radius:10px;background:#f5f9fb;color:#234c65;font:700 11px 'DM Sans',sans-serif;cursor:pointer;white-space:nowrap}
+.staff-signout-btn:hover,.staff-signout-btn:focus-visible{background:#e5f1f5;border-color:#b8d7e1}
+.staff-signout-btn>span:first-child{font-size:19px;line-height:1}
+.staff-signout-btn:disabled,.sidebar-signout:disabled{opacity:.6;cursor:wait}
+@media(max-width:760px){
+ .topbar .staff-signout-btn{display:inline-flex!important;min-width:44px;min-height:44px;justify-content:center;padding:8px 10px}
+ .topbar .staff-signout-btn span:last-child{display:none}
+ .sidebar-bottom{padding-bottom:15px}
+ .sidebar-signout{min-height:48px;font-size:13px}
+}

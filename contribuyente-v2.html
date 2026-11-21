@@ -123,7 +123,7 @@ form.addEventListener('submit',async e=>{
   });
   if(response.status===404||response.status===503)throw new Error('No está disponible el servicio de acceso. Vuelve a intentarlo o contacta a IMAUD; no registres otra cuenta.');
   const result=await response.json().catch(()=>({}));
-  if(!response.ok||!result.access_token||!result.refresh_token)throw new Error(result.error||'No se pudo iniciar sesión. Debes usar la contraseña creada mediante el correo de activación.');
+  if(!response.ok||!result.access_token||!result.refresh_token)throw new Error(result.error||'No se pudo iniciar sesión. Utiliza la clave provisional recibida en el correo de bienvenida o tu contraseña personal.');
   const {error:sessionError}=await client.auth.setSession({access_token:result.access_token,refresh_token:result.refresh_token});
   if(sessionError)throw sessionError;
   const {data,error}=await client.rpc('get_my_citizen_portal');
@@ -156,7 +156,7 @@ document.getElementById('citizenForgot').addEventListener('click',async e=>{
   });
   const result=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(result.error||'El servicio no está disponible.');
-  message.textContent='Si tu expediente está vinculado, recibirás en tu correo un enlace para establecer tu contraseña. Abre ese enlace, crea la clave y luego regresa aquí para ingresar con tu cédula o RIF.';
+  message.textContent='Si tu expediente está vinculado, recibirás instrucciones para recuperar el acceso. Tu clave de bienvenida sigue siendo válida hasta que decidas cambiarla; recuperarla es opcional si la recuerdas.';
  }catch(err){message.textContent=err.message||'No fue posible procesar la recuperación.';}
  finally{link.style.pointerEvents='';}
 });

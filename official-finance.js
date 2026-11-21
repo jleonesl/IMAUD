@@ -155,7 +155,7 @@
   }
     async function loadPayments(){
     if(!document.getElementById('officialPaymentRows')&&!document.getElementById('officialInvoiceRows')&&!document.getElementById('officialReportRows'))return;
-    const {data,error}=await imaudClient.from('payments').select('id,receipt_number,amount,received_amount_bs,currency_code,paid_at,created_at,invoice_issued_at,liquidated_at,payment_method,external_reference,status,registration_channel,evidence_path,bank_code,payment_udc_total,payment_udc_rate_id,rate:udc_rates!payments_payment_udc_rate_id_fkey(effective_date,udc_currency_code,udc_value,source_url),contributor:contributors!payments_contributor_id_fkey(kind,legal_name,first_name,last_name,contract_number,identification_type,identification_number)').order('created_at',{ascending:false}).limit(500);
+    const {data,error}=await imaudClient.from('payments').select('id,receipt_number,amount,received_amount_bs,currency_code,paid_at,created_at,invoice_issued_at,liquidated_at,payment_method,external_reference,status,registration_channel,evidence_path,bank_code,payer_bank_code,pos_terminal_id,payment_udc_total,payment_udc_rate_id,rate:udc_rates!payments_payment_udc_rate_id_fkey(effective_date,udc_currency_code,udc_value,source_url),contributor:contributors!payments_contributor_id_fkey(kind,legal_name,first_name,last_name,contract_number,identification_type,identification_number)').order('created_at',{ascending:false}).limit(500);
     if(error){for(const h of ['officialPaymentRows','officialInvoiceRows','officialReportRows']){const node=document.getElementById(h);if(node)node.innerHTML='<div class="contributors-empty">Error al consultar operaciones oficiales: '+safe(error.message)+'</div>';}return;}
     payments=data||[];limited=payments.length>=500;
     renderPaymentRows();renderInvoiceRows();
@@ -267,7 +267,7 @@
   }
   async function liquidate(id,btn){
     const p=payments.find(p=>p.id===id);if(!p||p.status!=='pending')return;
-    const ok=window.confirm('CONCILIACIÓN BANCARIA · Recibo '+p.receipt_number+'\\nBanco registrado: '+(p.bank_code||'—')+'\\nReferencia registrada: '+(p.external_reference||'—')+'\\nImporte que debe constar acreditado: '+money(p.received_amount_bs??p.amount,'VES')+'\\nDeuda tributaria aplicada: '+money(p.amount,'VES')+'\\n\\nAntes de continuar, verifica estos datos contra el movimiento bancario real.');
+    const ok=window.confirm('CONCILIACIÓN BANCARIA · Recibo '+p.receipt_number+'\\nBanco receptor / terminal: '+(p.bank_code||'—')+(p.payment_method==='punto_venta'?'\\nBanco emisor de la tarjeta: '+(p.payer_bank_code||'No registrado'):'')+'\\nReferencia registrada: '+(p.external_reference||'—')+'\\nImporte que debe constar acreditado: '+money(p.received_amount_bs??p.amount,'VES')+'\\nDeuda tributaria aplicada: '+money(p.amount,'VES')+'\\n\\nAntes de continuar, verifica estos datos contra el movimiento bancario real.');
     if(!ok)return;
     const verifiedBank=window.prompt('Escribe el código del banco que verificaste en el movimiento bancario (no se completa automáticamente):','');
     if(verifiedBank===null)return;

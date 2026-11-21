@@ -17,7 +17,7 @@
   function showLogin(){
     login.hidden=false;setup.hidden=true;forgot.hidden=false;
     heading.textContent='Iniciar sesión';
-    description.textContent='Ingresa con tu correo y la contraseña que creaste.';
+    description.textContent='Ingresa con tu correo y la clave provisional recibida o tu contraseña actual.';
   }
   function showSetup(){
     login.hidden=true;setup.hidden=false;forgot.hidden=true;

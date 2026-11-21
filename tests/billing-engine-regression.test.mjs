@@ -36,7 +36,7 @@ test('financial payment path preserves invoice before treasury validation',()=>{
   assert.match(cashier,/Registrar pago y emitir factura/);
   assert.match(cashier,/register_official_pos_received_payment/);
   assert.match(cashier,/register_official_udc_received_payment/);
-  assert.match(pos,/register_official_pos_received_payment/);
+  assert.match(pos,/register_official_pos_payment/);
   assert.match(pos,/pos_terminal_id/);
 });
 

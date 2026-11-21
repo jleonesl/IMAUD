@@ -23,7 +23,7 @@ test('details are disclosed explicitly and no raw JSON appears in primary activi
  assert.doesNotMatch(app,/const displayDetails=\(x\)=>/);
 });
 test('browser receives refreshed audit presentation',()=>{
- assert.match(index,/app\.js\?v=20261120-ves-ledger1/);
+ assert.match(index,/app\.js\?v=20261121-bank-verified1/);
  assert.match(index,/styles\.css\?v=20261120-ves-ledger1/);
 });
 

@@ -183,7 +183,7 @@
    if(difference)difference.textContent='Importe aplicado a la deuda: '+bs(quote.total_bs)+' · Diferencia: Bs. 0,00';
    host.innerHTML='<div class="card" style="padding:14px;margin:12px 0"><div><b>Total: '+bs(quote.total_bs)+'</b> · '+esc(ucd(quote.total_udc))+'</div>'+
    '<p>Tasa '+esc(quote.currency)+' / UCD: '+esc(quote.rate)+' Bs. · Fecha valor: '+esc(quote.effective_date)+
-   '</p><p>Origen: '+esc(quote.source_url)+'</p><small>El servidor recalcula al registrar; si la tasa cambia, no se guardará un importe elegido manualmente.</small></div>';
+   '</p><p>Origen: '+esc(quote.source_url)+'</p><small>El monto de las mensualidades se recalcula en el servidor. El importe recibido se guarda por separado para conciliación bancaria.</small></div>';
    button.disabled=false;
  }
  function updateReceivedDifference(){
@@ -227,7 +227,7 @@
      if((form.elements.method.value!=='punto_venta'&&!file)||(file&&(file.size>10*1024*1024||!['image/png','image/jpeg','image/webp','application/pdf'].includes(file.type)))){
        tell('Comprobante inválido. Se admite PDF, JPG, PNG o WebP, hasta 10 MB.');return;
      }
-     if(!window.confirm('Registrar '+selected.length+' mes(es) por '+bs(quote.total_bs)+' de deuda, con '+bs(receivedBs)+' efectivamente recibidos,'+
+     if(!window.confirm('Registrar '+selected.length+' mes(es) con deuda de '+bs(quote.total_bs)+' y '+bs(receivedBs)+' recibidos en banco,'+
        ' como pago PENDIENTE de Tesorería? La acreditación bancaria se verificará posteriormente.'))return;
      busy=true;b.disabled=true;b.textContent='Registrando y guardando comprobante…';
      let path='',saved=false;
@@ -244,7 +244,7 @@
         if(isPos&&!form.elements.pos_terminal_id.value)throw Error('Selecciona el terminal que está utilizando el recaudador.');
         const rpc=await imaudClient.rpc(isPos?'register_official_pos_received_payment':'register_official_udc_received_payment',{
          p_contributor_id:contributor.id,p_assessment_ids:selected,
-         p_payment_method:form.elements.method.value,
+         ...(!isPos?{p_payment_method:form.elements.method.value}:{}),
          p_external_reference:form.elements.reference.value.trim(),
          p_bank_code:form.elements.bank.value,
          p_evidence_path:path||null,p_paid_at:new Date().toISOString(),

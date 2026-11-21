@@ -40,7 +40,7 @@ test('cashier captures actual VES and sends exactly the selected payment method 
 test('receipts and Treasury reconcile received cash without changing monthly allocations',()=>{
  assert.match(finance,/receipt_number,amount,received_amount_bs,currency_code/);
  assert.match(finance,/p\.received_amount_bs\?\?p\.amount/);
- assert.match(finance,/deuda tributaria:/);
+ assert.match(finance,/Deuda tributaria aplicada:/);
  assert.match(receipt,/MONTO REALMENTE RECIBIDO/);
  assert.match(receipt,/DIFERENCIA NO APLICADA A DEUDA/);
  assert.match(receipt,/Monto aplicado a mensualidades/);

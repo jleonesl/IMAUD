@@ -76,7 +76,7 @@ Deno.serve(async (request) => {
   const mailFrom = Deno.env.get("SITMAUD_MAIL_FROM");
   if (mailApiKey && mailFrom) {
     const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#%";
-    const bytes = new Uint8Array(12);
+    const bytes = new Uint8Array(8);
     crypto.getRandomValues(bytes);
     const temporaryPassword = [...bytes].map(x => alphabet[x % alphabet.length]).join("");
     const { data: created, error: createError } = await admin.auth.admin.createUser({

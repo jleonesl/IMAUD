@@ -10,7 +10,7 @@ const audit=read('app.js');
 test('Treasury reconciliation requires matching bank, reference, VES amount and distinct actor',()=>{
  assert.match(reconciliation,/public\.has_permission\('payments\.validate'\)/);
  assert.match(reconciliation,/p\.registered_by=auth\.uid\(\)/);
- assert.match(reconciliation,/btrim\(p_bank_code\)<>btrim\(p\.bank_code\)/);
+ assert.match(reconciliation,/btrim\(coalesce\(p_bank_code,''\)\)<>btrim\(p\.bank_code\)/);
  assert.match(reconciliation,/upper\(btrim\(coalesce\(p_external_reference,''\)\)\)<>upper\(btrim\(coalesce\(p\.external_reference,''\)\)\)/);
  assert.match(reconciliation,/p_confirmed_received_bs<>actual/);
  assert.match(reconciliation,/actual:=coalesce\(p\.received_amount_bs,p\.amount\)/);

@@ -66,8 +66,8 @@
     if(!configured)return;
     const password=document.getElementById('staffNewPassword').value;
     const confirmation=document.getElementById('staffConfirmPassword').value;
-    if(password.length<12||password.length>128){
-      message.textContent='La contraseña debe tener entre 12 y 128 caracteres.';return;
+    if(password.length<8||password.length>128){
+      message.textContent='La contraseña debe tener entre 8 y 128 caracteres.';return;
     }
     if(password!==confirmation){
       message.textContent='Las contraseñas no coinciden.';return;

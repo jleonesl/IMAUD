@@ -28,5 +28,5 @@ test('Treasury screen asks operator to supply independently verified values befo
  assert.match(finance,/p_treasury_note:note\.trim\(\)/);
  assert.match(finance,/No se completa automáticamente|no se completa automáticamente/);
  assert.match(audit,/treasury_bank_reconciled:'Tesorería concilió banco, referencia y monto recibido'/);
- assert.match(index,/official-finance\.js\?v=20261121-issuer-bank1/);
+ assert.match(index,/official-finance\.js\?v=20261123-treasury1/);
 });

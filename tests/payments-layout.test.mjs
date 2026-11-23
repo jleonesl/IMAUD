@@ -5,7 +5,7 @@ const fin=readFileSync('official-finance.js','utf8');
 const cashier=readFileSync('official-payment-registration.js','utf8');
 const styles=readFileSync('styles.css','utf8');
 test('payments home is a debtor directory, not duplicated financial dashboard',()=>{
- const view=fin.slice(fin.indexOf('function paymentView()'),fin.indexOf('function invoiceView()'));
+ const view=fin.slice(fin.indexOf('function paymentView()'),fin.indexOf('function treasuryView()'));
  assert.match(view,/Contribuyentes con deudas/);
  assert.match(view,/data-official-open-register/);
  assert.match(view,/officialDebtorRows/);
@@ -14,9 +14,8 @@ test('payments home is a debtor directory, not duplicated financial dashboard',(
  assert.doesNotMatch(view,/financeKpis\(/);
  assert.doesNotMatch(view,/financialOverview/);
  assert.doesNotMatch(view,/<details class="card panel official-operations-details"/);
- assert.match(view,/data-official-payment-tab="deudas"/);
- assert.match(view,/data-official-payment-tab="pagos"/);
- assert.match(view,/id="officialPaymentsView" hidden/);
+ assert.doesNotMatch(view,/data-official-payment-tab/);
+ assert.doesNotMatch(view,/id="officialPaymentsView"/);
  assert.match(view,/id="officialReliefBackdrop" hidden/);
  assert.doesNotMatch(view,/section class="card panel" id="officialDebtReliefPanel"/);
 
@@ -57,8 +56,9 @@ test('treasury actions remain per pending payment with permission gate',()=>{
  assert.match(fin,/data-official-liquidate/);
  assert.match(fin,/data-official-reject/);
  assert.match(fin,/data-official-invoice/);
- assert.match(fin,/id="officialPaymentRows"/);
- assert.match(styles,/#officialDebtsView\[hidden\],#officialPaymentsView\[hidden\]/);
+ assert.match(fin,/id="officialTreasuryRows"/);
+ assert.match(fin,/function treasuryView\(\)/);
+ assert.match(styles,/\.treasury-kpis/);
 });
 
 test('cashier sees authorized September-November 2026 debts and matches V-prefixed cedula',()=>{
@@ -94,7 +94,7 @@ test('actual payment modal uses redesigned institutional structure, not the old 
  assert.match(styles,/\.cashier-search-row/);
  const html=readFileSync('index.html','utf8');
  assert.match(html,/official-payment-registration\.js\?v=20261121-issuer-bank1/);
- assert.match(html,/styles\.css\?v=20261121-sidebar-scroll1/);
+ assert.match(html,/styles\.css\?v=20261123-treasury1/);
 });
 
 test('monthly debt table displays Bs snapshots alongside UCD without treating them as current payable quotes',()=>{
@@ -114,4 +114,19 @@ test('selecting one or several debts instantly updates Bs total even when offici
  assert.match(cashier,/refTotal\.textContent=bs\(selectedReferenceBs\)/);
  assert.match(cashier,/if\(noOfficialRate\)/);
  assert.match(cashier,/Tasa UCD no disponible para el cobro/);
+});
+
+test('Treasury has its own permission-gated dashboard and cashier keeps debt registration',()=>{
+ const app=readFileSync('app.js','utf8');
+ const index=readFileSync('index.html','utf8');
+ assert.match(index,/data-view="tesoreria"/);
+ assert.match(app,/tesoreria:\['payments.validate'\]/);
+ assert.match(app,/view==='tesoreria'\).*payments.read.*payments.validate/);
+ assert.match(fin,/data-treasury-count="total"/);
+ assert.match(fin,/data-treasury-count="pending"/);
+ assert.match(fin,/data-treasury-count="confirmed"/);
+ assert.match(fin,/data-treasury-count="reversed"/);
+ assert.match(fin,/id="officialTreasuryRows"/);
+ assert.match(fin,/function paymentView\(\)/);
+ assert.match(fin,/data-official-open-register/);
 });

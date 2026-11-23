@@ -594,7 +594,7 @@
     async mount(v){
       if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){changeReportPeriod(form);changeReportGrouping(form);renderReportRows(form);}}
       if(v==='reportes')loadOverview();
-      if(v==='pagos'){loadDebtors();loadTrialBillingBanner();}
+      if(v==='pagos'){loadDebtors();loadFinancialPrivileges();loadTrialBillingBanner();}
       if(v==='tesoreria')loadFinancialPrivileges();
       await loadPayments();
     }

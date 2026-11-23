@@ -4,7 +4,7 @@
   const money=(v,c='VES')=>new Intl.NumberFormat('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(v||0))+' '+(c==='VES'?'Bs.':c);
     const safe=(v)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const fmtDate=(v)=>v?new Date(v).toLocaleString('es-VE',{timeZone:'America/Caracas',dateStyle:'short',timeStyle:'short'}):'—';
-  const label=(status)=>({pending:'Por liquidar',confirmed:'Liquidado',reversed:'Rechazado / reversado'})[status]||status||'—';
+  const label=(status)=>({pending:'Por validar / liquidar',confirmed:'Validado y liquidado',reversed:'Rechazado / reversado'})[status]||status||'—';
   const contributor=(p)=>p?.kind==='juridico'?(p?.legal_name||'Persona jurídica'):([p?.first_name,p?.last_name].filter(Boolean).join(' ')||'Contribuyente');
   const byCurrency=(obj)=>{const x=Object.entries(obj||{});return x.length?x.map(([c,v])=>money(v,c)).join(' · '):'Bs. 0,00'};
   let payments=[],currentReport=[],limited=false,treasuryAllowed=false,reliefAllowed=false,reliefCandidates=[];
@@ -16,17 +16,26 @@
       '<button type="button" class="btn btn-primary" data-official-open-register>＋ Registrar pago</button></div>'+
       '<section class="card panel" id="officialTrialBillingBanner" hidden aria-live="polite"><div class="panel-head"><div><h3>Mensualidades de septiembre a noviembre 2026</h3><p id="officialTrialBillingSummary">Comprobando el estado del motor de pruebas…</p></div></div><div class="form-actions"><button class="btn btn-primary" id="officialTrialBillingAction" type="button" data-official-bulk-trial hidden>Autorizar tabulador y generar mensualidades</button><button class="btn btn-light" type="button" data-go="ordenanza">Ver ordenanza y tarifas</button></div><p class="panel-hint" id="officialTrialBillingDetail">Solo el funcionario autorizado puede habilitar el tabulador de pruebas. Se registrará la autorización en bitácora, y el sistema no duplicará meses existentes.</p></section>'+
       '<section class="card payment-debt-card official-debtors">'+
-      '<div class="official-payment-view-tabs" role="group" aria-label="Ver deudas o pagos registrados"><button type="button" class="btn btn-sm official-payment-tab active" data-official-payment-tab="deudas" aria-pressed="true">Deudas pendientes</button><button type="button" class="btn btn-sm official-payment-tab" data-official-payment-tab="pagos" aria-pressed="false">Pagos registrados</button></div>'+
       '<div id="officialDebtsView"><div class="payment-list-head"><div><h3>Contribuyentes con deudas</h3><p>Selecciona un expediente para pagar o exonerar meses pendientes.</p></div><span class="table-count" id="officialDebtorCount">Consultando…</span></div>'+
       '<div class="payment-debt-toolbar"><input type="search" class="search" id="officialDebtorSearch" placeholder="Buscar nombre, cédula, RIF, contrato o inmueble" aria-label="Buscar contribuyentes con obligaciones"><select class="filter-select" id="officialDebtorType" aria-label="Tipo de contribuyente"><option value="">Todos los tipos</option><option value="individual">Contribuyentes e inmuebles</option><option value="condominio">Condominios</option></select><button type="button" class="btn btn-light" data-official-action="refresh">Actualizar</button></div>'+
-      '<div id="officialDebtorRows"><div class="contributors-loading">Consultando obligaciones oficiales…</div></div></div>'+
-      '<div id="officialPaymentsView" hidden><div class="payment-list-head"><div><h3>Pagos registrados</h3><p>Consulta y verifica cada comprobante; Tesorería puede liquidar o rechazar los pendientes desde su fila.</p></div></div>'+
-      '<div class="payment-debt-toolbar"><input type="search" class="search" id="officialPaySearch" placeholder="Buscar contribuyente, referencia o comprobante" aria-label="Buscar pagos"><select class="filter-select" id="officialPayStatus"><option value="">Todos los estados</option><option value="pending">Por liquidar</option><option value="confirmed">Liquidados</option><option value="reversed">Rechazados</option></select><button type="button" class="btn btn-light" data-official-action="refresh">Actualizar</button></div>'+
-      '<div id="officialPaymentRows"><div class="contributors-loading">Consultando pagos…</div></div></div></section>'+
+      '<div id="officialDebtorRows"><div class="contributors-loading">Consultando obligaciones oficiales…</div></div></div></section>'+
       '<div class="official-relief-backdrop" id="officialReliefBackdrop" hidden><section class="card panel official-relief-modal" id="officialDebtReliefPanel" role="dialog" aria-modal="true" aria-labelledby="officialReliefTitle">'+
       '<div class="panel-head"><div><h3 id="officialReliefTitle">Exonerar meses pendientes</h3><p>Solo funcionarios autorizados. Las exoneraciones se registran en bitácora y no cuentan como recaudación.</p></div><button type="button" class="btn btn-light" data-official-relief-close aria-label="Cerrar exoneración">✕ Cerrar</button></div>'+
       '<form id="officialDebtReliefLookup"><div class="form-grid"><div class="field"><label for="reliefContributorLookup">N.º de contrato, cédula o RIF</label><input id="reliefContributorLookup" name="identity" required placeholder="Buscar contribuyente"></div></div><div class="form-actions"><button class="btn btn-light" type="submit">Buscar obligaciones</button></div></form>'+
       '<div id="officialReliefObligations" aria-live="polite"></div></section></div>';
+  }
+  function treasuryView(){
+    return header('Tesorería','Bandeja exclusiva para revisar, validar y liquidar los pagos registrados por Recaudación.')+
+      '<section class="grid kpis treasury-kpis">'+
+      '<article class="card kpi"><div class="kpi-top"><span>Pagos recibidos</span><span class="kpi-icon">▧</span></div><div class="kpi-value" data-treasury-count="total">—</div><div class="kpi-note">Operaciones registradas</div></article>'+
+      '<article class="card kpi"><div class="kpi-top"><span>Por validar</span><span class="kpi-icon">◷</span></div><div class="kpi-value" data-treasury-count="pending">—</div><div class="kpi-note">Pendientes de revisión bancaria</div></article>'+
+      '<article class="card kpi"><div class="kpi-top"><span>Validados y liquidados</span><span class="kpi-icon">✓</span></div><div class="kpi-value" data-treasury-count="confirmed">—</div><div class="kpi-note">Ingresos confirmados</div></article>'+
+      '<article class="card kpi"><div class="kpi-top"><span>Rechazados</span><span class="kpi-icon">×</span></div><div class="kpi-value" data-treasury-count="reversed">—</div><div class="kpi-note">Operaciones rechazadas o reversadas</div></article>'+
+      '</section>'+
+      '<section class="card panel"><div class="panel-head"><div><h3>Control y validación de pagos</h3><p>Los pagos nuevos aparecen aquí automáticamente al ser registrados en Recaudación.</p></div><button type="button" class="btn btn-light" data-official-action="refresh">Actualizar</button></div>'+
+      '<div class="payment-debt-toolbar"><input type="search" class="search" id="officialPaySearch" placeholder="Buscar contribuyente, contrato, referencia o comprobante" aria-label="Buscar pagos para Tesorería"><select class="filter-select" id="officialPayStatus" aria-label="Filtrar pagos por estado"><option value="">Todos los estados</option><option value="pending">Por validar</option><option value="confirmed">Validados y liquidados</option><option value="reversed">Rechazados</option></select></div>'+
+      '<div id="officialTreasuryRows"><div class="contributors-loading">Consultando pagos registrados…</div></div>'+
+      '<p class="panel-hint" style="margin-top:14px">Nota operativa: el flujo vigente confirma la acreditación bancaria y liquida la obligación en una sola operación auditada. El comprobante se emite al registrar el pago; la validación de Tesorería no genera un segundo pago.</p></section>';
   }
   function invoiceView(){
     return header('Facturación','Documentos basados exclusivamente en pagos registrados en el sistema institucional.')+
@@ -153,21 +162,35 @@
     debtors=data?.items||[];debtorTotal=Number(data?.total||0);
     renderDebtors();
   }
+  async function loadTreasurySummary(){
+    if(!document.querySelector('[data-treasury-count]'))return;
+    const statuses=['pending','confirmed','reversed'];
+    const results=await Promise.all([
+      imaudClient.from('payments').select('id',{count:'exact',head:true}),
+      ...statuses.map(status=>imaudClient.from('payments').select('id',{count:'exact',head:true}).eq('status',status))
+    ]);
+    const keys=['total','pending','confirmed','reversed'];
+    results.forEach((result,index)=>{
+      const node=document.querySelector('[data-treasury-count="'+keys[index]+'"]');
+      if(node)node.textContent=result.error?'—':Number(result.count||0).toLocaleString('es-VE');
+      if(result.error)console.warn('SITMAUD Treasury count '+keys[index]+':',result.error.message);
+    });
+  }
     async function loadPayments(){
-    if(!document.getElementById('officialPaymentRows')&&!document.getElementById('officialInvoiceRows')&&!document.getElementById('officialReportRows'))return;
+    if(!document.getElementById('officialTreasuryRows')&&!document.getElementById('officialPaymentRows')&&!document.getElementById('officialInvoiceRows')&&!document.getElementById('officialReportRows'))return;
     const {data,error}=await imaudClient.from('payments').select('id,receipt_number,amount,received_amount_bs,currency_code,paid_at,created_at,invoice_issued_at,liquidated_at,payment_method,external_reference,status,registration_channel,evidence_path,bank_code,payer_bank_code,pos_terminal_id,payment_udc_total,payment_udc_rate_id,rate:udc_rates!payments_payment_udc_rate_id_fkey(effective_date,udc_currency_code,udc_value,source_url),contributor:contributors!payments_contributor_id_fkey(kind,legal_name,first_name,last_name,contract_number,identification_type,identification_number)').order('created_at',{ascending:false}).limit(500);
-    if(error){for(const h of ['officialPaymentRows','officialInvoiceRows','officialReportRows']){const node=document.getElementById(h);if(node)node.innerHTML='<div class="contributors-empty">Error al consultar operaciones oficiales: '+safe(error.message)+'</div>';}return;}
+    if(error){for(const h of ['officialTreasuryRows','officialPaymentRows','officialInvoiceRows','officialReportRows']){const node=document.getElementById(h);if(node)node.innerHTML='<div class="contributors-empty">Error al consultar operaciones oficiales: '+safe(error.message)+'</div>';}return;}
     payments=data||[];limited=payments.length>=500;
-    renderPaymentRows();renderInvoiceRows();
+    renderPaymentRows();renderInvoiceRows();loadTreasurySummary();
     const form=document.getElementById('officialFinancialFilter');if(form)renderReportRows(form);
   }
   function renderPaymentRows(){
-    const node=document.getElementById('officialPaymentRows');if(!node)return;
+    const node=document.getElementById('officialTreasuryRows')||document.getElementById('officialPaymentRows');if(!node)return;
     const term=(document.getElementById('officialPaySearch')?.value||'').toLowerCase().trim(),status=document.getElementById('officialPayStatus')?.value||'';
     const records=payments.filter(p=>(!status||p.status===status)&&(!term||[p.receipt_number,p.external_reference,contributor(p.contributor),p.contributor?.contract_number].join(' ').toLowerCase().includes(term)));
     if(!records.length){node.innerHTML='<div class="contributors-empty"><b>No hay operaciones registradas para este filtro.</b></div>';return;}
     node.innerHTML='<div class="payment-debt-scroll"><table><thead><tr><th>Fecha</th><th>Comprobante</th><th>Contribuyente</th><th>Referencia</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>'+
-      records.map(p=>'<tr><td>'+safe(fmtDate(p.created_at))+'</td><td><b>'+safe(p.receipt_number)+'</b></td><td>'+safe(contributor(p.contributor))+'</td><td>'+safe(p.external_reference||'—')+'</td><td>'+safe(money(p.received_amount_bs??p.amount,p.currency_code))+(p.received_amount_bs!=null&&Number(p.received_amount_bs)>Number(p.amount)?'<div class="cashier-ledger-note">Deuda: '+safe(money(p.amount,p.currency_code))+' · Diferencia: '+safe(money(Number(p.received_amount_bs)-Number(p.amount),p.currency_code))+'</div>':'')+'</td><td>'+safe(label(p.status))+'</td><td><button class="btn btn-light btn-sm" data-official-invoice="'+safe(p.id)+'">Ver documento</button> '+(p.evidence_path?'<button class="btn btn-light btn-sm" data-treasury-evidence="'+safe(p.id)+'">Ver comprobante</button> ':'')+(p.status==='pending'&&treasuryAllowed?'<button class="btn btn-primary btn-sm" data-official-liquidate="'+safe(p.id)+'">Liquidar (Tesorería)</button> <button class="btn btn-light btn-sm" data-official-reject="'+safe(p.id)+'">Rechazar pago</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';
+      records.map(p=>'<tr><td>'+safe(fmtDate(p.created_at))+'</td><td><b>'+safe(p.receipt_number)+'</b></td><td>'+safe(contributor(p.contributor))+'</td><td>'+safe(p.external_reference||'—')+'</td><td>'+safe(money(p.received_amount_bs??p.amount,p.currency_code))+(p.received_amount_bs!=null&&Number(p.received_amount_bs)>Number(p.amount)?'<div class="cashier-ledger-note">Deuda: '+safe(money(p.amount,p.currency_code))+' · Diferencia: '+safe(money(Number(p.received_amount_bs)-Number(p.amount),p.currency_code))+'</div>':'')+'</td><td>'+safe(label(p.status))+'</td><td><button class="btn btn-light btn-sm" data-official-invoice="'+safe(p.id)+'">Ver documento</button> '+(p.evidence_path?'<button class="btn btn-light btn-sm" data-treasury-evidence="'+safe(p.id)+'">Ver comprobante</button> ':'')+(p.status==='pending'&&treasuryAllowed?'<button class="btn btn-primary btn-sm" data-official-liquidate="'+safe(p.id)+'">Validar y liquidar</button> <button class="btn btn-light btn-sm" data-official-reject="'+safe(p.id)+'">Rechazar pago</button>':'')+'</td></tr>').join('')+'</tbody></table></div>';
   }
   function renderInvoiceRows(){
     const node=document.getElementById('officialInvoiceRows');if(!node)return;
@@ -566,12 +589,13 @@
   window.sitmaudOfficialFinance={
     overviewPlaceholder:()=>metrics,
     loadOverview,
-    view(v){return v==='pagos'?paymentView():v==='facturacion'?invoiceView():reportView();},
+    view(v){return v==='pagos'?paymentView():v==='tesoreria'?treasuryView():v==='facturacion'?invoiceView():reportView();},
     showDocument,
     async mount(v){
       if(v==='reportes'){const form=document.getElementById('officialFinancialFilter');if(form){changeReportPeriod(form);changeReportGrouping(form);renderReportRows(form);}}
       if(v==='reportes')loadOverview();
       if(v==='pagos'){loadDebtors();loadFinancialPrivileges();loadTrialBillingBanner();}
+      if(v==='tesoreria')loadFinancialPrivileges();
       await loadPayments();
     }
   };

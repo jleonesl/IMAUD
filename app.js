@@ -1,7 +1,7 @@
 const state={view:'inicio',people:[],parishes:[],sectors:[],paymentDebtors:[],paymentBankCatalog:[],paymentPage:1,currentPaymentContributor:null,currentPaymentAssessments:[],udcRate:null,payments:[],staff:[]};
 const $=s=>document.querySelector(s);const money=n=>new Intl.NumberFormat('es-VE',{minimumFractionDigits:2}).format(n);
 function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)}
-const titleMap={inicio:'Inicio',contribuyentes:'Contribuyentes',inmuebles:'Inmuebles',organizaciones:'Condominios',condominio_registro:'Registrar condominio',pagos:'Recaudación y pagos',facturacion:'Facturación',solvencias:'Solvencias',reportes:'Reportes',puntos_venta:'Puntos de venta',mapa:'Mapa territorial',ordenanza:'Ordenanza y tarifas',funcionarios:'Funcionarios y permisos',bitacora:'Bitácora'};
+const titleMap={inicio:'Inicio',contribuyentes:'Contribuyentes',inmuebles:'Inmuebles',organizaciones:'Condominios',condominio_registro:'Registrar condominio',pagos:'Recaudación y pagos',facturacion:'Facturación',solvencias:'Solvencias',tesoreria:'Tesorería',reportes:'Reportes',puntos_venta:'Puntos de venta',mapa:'Mapa territorial',ordenanza:'Ordenanza y tarifas',funcionarios:'Funcionarios y permisos',bitacora:'Bitácora'};
 function head(title,sub,action=''){return `<div class="page-head"><div><div class="eyebrow">SITMAUD · GESTIÓN MUNICIPAL</div><h1>${title}</h1><p>${sub}</p></div>${action}</div>`}
 function table(headers,rows){return `<div class="card table-card"><table><thead><tr>${headers.map(x=>`<th>${x}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`}
 function dashboard(){
@@ -1338,7 +1338,7 @@ const sitmaudViewPermissions={
  inicio:['dashboard.read'],contribuyentes:['contributors.read','contributors.create','contributors.update'],
  inmuebles:['properties.read','properties.create','properties.update'],
  organizaciones:['organizations.manage'],condominio_registro:['organizations.manage'],
- pagos:['payments.read','payments.register'],facturacion:['invoices.read','invoices.issue'],
+ pagos:['payments.read','payments.register'],tesoreria:['payments.validate'],facturacion:['invoices.read','invoices.issue'],
  solvencias:['solvencies.read','solvencies.issue'],
  reportes:['reports.read'],puntos_venta:['reports.read','settings.manage'],
  mapa:['properties.read'],ordenanza:['tariffs.read','tariffs.manage','assessments.read'],
@@ -1352,6 +1352,7 @@ function sitmaudCan(permission){
 function sitmaudAllowed(view){
  const access=window.sitmaudAccess;
  if(!access)return false;
+ if(view==='tesoreria')return access.master||(access.grants.has('payments.read')&&access.grants.has('payments.validate'));
  return access.master||((sitmaudViewPermissions[view]||[]).some(p=>access.grants.has(p)));
 }
 function sitmaudFirstView(){
@@ -1432,7 +1433,7 @@ function render(){
    sitmaudCloseMobileMenu();
    return;
  }
- const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:()=>window.sitmaudOfficialFinance.view('pagos'),facturacion:()=>window.sitmaudOfficialFinance.view('facturacion'),solvencias:solvencyModule,reportes:()=>window.sitmaudOfficialFinance.view('reportes'),puntos_venta:()=>window.sitmaudPosTerminals.view(),mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();sitmaudApplyActionPermissions();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));sitmaudCloseMobileMenu();if(v==='inicio'){loadDashboardMetrics();window.sitmaudOfficialFinance.loadOverview();}if(v==='solvencias'){loadSolvencyRecords();window.sitmaudSolvencyDocuments?.load();}if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(['pagos','facturacion','reportes'].includes(v))window.sitmaudOfficialFinance.mount(v);if(v==='puntos_venta')window.sitmaudPosTerminals.mount();if(v==='condominio_registro')loadOfficialCondoCatalogs();if(v==='bitacora'){auditFilterReady=false;auditPageOffset=0;loadAuditRecords();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog();loadResidentialEngineReadiness();loadResidentialEngineProperties();window.sitmaudRateContingency?.mount()}if(v==='funcionarios'){loadStaffPermissionMatrix();window.sitmaudBankAdmin.load();}}
+ const v=state.view;$('#crumb').textContent=titleMap[v]||'Inicio';const views={inicio:dashboard,contribuyentes:listPeople,inmuebles:properties,organizaciones:organizations,condominio_registro:officialCondoRegistration,pagos:()=>window.sitmaudOfficialFinance.view('pagos'),tesoreria:()=>window.sitmaudOfficialFinance.view('tesoreria'),facturacion:()=>window.sitmaudOfficialFinance.view('facturacion'),solvencias:solvencyModule,reportes:()=>window.sitmaudOfficialFinance.view('reportes'),puntos_venta:()=>window.sitmaudPosTerminals.view(),mapa:mapView,ordenanza:ordinance,funcionarios:staff,bitacora:officialAudit};$('#content').innerHTML=(views[v]||dashboard)();sitmaudApplyActionPermissions();document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===v));sitmaudCloseMobileMenu();if(v==='inicio'){loadDashboardMetrics();window.sitmaudOfficialFinance.loadOverview();}if(v==='solvencias'){loadSolvencyRecords();window.sitmaudSolvencyDocuments?.load();}if(v==='contribuyentes')loadContributors();if(v==='organizaciones')loadOrganizations();if(v==='inmuebles')loadProperties();if(['pagos','tesoreria','facturacion','reportes'].includes(v))window.sitmaudOfficialFinance.mount(v);if(v==='puntos_venta')window.sitmaudPosTerminals.mount();if(v==='condominio_registro')loadOfficialCondoCatalogs();if(v==='bitacora'){auditFilterReady=false;auditPageOffset=0;loadAuditRecords();}if(v==='ordenanza'){loadUdcRate();loadUdcCatalog();loadResidentialEngineReadiness();loadResidentialEngineProperties();window.sitmaudRateContingency?.mount()}if(v==='funcionarios'){loadStaffPermissionMatrix();window.sitmaudBankAdmin.load();}}
 function go(v){if(!sitmaudAllowed(v)){toast('No tienes permiso para abrir ese módulo.');return;}state.view=v;render();window.scrollTo(0,0);recordStaffAudit('module_opened',v);}
 function recordStaffAudit(action,module,reference=null){
  if(!window.imaudCurrentProfile)return;

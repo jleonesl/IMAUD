@@ -36,5 +36,5 @@ test('invoice and Treasury distinguish issuer from acquiring bank',()=>{
 });
 test('browser version keys refresh cashier, finance and receipt',()=>{
  for(const script of ['official-payment-registration.js','official-finance.js','official-receipt-template.js'])
-  assert.ok(index.includes(script+'?v=20261121-issuer-bank1'),script);
+  assert.ok(index.includes(script+'?v='+(script==='official-finance.js'?'20261123-treasury1':'20261121-issuer-bank1')),script);
 });

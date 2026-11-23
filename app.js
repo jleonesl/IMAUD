@@ -1352,6 +1352,7 @@ function sitmaudCan(permission){
 function sitmaudAllowed(view){
  const access=window.sitmaudAccess;
  if(!access)return false;
+ if(view==='tesoreria')return access.master||(access.grants.has('payments.read')&&access.grants.has('payments.validate'));
  return access.master||((sitmaudViewPermissions[view]||[]).some(p=>access.grants.has(p)));
 }
 function sitmaudFirstView(){

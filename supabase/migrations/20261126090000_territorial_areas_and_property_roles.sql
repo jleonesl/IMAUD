@@ -242,7 +242,7 @@ begin
     p_parish_id,p_sector_id,case when p_area_type='sector' then null else p_territorial_area_id end,
     v_parish.name,v_sector_name,v_organization_name,
     nullif(btrim(coalesce(p_reference,'')),''),nullif(btrim(coalesce(p_notes,'')),''),
-    v_typology,case when p_area_type='sector' then null else 'Tipología heredada del catálogo territorial' end,true
+    case when p_area_type='sector' then null else v_typology end,case when p_area_type='sector' then null else 'Tipología heredada del catálogo territorial' end,true
   ) returning id into v_property_id;
 
   insert into public.property_owners(

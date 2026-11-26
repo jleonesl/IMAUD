@@ -42,7 +42,7 @@ test('individual property registration is atomic and keeps condominiums in their
 test('new territorial location and owner appear in the property directory and detail view',()=>{
  assert.match(app,/territorial_areas!properties_territorial_area_id_fkey/);
  assert.match(app,/property_owners!property_owners_property_id_fkey/);
- assert.match(app,/Ubicación territorial/);
+ assert.match(app,/Tipo de ubicación/);
  assert.match(styles,/territorial-area-creator/);
  assert.match(index,/app\.js\?v=20261126-owner-territory1/);
 });

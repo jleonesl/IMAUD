@@ -181,6 +181,9 @@ begin
   if coalesce(v_contributor.service_account_type,'individual')='condominio' then
     raise exception 'Los condominios deben registrarse desde su módulo de cuenta matriz. Esta operación no modifica sus reglas.';
   end if;
+  if coalesce(v_contributor.is_property_owner,true) is distinct from coalesce(p_is_property_owner,true) then
+    raise exception 'La condición de propietario del contribuyente no coincide con el registro. Vuelve a revisar el formulario.';
+  end if;
   if length(btrim(coalesce(p_address,'')))<5 then raise exception 'Indica la dirección completa del inmueble'; end if;
   select * into v_parish from public.parishes where id=p_parish_id and is_active=true;
   if v_parish.id is null then raise exception 'Selecciona una parroquia activa'; end if;
@@ -273,44 +276,8 @@ $function$;
 revoke all on function public.register_sitmaud_individual_property(uuid,text,text,uuid,text,uuid,uuid,boolean,text,text,text,text,text,text,text,text) from public,anon;
 grant execute on function public.register_sitmaud_individual_property(uuid,text,text,uuid,text,uuid,uuid,boolean,text,text,text,text,text,text,text,text) to authenticated;
 
--- Cambio posterior de responsable: cierra la relación anterior y crea una nueva,
--- sin tocar propietario, inmueble, contrato ni historial de pagos/deudas.
-create or replace function public.change_sitmaud_property_responsible(
-  p_property_id uuid,p_new_contributor_id uuid,p_relationship_role text,p_reason text
-) returns jsonb
-language plpgsql security definer set search_path=''
-as $function$
-declare v_old uuid;v_new public.contributors%rowtype;v_relation_id uuid;
-begin
-  if auth.uid() is null or not public.has_permission('properties.update') then
-    raise exception 'No tienes permisos para cambiar el responsable de pago' using errcode='42501';
-  end if;
-  if length(btrim(coalesce(p_reason,'')))<10 then raise exception 'Indica el motivo del cambio (mínimo 10 caracteres)'; end if;
-  if p_relationship_role not in ('arrendatario','ocupante','responsable_pago') then raise exception 'Relación del responsable no válida'; end if;
-  select * into v_new from public.contributors where id=p_new_contributor_id and coalesce(status,'active')='active';
-  if v_new.id is null then raise exception 'El nuevo responsable no es un contribuyente activo'; end if;
-  if coalesce(v_new.service_account_type,'individual')='condominio' then raise exception 'Una cuenta matriz de condominio no puede ser responsable individual de una vivienda'; end if;
-  perform 1 from public.properties where id=p_property_id and coalesce(is_consolidated_master,false)=false for update;
-  if not found then raise exception 'Inmueble individual no encontrado'; end if;
-  select contributor_id into v_old from public.property_relationships
-   where property_id=p_property_id and is_current=true and is_payment_responsible=true
-   order by starts_on desc nulls last,created_at desc limit 1;
-  if v_old=p_new_contributor_id then raise exception 'El contribuyente ya es el responsable vigente'; end if;
-  update public.property_relationships set is_current=false,ends_on=current_date,is_payment_responsible=false
-   where property_id=p_property_id and is_current=true and is_payment_responsible=true;
-  insert into public.property_relationships(property_id,contributor_id,relationship_role,starts_on,is_current,is_payment_responsible,notes)
-  values(p_property_id,p_new_contributor_id,p_relationship_role,current_date,true,true,btrim(p_reason))
-  returning id into v_relation_id;
-  insert into public.audit_log(actor_user_id,action,entity_table,entity_id,before_data,after_data)
-  values(auth.uid(),'property_payment_responsible_changed','properties',p_property_id::text,
-    jsonb_build_object('previous_contributor_id',v_old),
-    jsonb_build_object('new_contributor_id',p_new_contributor_id,'relationship_role',p_relationship_role,'reason',btrim(p_reason)));
-  return jsonb_build_object('property_id',p_property_id,'previous_contributor_id',v_old,
-    'new_contributor_id',p_new_contributor_id,'relationship_id',v_relation_id);
-end;
-$function$;
-revoke all on function public.change_sitmaud_property_responsible(uuid,uuid,text,text) from public,anon;
-grant execute on function public.change_sitmaud_property_responsible(uuid,uuid,text,text) to authenticated;
+-- El cambio posterior de responsable se implementará con una regla explícita para
+-- separar las deudas históricas de las obligaciones generadas desde la fecha efectiva.
 
 comment on table public.territorial_areas is
   'Comunidades, urbanizaciones privadas y villas; los sectores conservan public.sectors para compatibilidad con las reglas tarifarias.';

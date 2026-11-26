@@ -69,6 +69,7 @@ jobs:
           node --test tests/staff-invitation-password.test.mjs
           node --test tests/unique-welcome-credentials.test.mjs
           node --test tests/payments-layout.test.mjs
+          node --test tests/property-owner-territorial-registration.test.mjs
           node --test tests/billing-engine-regression.test.mjs
           node --check dist/official-finance.js
           node --check dist/official-payment-registration.js

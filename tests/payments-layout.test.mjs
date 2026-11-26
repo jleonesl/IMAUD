@@ -94,7 +94,7 @@ test('actual payment modal uses redesigned institutional structure, not the old 
  assert.match(styles,/\.cashier-search-row/);
  const html=readFileSync('index.html','utf8');
  assert.match(html,/official-payment-registration\.js\?v=20261121-issuer-bank1/);
- assert.match(html,/styles\.css\?v=20261123-treasury1/);
+ assert.match(html,/styles\.css\?v=20261126-owner-territory1/);
 });
 
 test('monthly debt table displays Bs snapshots alongside UCD without treating them as current payable quotes',()=>{

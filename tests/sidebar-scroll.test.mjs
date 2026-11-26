@@ -23,5 +23,5 @@ test('staff sidebar has independent visible vertical scrollbar and does not clip
  assert.match(styles,/touch-action:pan-y/);
 });
 test('browser is instructed to load updated navigation stylesheet',()=>{
- assert.match(html,/styles\.css\?v=20261123-treasury1/);
+ assert.match(html,/styles\.css\?v=20261126-owner-territory1/);
 });

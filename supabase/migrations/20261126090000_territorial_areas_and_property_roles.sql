@@ -9,9 +9,10 @@ create table if not exists public.territorial_areas (
   is_active boolean not null default true,
   created_by uuid,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(parish_id, area_type, lower(name))
+  updated_at timestamptz not null default now()
 );
+create unique index if not exists territorial_areas_name_unique_idx
+  on public.territorial_areas(parish_id,area_type,lower(name));
 create index if not exists territorial_areas_parish_type_idx
   on public.territorial_areas(parish_id,area_type) where is_active;
 

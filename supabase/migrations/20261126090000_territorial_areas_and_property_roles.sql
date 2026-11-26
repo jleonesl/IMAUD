@@ -125,7 +125,7 @@ begin
   values(auth.uid(),'territorial_catalog_created',
     case when v_type='sector' then 'sectors' else 'territorial_areas' end,
     coalesce(v_sector_id,v_area_id)::text,
-    jsonb_build_object('name',v_name,'type',v_type,'parish',v_parish.name,'typology',v_typology));
+    jsonb_build_object('name',v_name,'type',v_type,'parish',v_parish.name,'typology',v_typology,'typology_reason',nullif(btrim(coalesce(p_typology_reason,'')),'')));
   return jsonb_build_object('id',coalesce(v_sector_id,v_area_id),'sector_id',v_sector_id,
     'territorial_area_id',v_area_id,'name',v_name,'area_type',v_type,
     'parish_id',p_parish_id,'typology_code',v_typology);
